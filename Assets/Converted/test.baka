@@ -1,0 +1,51 @@
+
+#pragma kernel CSVoxel
+// properties
+float inj_float_0;
+float inj_float_1;
+float inj_float_2;
+float inj_float_3;
+float inj_float_4;
+RWTexture3D<float> voxels;
+int3 permuationSeed;
+int3 moduloSeed;
+#include "Assets/Noises.cginc"
+void Func(float3 position, out float density, out uint material) {
+	// lines
+	const float identity_float_0 = 0.0;
+	const float2 identity_float2_0 = float2(0.0, 0.0);
+	const float3 identity_float3_0 = float3(0.0, 0.0, 0.0);
+	const float st__0 = 1;
+	const float st__1 = 1;
+	float position_y_0 = position.y;
+	const float st__2 = 10;
+	float position_y_0_s_st__2_0 = position_y_0 - st__2;
+	float position_noised_fbm_0 = 0.0;
+	float position_noised_fbm_scale_0 = 1.0;
+	float position_noised_fbm_amplitude_0 = 1.0;
+	
+	[unroll]
+	for(uint i = 0; i < 2; i++) {
+	
+	    position_noised_fbm_0 += abs((cellular(position * position_noised_fbm_scale_0 * inj_float_0).x - 0.5) * inj_float_1) * position_noised_fbm_amplitude_0;
+	
+	    position_noised_fbm_scale_0 *= inj_float_2;
+	    position_noised_fbm_amplitude_0 *= inj_float_3;
+	
+	}
+	float position_y_0_s_st__2_0_p_position_noised_fbm_0_0 = position_y_0_s_st__2_0 + position_noised_fbm_0;
+	float position_y_0_s_st__2_0_p_position_noised_fbm_0_0_p_inj_float_4_0 = position_y_0_s_st__2_0_p_position_noised_fbm_0_0 + inj_float_4;
+	const uint st__3 = 0;
+	density = position_y_0_s_st__2_0_p_position_noised_fbm_0_0_p_inj_float_4_0;
+	material = st__3;
+}
+
+[numthreads(8, 8, 8)]
+void CSVoxel(uint3 id : SV_DispatchThreadID) {
+    float3 position = float3(id);
+    float density = 0.0;
+    uint material = 0;
+    Func(position, density, material);
+    voxels[id] = density;
+}
+        

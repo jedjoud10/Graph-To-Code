@@ -1,0 +1,8 @@
+#include "Noises/common.cginc"
+#include "Noises/cellular2D.cginc"
+#include "Noises/cellular3D.cginc"
+#include "Noises/erosion.cginc"
+#include "Noises/noise2D.cginc"
+#include "Noises/noise3D.cginc"
+#include "Noises/fbm.cginc"
+#include "Noises/voronoise.cginc"

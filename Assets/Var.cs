@@ -8,15 +8,11 @@ public class Var<T> {
     // the name of the variable. automatically generated
     public string name;
 
-    // is the current value defined in the code as a constant (or an editor variable)
-    public bool isStatic;
-
     public static Var<T> CreateFromName(string name, string value) {
         string newName = ShaderManager.singleton.DefineVariable<T>(name, value);
-        
+
         return new Var<T> {
             name = newName,
-            isStatic = false,
         };
     }
 
@@ -47,23 +43,17 @@ public class Var<T> {
     public static Var<T> Identity {
         get {
             return new Var<T> {
-                name = "identity_" + Utils.TypeOf<T>(),
-                isStatic = false,
+                name = "identity_" + Utils.TypeOf<T>().ToStringType(),
             };
         }
     }
 
     // Implicitly convert a constant value to a variable
-    public static implicit operator Var<T>(T value) => new Var<T> {
-        name = "_st_",
-        isStatic = true,
-    };
-    
-    // Implict conversion from common types to this type
-    public static implicit operator Var<T>(Var<double> d) => Var<T>.Identity;
-    public static implicit operator Var<T>(Var<float> d) => Var<T>.Identity;
-    public static implicit operator Var<T>(Var<uint> d) => Var<T>.Identity;
-    public static implicit operator Var<T>(Var<int> d) => Var<T>.Identity;
+    public static implicit operator Var<T>(T value) {
+        return new Var<T> {
+            name = ShaderManager.singleton.DefineVariable<T>("st_", value.ToString(), true),
+        };
+    }
 
     // Inject a custom variable that will update its value dynamically based on the given callback 
     // Mainly used to pass inputs from fields from the unity editor to the graph
@@ -71,12 +61,30 @@ public class Var<T> {
         // hook on before on graph execution (runtime) 
         // update "internal" value
         // send value to shader using uniform (make sure name matches up)
-        return Var<T>.Identity;
+        return new Var<T> {
+            name = ShaderManager.singleton.Inject<T>("inj_" + Utils.TypeOf<T>().ToStringType(), callback),
+        };
     }
 
     // Common operators
-    public static Var<T> operator +(Var<T> a, Var<T> b) => a;
-    public static Var<T> operator -(Var<T> a, Var<T> b) => a;
-    public static Var<T> operator *(Var<T> a, Var<T> b) => a;
-    public static Var<T> operator /(Var<T> a, Var<T> b) => a;
+    public static Var<T> operator +(Var<T> a, Var<T> b) {
+        return new Var<T> {
+            name = ShaderManager.singleton.DefineVariable<T>(a.name + "_p_" + b.name, a.name + " + " + b.name)
+        };
+    }
+    public static Var<T> operator -(Var<T> a, Var<T> b) {
+        return new Var<T> {
+            name = ShaderManager.singleton.DefineVariable<T>(a.name + "_s_" + b.name, a.name + " - " + b.name)
+        };
+    }
+    public static Var<T> operator *(Var<T> a, Var<T> b) {
+        return new Var<T> {
+            name = ShaderManager.singleton.DefineVariable<T>(a.name + "_m_" + b.name, a.name + " * " + b.name)
+        };
+    }
+    public static Var<T> operator /(Var<T> a, Var<T> b) {
+        return new Var<T> {
+            name = ShaderManager.singleton.DefineVariable<T>(a.name + "_d_" + b.name, a.name + " / " + b.name)
+        };
+    }
 }
