@@ -71,35 +71,35 @@ public static class Utils {
     }
 
     // Get the x value of the float3
-    public static Var<float> x(this Var<float3> vec3) {
+    public static Var<float> X(this Var<float3> vec3) {
         return new Var<float> {
             name = ShaderManager.singleton.DefineVariable<float>(vec3.name + "_x", vec3.name + ".x"),
         };
     }
 
     // Get the y value of the float3
-    public static Var<float> y(this Var<float3> vec3) {
+    public static Var<float> Y(this Var<float3> vec3) {
         return new Var<float> {
             name = ShaderManager.singleton.DefineVariable<float>(vec3.name + "_y", vec3.name + ".y"),
         };
     }
 
     // Get the z value of the float3
-    public static Var<float> z(this Var<float3> vec3) {
+    public static Var<float> Z(this Var<float3> vec3) {
         return new Var<float> {
             name = ShaderManager.singleton.DefineVariable<float>(vec3.name + "_z", vec3.name + ".z"),
         };
     }
 
     // Construct float3 from 1 float
-    public static Var<float3> float3(this Var<float> val) {
+    public static Var<float3> Float3(this Var<float> val) {
         return new Var<float3> {
             name = ShaderManager.singleton.DefineVariable<float3>(val.name + "_f3", $"float3({val.name}, {val.name}, {val.name})"),
         };
     }
 
     // Construct float2 from 1 float
-    public static Var<float2> float2(this Var<float> val) {
+    public static Var<float2> Float2(this Var<float> val) {
         return new Var<float2> {
             name = ShaderManager.singleton.DefineVariable<float2>(val.name + "_f2", $"float2({val.name}, {val.name})"),
         };
