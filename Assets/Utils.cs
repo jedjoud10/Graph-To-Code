@@ -15,6 +15,57 @@ public static class Utils {
         Int,
     }
 
+    public enum Swizzle2Mode {
+        XY,
+        XZ,
+        YX,
+        YZ,
+        ZX,
+        ZY,
+    }
+
+    public enum Swizzle3Mode {
+        XYX,
+        XYZ,
+        XZX,
+        XZY,
+        YXY,
+        YXZ,
+        YZX,
+        YZY,
+        ZXY,
+        ZXZ,
+        ZYX,
+        ZYZ,
+    }
+
+    public enum Swizzle4Mode {
+        XYXY,
+        XYXZ,
+        XYZX,
+        XYZY,
+        XZXY,
+        XZXZ,
+        XZYX,
+        XZYZ,
+        YXYX,
+        YXYZ,
+        YXZX,
+        YXZY,
+        YZXY,
+        YZXZ,
+        YZYX,
+        YZYZ,
+        ZXYX,
+        ZXYZ,
+        ZXZX,
+        ZXZY,
+        ZYXY,
+        ZYXZ,
+        ZYZX,
+        ZYZY,
+    }
+
     public static string ToStringType(this StrictType data) {
         return data.ToString().ToLower();
     }
@@ -51,6 +102,34 @@ public static class Utils {
     public static Var<float2> float2(this Var<float> val) {
         return new Var<float2> {
             name = ShaderManager.singleton.DefineVariable<float2>(val.name + "_f2", $"float2({val.name}, {val.name})"),
+        };
+    }
+
+    private static Var<T> SwizzleInternal<T, G>(this Var<G> val, string stringed) {
+        if (val.Dimensionality < stringed.Length) {
+            throw new System.Exception("Nuhuh!!");
+        }
+
+        return new Var<T> {
+            name = ShaderManager.singleton.DefineVariable<T>(val.name + "_swizzled", $"{val.name}.{stringed}"),
+        };
+    }
+
+    public static Var<float2> Swizzle2<G>(this Var<G> val, Swizzle2Mode swizzle) {
+        return SwizzleInternal<float2, G>(val, swizzle.ToString().ToLower());
+    }
+
+    public static Var<float3> Swizzle3<G>(this Var<G> val, Swizzle3Mode swizzle) {
+        return SwizzleInternal<float3, G>(val, swizzle.ToString().ToLower());
+    }
+
+    public static Var<float4> Swizzle4<G>(this Var<G> val, Swizzle4Mode swizzle) {
+        return SwizzleInternal<float4, G>(val, swizzle.ToString().ToLower());
+    }
+
+    public static Var<T> Mix<T>(this Var<float> t, Var<T> a, Var<T> b) {
+        return new Var<T> {
+            name = ShaderManager.singleton.DefineVariable<T>($"{t.name}_mix_{a.name}_{b.name}", $"lerp({a.name}, {b.name}, {t.name})"),
         };
     }
 

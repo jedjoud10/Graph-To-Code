@@ -84,6 +84,8 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
             currentHash = newHash;
             Compile();
         }
+
+        ExecuteShader();
     }
 
     public void ExecuteShader() {

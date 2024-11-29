@@ -9,6 +9,9 @@ public class Test : VoxelGraph {
     [Range(0, 1)]
     public float scale;
 
+    [Range(0, 1)]
+    public float scale2;
+
     [Range(-10, 10)]
     public float amplitude;
 
@@ -33,11 +36,13 @@ public class Test : VoxelGraph {
 
         FractalNoise fbm = new FractalNoise(noise, mode, Var<float>.Inject(() => lacunarity), Var<float>.Inject(() => persistence), octaves);
 
+        // creates a texture caching this result?? maybe we can use this to calculate implicit diffs
+        // fbm.Cached()
 
         Var<float> injected = Var<float>.Inject(() => offset);
-        density = position.y() - 10.0f + fbm.Evaluate(position) + injected;
+        var temp = position.y() - 10.0f + fbm.Evaluate(position.Swizzle2(Utils.Swizzle2Mode.XZ)) + injected;
 
-        
+        density = (new Noise(1.0f, Var<float>.Inject(() => scale2)).Evaluate(position) * 0.5f + 0.5f).Mix(temp, 0.0f);
         material = 0;
     }
 

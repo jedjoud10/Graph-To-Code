@@ -411,14 +411,15 @@ MonoBehaviour:
     m_NumAlphaKeys: 2
   previewOpacity: 1
   previewQuality: 3
-  moduloSeed: {x: -24, y: 26, z: 23}
+  moduloSeed: {x: 2, y: 26, z: 23}
   permutationSeed: {x: -48, y: 16, z: 18}
-  offset: -0.1
-  scale: 0.067
+  offset: -8.12
+  scale: 0.072
+  scale2: 0.195
   amplitude: 8.18
   octaves: 2
-  persistence: 0.546
-  lacunarity: 1.781
+  persistence: 1.599
+  lacunarity: 1.872
   mode: 0
   type: 2
 --- !u!4 &1968314171

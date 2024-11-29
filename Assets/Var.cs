@@ -16,26 +16,20 @@ public class Var<T> {
         };
     }
 
-    // Dimensionality of a variable
-    public enum Dimensions {
-        One,
-        Two,
-        Three,
-        Undefined
-    }
-
     // Get the dimensionality of the variable
-    public Dimensions Dimensionality {
+    public int Dimensionality {
         get {
             if (typeof(T) == typeof(float)) {
-                return Dimensions.One;
+                return 1;
             } else if (typeof(T) == typeof(float2)) {
-                return Dimensions.Two;
+                return 2;
             } else if (typeof(T) == typeof(float3)) {
-                return Dimensions.Three;
+                return 3;
+            } else if (typeof(T) == typeof(float4)) {
+                return 4;
             }
 
-            return Dimensions.Undefined;
+            return -1;
         }
     }
 

@@ -13,10 +13,6 @@ public class CustomVoxelGraphEditor : Editor {
         if (GUILayout.Button("Recompile")) {
             script.Compile();
         }
-
-        if (script.preview) {
-            script.ExecuteShader();
-        }
     }
 
     private void OnSceneViewGUI(SceneView sv) {
