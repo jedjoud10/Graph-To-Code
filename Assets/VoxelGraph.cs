@@ -92,12 +92,12 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
         Transpile();
 
         if (texture == null)
-            texture = Create3DRenderTexture(64, GraphicsFormat.R32_SFloat);
+            texture = Create3DRenderTexture(32, GraphicsFormat.R32_SFloat);
         
         shader.SetTexture(0, "voxels", texture);
         shader.SetInts("permuationSeed", new int[] { permutationSeed.x, permutationSeed.y, permutationSeed.z });
         shader.SetInts("moduloSeed", new int[] { moduloSeed.x, moduloSeed.y, moduloSeed.z });
-        shader.Dispatch(0, 8, 8, 8);
+        shader.Dispatch(0, 4, 4, 4);
         manager.UpdateInjected(shader);
     }
 

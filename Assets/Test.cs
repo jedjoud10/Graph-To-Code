@@ -37,8 +37,6 @@ public class Test : VoxelGraph {
         FractalNoise fbm = new FractalNoise(noise, mode, Var<float>.Inject(() => lacunarity), Var<float>.Inject(() => persistence), octaves);
 
         // creates a texture caching this result?? maybe we can use this to calculate implicit diffs
-        // fbm.Cached()
-
         Var<float> injected = Var<float>.Inject(() => offset);
         var temp = position.y() - 10.0f + fbm.Evaluate(position.Swizzle2(Utils.Swizzle2Mode.XZ)) + injected;
 

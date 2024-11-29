@@ -81,4 +81,21 @@ public class Var<T> {
             name = ShaderManager.singleton.DefineVariable<T>(a.name + "_d_" + b.name, a.name + " / " + b.name)
         };
     }
+
+    // TODO: Keep track of the inputs used for this variable so that we can use a 2d texture instead of a 3d one each time
+    // TODO: Must create a different compute shader with required variables
+    // TODO: Must create texture and create a variable that reads from it in the OG shader
+    // sub-TODO: can squish multiple cached calls into a single RGBA texture (of the same size) to help performance
+    public CachedVar<T> Cached(int sizeReduction = 1) {
+        return null;
+    }
+}
+
+public class CachedVar<T> {
+    public Var<T> var;
+
+    // Central difference gradient approximation
+    public Var<float3> ApproxGradent() {
+        return float3.zero;
+    }
 }

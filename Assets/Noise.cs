@@ -1,5 +1,6 @@
 
 // Simple noise class that allows us to write and combine noise types to evaluate them
+using Unity.Mathematics;
 using UnityEngine.UIElements;
 
 public class Noise {
@@ -26,7 +27,7 @@ public class Noise {
     public Var<float> scale;
 
     public string Internal(string name) {
-        string inner = $"{name} * {scale.name}";
+        string inner = $"({name}) * {scale.name}";
         string suffix = "";
         string fn = "";
 
@@ -57,12 +58,24 @@ public class Noise {
     }
 }
 
+public class Coherent : Noise {
+    public enum Type {
+        Simplex,
+        Perlin,
+    }
+}
+
+public class Voronoi : Noise {
+
+}
+
 // Fractal noise is a type of noise that implement fBm (either Ridged, Billow, or Sum mode)
 public class FractalNoise {
     public enum FractalMode {
         Ridged,
         Billow,
         Sum,
+        Mul,
     }
 
 
@@ -89,7 +102,7 @@ public class FractalNoise {
     }
 
     public Var<float> Evaluate<T>(Var<T> position) {
-        Var<float> sum = Var<float>.CreateFromName(position.name + "_noised_fbm", "0.0");
+        Var<float> sum = Var<float>.CreateFromName(position.name + "_noised_fbm", mode == FractalMode.Mul ? "1.0" : "0.0");
         Var<float> _s = Var<float>.CreateFromName(position.name + "_noised_fbm_scale", "1.0");
         Var<float> _a = Var<float>.CreateFromName(position.name + "_noised_fbm_amplitude", "1.0");
 
@@ -97,7 +110,7 @@ public class FractalNoise {
 [unroll]
 for(uint i = 0; i < {octaves}; i++) {{
 ");
-        string test = $"{position.name} * {_s.name}";
+        string test = $"{position.name} * {_s.name} + hash31(float(i))";
 
         switch (mode) {
             case FractalMode.Billow:
@@ -108,6 +121,9 @@ for(uint i = 0; i < {octaves}; i++) {{
                 break;
             case FractalMode.Sum:
                 ShaderManager.singleton.AddLine($"    {sum.name} += {noise.Internal(test)} * {_a.name};");
+                break;
+            case FractalMode.Mul:
+                ShaderManager.singleton.AddLine($"    {sum.name} *= {noise.Internal(test)} * {_a.name};");
                 break;
         }
 
