@@ -17,6 +17,11 @@ public class CustomVoxelGraphEditor : Editor {
 
     private void OnSceneViewGUI(SceneView sv) {
         var script = (VoxelGraph)target;
+
+        if (!script.preview)
+            return;
+
+        script.ExecuteShader();
         if (Application.isPlaying || script.texture == null) return;
 
         Handles.matrix = Matrix4x4.Scale(Vector3.one * 64.0f);

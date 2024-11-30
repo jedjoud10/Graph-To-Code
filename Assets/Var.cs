@@ -44,8 +44,15 @@ public class Var<T> {
 
     // Implicitly convert a constant value to a variable
     public static implicit operator Var<T>(T value) {
+        string a = value.ToString();
+        if (Utils.TypeOf<T>() == Utils.StrictType.Float3) {
+            object cock = (object)value;
+            float3 cock2 = (float3)cock;
+            a = $"float3({cock2.x},{cock2.y},{cock2.z})";
+        }
+
         return new Var<T> {
-            name = ShaderManager.singleton.DefineVariable<T>("st_", value.ToString(), true),
+            name = ShaderManager.singleton.DefineVariable<T>("st_", a.ToString(), true),
         };
     }
 

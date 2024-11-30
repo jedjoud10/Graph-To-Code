@@ -1,3 +1,6 @@
+using Unity.Mathematics;
+using UnityEngine.UIElements;
+
 public abstract class Noise {
     public Noise(Var<float> intensity, Var<float> scale) {
         this.amplitude = intensity;
@@ -45,10 +48,10 @@ public class Voronoi : Noise {
     }
 
     public Type type;
-    public float voronoiseLerpValue;
-    public float voronoiseRandomness;
+    public Var<float> voronoiseLerpValue;
+    public Var<float> voronoiseRandomness;
 
-    public Voronoi(Type type, float voronoiseLerpValue, float voronoiseRandomness) : base() {
+    public Voronoi(Type type, Var<float> voronoiseLerpValue, Var<float> voronoiseRandomness) : base() {
         this.type = type;
         this.voronoiseLerpValue = voronoiseLerpValue;
         this.voronoiseRandomness = voronoiseRandomness;
@@ -56,11 +59,12 @@ public class Voronoi : Noise {
 
     public Voronoi() : base() {
         this.type = Type.F1;
-        this.voronoiseLerpValue = 0.0f;
-        this.voronoiseRandomness = 0.0f;
+        this.voronoiseLerpValue = 0.5f;
+        this.voronoiseRandomness = 0.5f;
     }
 
     public override string Internal(string name) {
+        ShaderManager.singleton.HashenateMaxx(type);
         string inner = $"({name}) * {scale.name}";
         string suffix = "";
         string fn = "";
@@ -77,12 +81,38 @@ public class Voronoi : Noise {
                 break;
             case Type.Voronoise:
                 fn = "voronoise";
-                extra = $", {voronoiseRandomness}, {voronoiseLerpValue}";
+                extra = $", {voronoiseRandomness.name}, {voronoiseLerpValue.name}";
                 break;
         }
         return $"({fn}({inner}{extra}){suffix}) * {amplitude.name}";
     }
 }
+
+public class Warper {
+    private Noise noise;
+    public Var<float3> scale;
+    public float3 offsets_x = new float3(123.85441f, 32.223543f, -359.48534f);
+    public float3 offsets_y = new float3(65.4238f, -551.15353f, 159.5435f);
+    public float3 offsets_z = new float3(-43.85454f, -3346.234f, 54.7653f);
+
+    public Warper(Noise noise) {
+        this.noise = noise;
+        this.scale = new float3(1.0f, 1.0f, 1.0f);
+    }
+
+    public Var<float2> Warp(Var<float2> position) {
+        Var<float2> a_offseted = Var<float2>.CreateFromName(position.name + "_x_offset", $"({position.name} + float2({offsets_x.x}, {offsets_x.y}))");
+        Var<float2> b_offseted = Var<float2>.CreateFromName(position.name + "_y_offset", $"({position.name} + float2({offsets_y.x}, {offsets_y.y}))");
+
+        Var<float> a = Var<float>.CreateFromName(position.name + "_warped_x", $"({position.name}.x + {noise.Evaluate(a_offseted).name} * {scale.name}.x)");
+        Var<float> b = Var<float>.CreateFromName(position.name + "_warped_y", $"({position.name}.y + {noise.Evaluate(b_offseted).name} * {scale.name}.y)");
+
+        Var<float2> reconstructed = Var<float2>.CreateFromName(position.name + "_warped", $"float2({a.name}, {b.name})");
+        return reconstructed;
+    }
+}
+
+
 
 // Fractal noise is a type of noise that implement fBm (either Ridged, Billow, or Sum mode)
 public class FractalNoise {
@@ -117,15 +147,19 @@ public class FractalNoise {
     }
 
     public Var<float> Evaluate<T>(Var<T> position) {
-        Var<float> sum = Var<float>.CreateFromName(position.name + "_noised_fbm", mode == FractalMode.Mul ? "1.0" : "0.0");
-        Var<float> _s = Var<float>.CreateFromName(position.name + "_noised_fbm_scale", "1.0");
-        Var<float> _a = Var<float>.CreateFromName(position.name + "_noised_fbm_amplitude", "1.0");
+        ShaderManager.singleton.HashenateMaxx(mode);
+        ShaderManager.singleton.HashenateMaxx(octaves);
+
+        string name = position.name;
+        Var<float> sum = Var<float>.CreateFromName(name + "_noised_fbm", mode == FractalMode.Mul ? "1.0" : "0.0");
+        Var<float> _s = Var<float>.CreateFromName(name + "_noised_fbm_scale", "1.0");
+        Var<float> _a = Var<float>.CreateFromName(name + "_noised_fbm_amplitude", "1.0");
 
         ShaderManager.singleton.AddLine($@"
 [unroll]
 for(uint i = 0; i < {octaves}; i++) {{
 ");
-        string test = $"{position.name} * {_s.name} + hash31(float(i))";
+        string test = $"{name} * {_s.name} + hash31(float(i))";
 
         switch (mode) {
             case FractalMode.Billow:

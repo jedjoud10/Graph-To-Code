@@ -15,8 +15,9 @@ public class ShaderManager {
     Dictionary<string, (Utils.StrictType, Func<object>)> injected;
     public List<string> properties;
     private int counter;
+    public int hash;
 
-    public ShaderManager() {
+    public ShaderManager(bool discard) {
         lines = new List<string>() { "// lines" };
         properties = new List<string>() { "// properties" };
         injected = new Dictionary<string, (Utils.StrictType, Func<object>)>();
@@ -29,6 +30,10 @@ public class ShaderManager {
 
     public void AddLine(string line) {
         lines.Add(line);
+    }
+
+    public void HashenateMaxx(object val) {
+        hash = HashCode.Combine(hash, val.GetHashCode());
     }
 
     public string Inject<T>(string name, Func<T> func) {

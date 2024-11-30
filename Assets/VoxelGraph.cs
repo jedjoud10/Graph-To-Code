@@ -25,9 +25,10 @@ public abstract class VoxelGraph : MonoBehaviour {
 
     // This transpile the voxel graph into HLSL code that can be executed on the GPU
     // This can be done outside the editor, but shader compilation MUST be done in editor
-    public string Transpile() {
-        manager = new ShaderManager();
+    public string Transpile(bool hashOnly = false) {
+        manager = new ShaderManager(hashOnly);
         ShaderManager.singleton = manager;
+
         Var<float3> position = new Var<float3> {
             name = "position"
         };
@@ -47,6 +48,10 @@ public abstract class VoxelGraph : MonoBehaviour {
 
         ShaderManager.singleton = null;
 
+        if (hashOnly) {
+            return "";
+        }
+
         List<string> strings = new List<string>();
 
         strings.Add("#pragma kernel CSVoxel");
@@ -62,41 +67,61 @@ public abstract class VoxelGraph : MonoBehaviour {
         strings.Add("}");
 
         strings.Add(@"
+int3 offset;
 [numthreads(8, 8, 8)]
 void CSVoxel(uint3 id : SV_DispatchThreadID) {
-    float3 position = float3(id);
+    float3 position = float3(id + offset * 32);
     float density = 0.0;
     uint material = 0;
-    Func(position, density, material);
-    voxels[id] = density;
+    Func(position * 0.01, density, material);
+    voxels[id + offset * 32] = density;
 }
         ");
 
+        this.currentHash = manager.hash;
         return strings.Aggregate("", (a, b) => a + "\n" + b);
     }
 
-    public abstract int RecompilationHash();
-
     public void OnValidate() {
-        int newHash = RecompilationHash();
-    
-        if (newHash != currentHash) {
-            currentHash = newHash;
+        int oldHash = currentHash;
+        Transpile();
+
+        if (oldHash != currentHash) {
             Compile();
         }
 
         ExecuteShader();
     }
 
+    int counter;
+
+    public static uint3 IndexToPos(int index, uint size) {
+        uint index2 = (uint)index;
+
+        // N(ABC) -> N(A) x N(BC)
+        uint y = index2 / (size * size);   // x in N(A)
+        uint w = index2 % (size * size);  // w in N(BC)
+
+        // N(BC) -> N(B) x N(C)
+        uint z = w / size;        // y in N(B)
+        uint x = w % size;        // z in N(C)
+        return new uint3(x, y, z);
+    }
+
     public void ExecuteShader() {
         Transpile();
+        counter++;
+
+        int3 offset = (int3)IndexToPos(counter % (4*4*4), 4);
+
 
         if (texture == null)
-            texture = Create3DRenderTexture(32, GraphicsFormat.R32_SFloat);
+            texture = Create3DRenderTexture(128, GraphicsFormat.R32_SFloat);
         
         shader.SetTexture(0, "voxels", texture);
         shader.SetInts("permuationSeed", new int[] { permutationSeed.x, permutationSeed.y, permutationSeed.z });
         shader.SetInts("moduloSeed", new int[] { moduloSeed.x, moduloSeed.y, moduloSeed.z });
+        shader.SetInts("offset", new int[] { offset.x, offset.y, offset.z });
         shader.Dispatch(0, 4, 4, 4);
         manager.UpdateInjected(shader);
     }
