@@ -115,7 +115,7 @@ public class Warper {
 
 
 // Fractal noise is a type of noise that implement fBm (either Ridged, Billow, or Sum mode)
-public class FractalNoise {
+public class FractalNoise : Noise {
     public enum FractalMode {
         Ridged,
         Billow,
@@ -129,6 +129,8 @@ public class FractalNoise {
     public Var<float> persistence;
     public int octaves;
     private Noise noise;
+
+    public override bool Supports3D => noise.Supports3D;
 
     public FractalNoise(Noise noise, FractalMode mode, Var<float> lacunarity, Var<float> persistence, int octaves) {
         this.noise = noise;
@@ -146,11 +148,10 @@ public class FractalNoise {
         this.mode = mode;
     }
 
-    public Var<float> Evaluate<T>(Var<T> position) {
+    public override string Internal(string name) {
         ShaderManager.singleton.HashenateMaxx(mode);
         ShaderManager.singleton.HashenateMaxx(octaves);
 
-        string name = position.name;
         Var<float> sum = Var<float>.CreateFromName(name + "_noised_fbm", mode == FractalMode.Mul ? "1.0" : "0.0");
         Var<float> _s = Var<float>.CreateFromName(name + "_noised_fbm_scale", "1.0");
         Var<float> _a = Var<float>.CreateFromName(name + "_noised_fbm_amplitude", "1.0");
@@ -182,6 +183,6 @@ for(uint i = 0; i < {octaves}; i++) {{
 ");
         ShaderManager.singleton.AddLine("}");
 
-        return sum;
+        return sum.name;
     }
 }
