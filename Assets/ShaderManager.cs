@@ -16,6 +16,7 @@ public class ShaderManager {
     public List<string> properties;
     private int counter;
     public int hash;
+    private int indent = 0;
 
     public ShaderManager(bool discard) {
         lines = new List<string>() { "// lines" };
@@ -23,14 +24,20 @@ public class ShaderManager {
         injected = new Dictionary<string, (Utils.StrictType, Func<object>)>();
         varNamesToId = new Dictionary<string, int>();
         counter = 0;
-        DefineVariable<float>("identity_float", "0.0", true);
-        DefineVariable<float2>("identity_float2", "float2(0.0, 0.0)", true);
-        DefineVariable<float3>("identity_float3", "float3(0.0, 0.0, 0.0)", true);
+    }
+
+    public void BeginIndentScope() {
+        indent++;
+    }
+
+    public void EndIndentScope() {
+        indent--;
     }
 
     public void AddLine(string line) {
-        lines.Add(line);
+        lines.Add(new string('\t', indent) + line);
     }
+
 
     public void HashenateMaxx(object val) {
         hash = HashCode.Combine(hash, val.GetHashCode());
@@ -65,12 +72,12 @@ public class ShaderManager {
     public string DefineVariable<T>(string name, string value, bool constant = false) {
         string newName = GenId(name);
         string suffix = constant ? "const " : "";
-        lines.Add(suffix + Utils.TypeOf<T>().ToStringType() + " " + newName + " = " + value + ";");
+        AddLine(suffix + Utils.TypeOf<T>().ToStringType() + " " + newName + " = " + value + ";");
         return newName;
     }
 
     public void SetVariable(string name, string value) {
-        lines.Add(name + " = " + value + ";");
+        AddLine(name + " = " + value + ";");
     }
 }
 

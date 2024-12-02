@@ -156,31 +156,29 @@ public class FractalNoise : Noise {
         Var<float> _s = Var<float>.CreateFromName(name + "_noised_fbm_scale", "1.0");
         Var<float> _a = Var<float>.CreateFromName(name + "_noised_fbm_amplitude", "1.0");
 
-        ShaderManager.singleton.AddLine($@"
-[unroll]
-for(uint i = 0; i < {octaves}; i++) {{
-");
+        ShaderManager.singleton.AddLine("[unroll]");
+        ShaderManager.singleton.AddLine($"for(uint i = 0; i < {octaves}; i++) {{");
+        ShaderManager.singleton.BeginIndentScope();
         string test = $"{name} * {_s.name} + hash31(float(i))";
 
         switch (mode) {
             case FractalMode.Billow:
-                ShaderManager.singleton.AddLine($"    {sum.name} += ({noise.amplitude.name} - abs({noise.Internal(test)})) * {_a.name};");
+                ShaderManager.singleton.AddLine($"{sum.name} += ({noise.amplitude.name} - abs({noise.Internal(test)})) * {_a.name};");
                 break;
             case FractalMode.Ridged:
-                ShaderManager.singleton.AddLine($"    {sum.name} += abs({noise.Internal(test)}) * {_a.name};");
+                ShaderManager.singleton.AddLine($"{sum.name} += abs({noise.Internal(test)}) * {_a.name};");
                 break;
             case FractalMode.Sum:
-                ShaderManager.singleton.AddLine($"    {sum.name} += {noise.Internal(test)} * {_a.name};");
+                ShaderManager.singleton.AddLine($"{sum.name} += {noise.Internal(test)} * {_a.name};");
                 break;
             case FractalMode.Mul:
-                ShaderManager.singleton.AddLine($"    {sum.name} *= {noise.Internal(test)} * {_a.name};");
+                ShaderManager.singleton.AddLine($"{sum.name} *= {noise.Internal(test)} * {_a.name};");
                 break;
         }
 
-        ShaderManager.singleton.AddLine($@"
-    {_s.name} *= {lacunarity.name};
-    {_a.name} *= {persistence.name};
-");
+        ShaderManager.singleton.AddLine($"{_s.name} *= {lacunarity.name};");
+        ShaderManager.singleton.AddLine($"{_a.name} *= {persistence.name};");
+        ShaderManager.singleton.EndIndentScope();
         ShaderManager.singleton.AddLine("}");
 
         return sum.name;

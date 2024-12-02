@@ -15,10 +15,7 @@ int3 permuationSeed;
 int3 moduloSeed;
 #include "Assets/Noises.cginc"
 void Func(float3 position, out float density, out uint material) {
-	// lines
-	const float identity_float_0 = 0.0;
-	const float2 identity_float2_0 = float2(0.0, 0.0);
-	const float3 identity_float3_0 = float3(0.0, 0.0, 0.0);
+// lines
 	const float st__0 = 1;
 	const float st__1 = 1;
 	const float st__2 = 1;
@@ -44,15 +41,11 @@ void Func(float3 position, out float density, out uint material) {
 	float position_swizzled_0_warped_0_noised_fbm_0 = 0.0;
 	float position_swizzled_0_warped_0_noised_fbm_scale_0 = 1.0;
 	float position_swizzled_0_warped_0_noised_fbm_amplitude_0 = 1.0;
-	
 	[unroll]
 	for(uint i = 0; i < 3; i++) {
-	
-	    position_swizzled_0_warped_0_noised_fbm_0 += (inj_float_1 - abs((snoise((position_swizzled_0_warped_0 * position_swizzled_0_warped_0_noised_fbm_scale_0 + hash31(float(i))) * inj_float_0)) * inj_float_1)) * position_swizzled_0_warped_0_noised_fbm_amplitude_0;
-	
-	    position_swizzled_0_warped_0_noised_fbm_scale_0 *= inj_float_4;
-	    position_swizzled_0_warped_0_noised_fbm_amplitude_0 *= inj_float_5;
-	
+		position_swizzled_0_warped_0_noised_fbm_0 += abs((snoise((position_swizzled_0_warped_0 * position_swizzled_0_warped_0_noised_fbm_scale_0 + hash31(float(i))) * inj_float_0)) * inj_float_1) * position_swizzled_0_warped_0_noised_fbm_amplitude_0;
+		position_swizzled_0_warped_0_noised_fbm_scale_0 *= inj_float_4;
+		position_swizzled_0_warped_0_noised_fbm_amplitude_0 *= inj_float_5;
 	}
 	float position_swizzled_0_warped_0_noised_0 = position_swizzled_0_warped_0_noised_fbm_0;
 	float position_y_0_s_st__11_0_p_position_swizzled_0_warped_0_noised_0_0 = position_y_0_s_st__11_0 + position_swizzled_0_warped_0_noised_0;

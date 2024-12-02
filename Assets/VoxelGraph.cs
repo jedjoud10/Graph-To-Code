@@ -41,12 +41,14 @@ public abstract class VoxelGraph : MonoBehaviour {
             name = "material"
         };
 
-        Execute(position, out Var<float> _density, out Var<uint> _material);
+        manager.BeginIndentScope();
 
-        ShaderManager.singleton.SetVariable("density", _density.name);
-        ShaderManager.singleton.SetVariable("material", _material.name);
+        Execute(position, out Var<float> _density, out Var<uint> _material);
+        manager.SetVariable("density", _density.name);
+        manager.SetVariable("material", _material.name);
 
         ShaderManager.singleton = null;
+        manager.EndIndentScope();
 
         if (hashOnly) {
             return "";
@@ -63,7 +65,7 @@ public abstract class VoxelGraph : MonoBehaviour {
         strings.Add("#include \"Assets/Noises.cginc\"");
 
         strings.Add("void Func(float3 position, out float density, out uint material) {");
-        strings.AddRange(manager.lines.SelectMany(str => str.Split(new[] { "\r\n", "\n" }, System.StringSplitOptions.None)).Select(x => $"\t{x}"));
+        strings.AddRange(manager.lines.SelectMany(str => str.Split(new[] { "\r\n", "\n" }, System.StringSplitOptions.None)).Select(x => $"{x}"));
         strings.Add("}");
 
         strings.Add(@"

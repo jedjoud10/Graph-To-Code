@@ -44,16 +44,34 @@ public class Var<T> {
 
     // Implicitly convert a constant value to a variable
     public static implicit operator Var<T>(T value) {
+        return new Var<T> {
+            name = ShaderManager.singleton.DefineVariable<T>("st_", ToDefinableString(value), true),
+        };
+    }
+
+    public static string ToDefinableString(T value) {
         string a = value.ToString();
-        if (Utils.TypeOf<T>() == Utils.StrictType.Float3) {
-            object cock = (object)value;
-            float3 cock2 = (float3)cock;
-            a = $"float3({cock2.x},{cock2.y},{cock2.z})";
+        object cock = (object)value;
+
+        switch (Utils.TypeOf<T>()) {
+            case Utils.StrictType.Float2:
+                float2 f2 = (float2)cock;
+                a = $"float2({f2.x},{f2.y})";
+                break;
+            case Utils.StrictType.Float3:
+                float3 f3 = (float3)cock;
+                a = $"float3({f3.x},{f3.y},{f3.z})";
+                break;
+            case Utils.StrictType.Float4:
+                float4 f4 = (float4)cock;
+                a = $"float3({f4.x},{f4.y},{f4.z})";
+                break;
+            default:
+                a = value.ToString();
+                break;
         }
 
-        return new Var<T> {
-            name = ShaderManager.singleton.DefineVariable<T>("st_", a.ToString(), true),
-        };
+        return a;
     }
 
     // Inject a custom variable that will update its value dynamically based on the given callback 

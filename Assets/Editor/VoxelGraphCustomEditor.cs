@@ -25,7 +25,7 @@ public class CustomVoxelGraphEditor : Editor {
         if (Application.isPlaying || script.texture == null) return;
 
         Handles.matrix = Matrix4x4.Scale(Vector3.one * 64.0f);
-        Handles.DrawTexture3DVolume(script.texture, script.previewOpacity, script.previewQuality, useColorRamp: true, customColorRamp: script.previewGradient);
+        Handles.DrawTexture3DVolume(script.texture, script.previewOpacity, script.previewQuality, useColorRamp: true, customColorRamp: script.previewGradient, filterMode: FilterMode.Point);
     }
 
     void OnEnable() {
