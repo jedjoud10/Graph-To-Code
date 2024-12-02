@@ -376,7 +376,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6069082256f621d409621e46d0e9ea14, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shader: {fileID: 0}
+  shader: {fileID: -5579638545521383746, guid: 2e403456b30b5914fa07f58b90de3d44, type: 3}
   texture: {fileID: 943144133}
   preview: 0
   previewGradient:
@@ -398,7 +398,7 @@ MonoBehaviour:
     ctime6: 0
     ctime7: 0
     atime0: 0
-    atime1: 7903
+    atime1: 1735
     atime2: 65535
     atime3: 65535
     atime4: 65535
@@ -411,20 +411,28 @@ MonoBehaviour:
     m_NumAlphaKeys: 3
   previewOpacity: 1
   previewQuality: 3
-  moduloSeed: {x: 32, y: 19, z: 0}
-  permutationSeed: {x: 62, y: -21, z: -166}
-  offset: 9.73
+  moduloSeed: {x: 65, y: 19, z: 0}
+  permutationSeed: {x: 78, y: -21, z: -166}
+  offset: 9.32
   scale: 1
-  scale2: 0.199
+  scale2: 0.331
   amplitude: 0.22
   octaves: 3
-  persistence: 1.247
-  lacunarity: 1.241
-  warperNoiseScale: 0.96
-  warperNoiseAmplitude: 0.57
-  scale23: -0.89
-  mode: 1
-  type: 2
+  persistence: 0.5
+  lacunarity: 1.989
+  warperNoiseScale:
+    x: 0.05
+  warperNoiseAmplitude:
+    x: -0.08
+  scale23:
+    x: 0.55
+  scale5:
+    x: -2.61
+  mode: 0
+  type: 0
+  bounds:
+    m_Center: {x: 0, y: -0.6, z: 0}
+    m_Extent: {x: 1, y: 1, z: 1}
 --- !u!4 &1968314171
 Transform:
   m_ObjectHideFlags: 0

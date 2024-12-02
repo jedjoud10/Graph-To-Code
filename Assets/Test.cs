@@ -1,7 +1,13 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
+
+[Serializable]
+public class Inject<T> {
+    public T x;
+}
 
 public class Test : VoxelGraph {
     public float offset;
@@ -24,12 +30,16 @@ public class Test : VoxelGraph {
     [Range(0, 2)]
     public float lacunarity;
 
-    public float warperNoiseScale;
-    public float warperNoiseAmplitude;
-    public float scale23;
+    public Inject<float> warperNoiseScale;
+    public Inject<float> warperNoiseAmplitude;
+    public Inject<float> scale23;
+
+    public Inject<float> scale5;
 
     public FractalNoise.FractalMode mode;
     public Voronoi.Type type;
+
+    public Bounds bounds;
 
     public override void Execute(Var<float3> position, out Var<float> density, out Var<uint> material) {
         Simplex noise = new Simplex() {
@@ -38,8 +48,8 @@ public class Test : VoxelGraph {
         };
 
         Simplex warperNoise = new Simplex() {
-            scale = Var<float>.Inject(() => warperNoiseScale),
-            amplitude = Var<float>.Inject(() => warperNoiseAmplitude),
+            scale = scale5,
+            amplitude = warperNoiseAmplitude,
         };
 
         FractalNoise fbm = new FractalNoise(noise, mode, Var<float>.Inject(() => lacunarity), Var<float>.Inject(() => persistence), octaves);
@@ -52,8 +62,12 @@ public class Test : VoxelGraph {
         Var<float2> nyaa = warper.Warp(owo);
 
 
-        Voronoi noise2 = new Voronoi(type, 0.5f, 0.5f) { scale = Var<float>.Inject(() => scale), amplitude = Var<float>.Inject(() => scale23), };
+        Voronoi noise2 = new Voronoi(type, 0.5f, 0.5f) { scale = Var<float>.Inject(() => scale), amplitude = scale23, };
         var temp = position.Y() - 10.0f + fbm.Evaluate(nyaa) + injected + noise2.Evaluate(owo);
+
+        SdfBox box = new SdfBox(Var<float3>.Inject(() => bounds.center), Var<float3>.Inject(() => bounds.extents));
+
+        //density = box.Evaluate(position);
         density = temp;
         material = 0;
     }

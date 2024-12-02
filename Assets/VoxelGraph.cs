@@ -63,6 +63,7 @@ public abstract class VoxelGraph : MonoBehaviour {
         strings.Add("int3 permuationSeed;\nint3 moduloSeed;");
         
         strings.Add("#include \"Assets/Noises.cginc\"");
+        strings.Add("#include \"Assets/SDF.cginc\"");
 
         strings.Add("void Func(float3 position, out float density, out uint material) {");
         strings.AddRange(manager.lines.SelectMany(str => str.Split(new[] { "\r\n", "\n" }, System.StringSplitOptions.None)).Select(x => $"{x}"));

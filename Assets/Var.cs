@@ -19,26 +19,22 @@ public class Var<T> {
     // Get the dimensionality of the variable
     public int Dimensionality {
         get {
-            if (typeof(T) == typeof(float)) {
-                return 1;
-            } else if (typeof(T) == typeof(float2)) {
-                return 2;
-            } else if (typeof(T) == typeof(float3)) {
-                return 3;
-            } else if (typeof(T) == typeof(float4)) {
-                return 4;
+            switch (Utils.TypeOf<T>()) {
+                case Utils.StrictType.Float:
+                    return 1;
+                case Utils.StrictType.Float2:
+                    return 2;
+                case Utils.StrictType.Float3:
+                    return 3;
+                case Utils.StrictType.Float4:
+                    return 4;
+                case Utils.StrictType.Uint:
+                    return 1;
+                case Utils.StrictType.Int:
+                    return 1;
             }
 
             return -1;
-        }
-    }
-
-    // Null, zero, or identity value
-    public static Var<T> Identity {
-        get {
-            return new Var<T> {
-                name = "identity_" + Utils.TypeOf<T>().ToStringType(),
-            };
         }
     }
 
@@ -46,6 +42,12 @@ public class Var<T> {
     public static implicit operator Var<T>(T value) {
         return new Var<T> {
             name = ShaderManager.singleton.DefineVariable<T>("st_", ToDefinableString(value), true),
+        };
+    }
+
+    public static implicit operator Var<T>(Inject<T> value) {
+        return new Var<T> {
+            name = ShaderManager.singleton.Inject<T>("inj_" + Utils.TypeOf<T>().ToStringType(), () => value.x),
         };
     }
 
