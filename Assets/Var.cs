@@ -41,7 +41,7 @@ public class Var<T> {
     // Implicitly convert a constant value to a variable
     public static implicit operator Var<T>(T value) {
         return new Var<T> {
-            name = ShaderManager.singleton.DefineVariable<T>("st_", ToDefinableString(value), true),
+            name = ShaderManager.singleton.DefineVariable<T>("st_", Utils.ToDefinableString(value), true),
         };
     }
 
@@ -51,30 +51,7 @@ public class Var<T> {
         };
     }
 
-    public static string ToDefinableString(T value) {
-        string a = value.ToString();
-        object cock = (object)value;
 
-        switch (Utils.TypeOf<T>()) {
-            case Utils.StrictType.Float2:
-                float2 f2 = (float2)cock;
-                a = $"float2({f2.x},{f2.y})";
-                break;
-            case Utils.StrictType.Float3:
-                float3 f3 = (float3)cock;
-                a = $"float3({f3.x},{f3.y},{f3.z})";
-                break;
-            case Utils.StrictType.Float4:
-                float4 f4 = (float4)cock;
-                a = $"float3({f4.x},{f4.y},{f4.z})";
-                break;
-            default:
-                a = value.ToString();
-                break;
-        }
-
-        return a;
-    }
 
     // Inject a custom variable that will update its value dynamically based on the given callback 
     // Mainly used to pass inputs from fields from the unity editor to the graph

@@ -4,11 +4,6 @@ using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
 
-[Serializable]
-public class Inject<T> {
-    public T x;
-}
-
 public class Test : VoxelGraph {
     public float offset;
 
@@ -42,6 +37,9 @@ public class Test : VoxelGraph {
     public Bounds bounds;
 
     public override void Execute(Var<float3> position, out Var<float> density, out Var<uint> material) {
+        density = null;
+        material = null;
+        /*
         Simplex noise = new Simplex() {
             scale = Var<float>.Inject(() => scale),
             amplitude = Var<float>.Inject(() => amplitude),
@@ -70,5 +68,6 @@ public class Test : VoxelGraph {
         //density = box.Evaluate(position);
         density = temp;
         material = 0;
+        */
     }
 }

@@ -70,6 +70,25 @@ public static class Utils {
         return data.ToString().ToLower();
     }
 
+    public static string ToDefinableString<T>(T value) {
+        string a = value.ToString();
+        object cock = (object)value;
+
+        switch (Utils.TypeOf<T>()) {
+            case Utils.StrictType.Float2:
+                float2 f2 = (float2)cock;
+                return $"float2({f2.x},{f2.y})";
+            case Utils.StrictType.Float3:
+                float3 f3 = (float3)cock;
+                return $"float3({f3.x},{f3.y},{f3.z})";
+            case Utils.StrictType.Float4:
+                float4 f4 = (float4)cock;
+                return $"float3({f4.x},{f4.y},{f4.z})";
+            default:
+                return value.ToString();
+        }
+    }
+
     // Get the x value of the float3
     public static Var<float> X(this Var<float3> vec3) {
         return new Var<float> {
