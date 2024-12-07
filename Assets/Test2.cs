@@ -12,6 +12,11 @@ public class Test2 : MonoBehaviour {
         Variable<float> a = 0.0f;
         Variable<float> b = 1.0f;
         Variable<float> c = a + a + a + a;
-        Parser.Parse(c.symbol);
+        TreeContext.Parse(c.symbol);
+
+        Noise2 noise = new Noise2();
+
+        // 
+        // snoise (p1, c2, c3)
     }
 }
