@@ -1,5 +1,6 @@
 using Unity.Mathematics;
 
+/*
 public abstract class Noise {
     public Noise(Var<float> intensity, Var<float> scale) {
         this.amplitude = intensity;
@@ -183,3 +184,4 @@ public class FractalNoise : Noise {
         return sum.name;
     }
 }
+*/

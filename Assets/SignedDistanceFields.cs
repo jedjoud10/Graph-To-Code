@@ -1,5 +1,6 @@
 using Unity.Mathematics;
 
+/*
 public abstract class SdfShape {
     public Var<float3> offset;
     public SdfShape(Var<float3> offset) {
@@ -23,3 +24,4 @@ public class SdfBox : SdfShape {
         return $"sdBox({name}, {extent.name})";
     }
 }
+*/

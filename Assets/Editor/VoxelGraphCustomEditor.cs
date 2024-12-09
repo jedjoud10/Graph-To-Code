@@ -3,6 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 
+/*
 [CustomEditor(typeof(VoxelGraph), true)]
 public class CustomVoxelGraphEditor : Editor {
     public override void OnInspectorGUI() {
@@ -32,3 +33,4 @@ public class CustomVoxelGraphEditor : Editor {
         SceneView.duringSceneGui += OnSceneViewGUI;
     }
 }
+*/

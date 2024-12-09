@@ -6,6 +6,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 
+/*
 // A voxel graph is the base class to inherit from to be able to write custom voxel stuff
 public abstract class VoxelGraph : MonoBehaviour {
     public ComputeShader shader;
@@ -177,3 +178,4 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
 #endif
     }
 }
+*/

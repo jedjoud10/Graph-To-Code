@@ -1,3 +1,4 @@
+using Unity.Mathematics;
 using UnityEngine;
 
 public class Test2 : MonoBehaviour {
@@ -10,9 +11,14 @@ public class Test2 : MonoBehaviour {
         Variable<float> a = 0.0f;
         Variable<float> b = 1.0f;
         Variable<float> c = a + a + a + a;
-        TreeContext.Parse(c.symbol);
+        Variable<float3> d = float3.zero;
 
-        Noise2 noise = new Noise2();
+
+        Simplex simplex = new Simplex();
+        Voronoi voronoi = new Voronoi();
+        var output = simplex.Evaluate(d) + voronoi.Evaluate(d);
+        var out2 = output + b;
+        TreeContext.Parse(out2);
 
         // 
         // snoise (p1, c2, c3)

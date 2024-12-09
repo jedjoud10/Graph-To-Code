@@ -2,6 +2,7 @@ using System;
 using Unity.Mathematics;
 using UnityEngine;
 
+/*
 public class Test : VoxelGraph {
     public float offset;
 
@@ -66,6 +67,8 @@ public class Test : VoxelGraph {
         //density = box.Evaluate(position);
         density = temp;
         material = 0;
-        */
+        
     }
+
 }
+*/

@@ -1,6 +1,7 @@
 using System;
 using Unity.Mathematics;
 
+/*
 public class Var<T> {
     // the name of the variable. automatically generated
     public string name;
@@ -100,3 +101,4 @@ public class CachedVar<T> {
         return float3.zero;
     }
 }
+*/

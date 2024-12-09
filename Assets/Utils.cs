@@ -87,6 +87,7 @@ public static class Utils {
         }
     }
 
+    /*
     // Get the x value of the float3
     public static Var<float> X(this Var<float3> vec3) {
         return new Var<float> {
@@ -149,6 +150,7 @@ public static class Utils {
             name = ShaderManager.singleton.DefineVariable<T>($"{t.name}_mix_{a.name}_{b.name}", $"lerp({a.name}, {b.name}, {t.name})"),
         };
     }
+    */
 
     // Convert type data to string
     public static StrictType TypeOf<T>() {
