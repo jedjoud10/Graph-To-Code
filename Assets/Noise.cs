@@ -1,5 +1,4 @@
 using Unity.Mathematics;
-using UnityEngine.UIElements;
 
 public abstract class Noise {
     public Noise(Var<float> intensity, Var<float> scale) {

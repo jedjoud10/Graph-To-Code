@@ -1,10 +1,5 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Xml.Linq;
-using Unity.Mathematics;
-using Unity.VisualScripting;
-using UnityEditor;
 using UnityEngine;
 
 // Handles initializing variables, functions, and other shader stuff

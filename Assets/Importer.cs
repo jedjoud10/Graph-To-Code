@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEditor.AssetImporters;
 using System.IO;
-using static Unity.VisualScripting.Member;
 using UnityEditor;
 
 [ScriptedImporter(1, "baka")]

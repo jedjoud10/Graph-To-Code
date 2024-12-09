@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Unity.Android.Types;
-using Unity.Mathematics;
-using UnityEngine;
 
 public class PreHandle {
     private List<TreeNode> symbols;
