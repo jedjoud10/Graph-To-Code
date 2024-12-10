@@ -1,99 +1,159 @@
+using System;
 using Unity.Mathematics;
+using Unity.VisualScripting;
+using UnityEngine;
 
-/*
-public abstract class Noise {
-    public Noise(Var<float> intensity, Var<float> scale) {
-        this.amplitude = intensity;
-        this.scale = scale;
-    }
 
-    public Noise() {
-        this.amplitude = 1.0f;
-        this.scale = 1.0f;
-    }
 
-    public Var<float> amplitude;
-    public Var<float> scale;
+[Serializable]
+public abstract class AbstractNoiseNode<I, O> : Variable<O>, ICloneable {
+    [SerializeReference]
+    public Variable<float> amplitude;
+    [SerializeReference]
+    public Variable<float> scale;
+    [SerializeReference]
+    public Variable<I> position;
 
-    public abstract string Internal(string name);
+    public abstract object Clone();
 
-    public abstract bool Supports3D { get; }
-
-    // Evaluate the noise at the specific point
-    public virtual Var<float> Evaluate<T>(Var<T> position) {
-        if (position.Dimensionality == 3 && !Supports3D) {
-            throw new System.Exception("Noise type does not support 3D");
+    public override void PreHandle(PreHandle context) {
+        context.RegisterDependency(amplitude);
+        context.RegisterDependency(scale);
+        if (position != null) {
+            context.RegisterDependency(position);
         }
-
-        return Var<float>.CreateFromName(position.name + "_noised", Internal(position.name));
     }
 }
 
-public class Simplex : Noise {
-    public override bool Supports3D => true;
+[Serializable]
+public class SimplexNoiseNode<T> : AbstractNoiseNode<T, float> {
+    public override object Clone() {
+        return new SimplexNoiseNode<T> {
+            amplitude = this.amplitude,
+            scale = this.scale,
+            position = this.position
+        };
+    }
 
-    public override string Internal(string name) {
-        string inner = $"({name}) * {scale.name}";
-        return $"(snoise({inner})) * {amplitude.name}";
+    public override string Handle(TreeContext context) {
+        string inner = $"({context[position]}) * {context[scale]}";
+        string value = $"(snoise({inner})) * {context[amplitude]}";
+        return context.DefineVariable(Utils.StrictType.Float, $"{context[position]}_noised", value);
     }
 }
 
-public class Voronoi : Noise {
-    public override bool Supports3D => type != Type.Voronoise;
-
-    public enum Type {
-        F1,
-        F2,
-        Voronoise,
+[Serializable]
+public class VoronoiNode<T> : AbstractNoiseNode<T, float> {
+    public override object Clone() {
+        return new VoronoiNode<T> {
+            amplitude = this.amplitude,
+            scale = this.scale,
+            position = this.position,
+            type = this.type,
+        };
     }
 
-    public Type type;
-    public Var<float> voronoiseLerpValue;
-    public Var<float> voronoiseRandomness;
+    public Voronoi.Type type;
 
-    public Voronoi(Type type, Var<float> voronoiseLerpValue, Var<float> voronoiseRandomness) : base() {
-        this.type = type;
-        this.voronoiseLerpValue = voronoiseLerpValue;
-        this.voronoiseRandomness = voronoiseRandomness;
-    }
-
-    public Voronoi() : base() {
-        this.type = Type.F1;
-        this.voronoiseLerpValue = 0.5f;
-        this.voronoiseRandomness = 0.5f;
-    }
-
-    public override string Internal(string name) {
-        ShaderManager.singleton.HashenateMaxx(type);
-        string inner = $"({name}) * {scale.name}";
+    public override string Handle(TreeContext context) {
         string suffix = "";
         string fn = "";
-        string extra = "";
 
         switch (type) {
-            case Type.F1:
+            case Voronoi.Type.F1:
                 fn = "cellular";
                 suffix = ".x - 0.5";
                 break;
-            case Type.F2:
+            case Voronoi.Type.F2:
                 fn = "cellular";
                 suffix = ".y - 0.5";
                 break;
-            case Type.Voronoise:
-                fn = "voronoise";
-                extra = $", {voronoiseRandomness.name}, {voronoiseLerpValue.name}";
-                break;
         }
-        return $"({fn}({inner}{extra}){suffix}) * {amplitude.name}";
+
+        string inner = $"({context[position]}) * {context[scale]}";
+        string value = $"({fn}({inner}){suffix}) * {context[amplitude]}";
+        return context.DefineVariable(Utils.StrictType.Float, $"{context[position]}_noised", value);
     }
 }
 
-public class Warper {
-    private Noise noise;
-    public Var<float3> scale;
+[Serializable]
+public class VoronoiseNode<T> : AbstractNoiseNode<T, float> {
+    [SerializeReference]
+    public Variable<float> lerpValue;
+    [SerializeReference]
+    public Variable<float> randomness;
+
+    public override object Clone() {
+        return new VoronoiseNode<T> {
+            amplitude = this.amplitude,
+            scale = this.scale,
+            position = this.position,
+            lerpValue = this.lerpValue,
+            randomness = this.randomness
+        };
+    }
+
+    public override string Handle(TreeContext context) {
+        string inner = $"({context[position]}) * {context[scale]}";
+        string value = $"(voronoise({inner}, {context[randomness]}, {context[lerpValue]})) * {context[amplitude]}";
+        return context.DefineVariable(Utils.StrictType.Float, $"{context[position]}_noised", value);
+    }
+
+    public override void PreHandle(PreHandle context) {
+        base.PreHandle(context);
+        context.RegisterDependency(lerpValue);
+        context.RegisterDependency(randomness);
+    }
+}
+
+[Serializable]
+public class WarperNode : Variable<float2> {
+    [SerializeReference]
+    public AbstractNoiseNode<float2, float> toClone;
+    [SerializeReference]
+    public Variable<float2> warpingScale2;
+    [SerializeReference]
+    public Variable<float2> warpingScale;
+    [SerializeReference]
+    public Variable<float2> position;
+
+    public override void PreHandle(PreHandle context) {
+        toClone.PreHandle(context);
+        context.RegisterDependency(warpingScale2);
+        context.RegisterDependency(warpingScale);
+        context.RegisterDependency(position);
+    }
+
     public float3 offsets_x = new float3(123.85441f, 32.223543f, -359.48534f);
     public float3 offsets_y = new float3(65.4238f, -551.15353f, 159.5435f);
     public float3 offsets_z = new float3(-43.85454f, -3346.234f, 54.7653f);
+
+    public override string Handle(TreeContext context) {
+        Variable<float2> a_offsetted = context.DefineVariableNoOp<float2>($"{context[position]}_x_offset", $"(({context[position]} + float2({offsets_x.x}, {offsets_x.y})) * {context[warpingScale]}.x)");
+        Variable<float2> b_offsetted = context.DefineVariableNoOp<float2>($"{context[position]}_y_offset", $"(({context[position]} + float2({offsets_y.x}, {offsets_y.y})) * {context[warpingScale]}.y)");
+
+        var a = (AbstractNoiseNode<float2, float>)toClone.Clone();
+        a.position = a_offsetted;
+        var b = (AbstractNoiseNode<float2, float>)toClone.Clone();
+        b.position = b_offsetted;
+
+        Variable<float> a1 = context.Bind<float>(a.Handle(context));
+        Variable<float> b1 = context.Bind<float>(a.Handle(context));
+
+
+        Variable<float> a2 = context.DefineVariableNoOp<float>($"{context[position]}_warped_x", $"({context[position]}.x + {context[a1]} * {context[warpingScale2]}.x)");
+        Variable<float> b2 = context.DefineVariableNoOp<float>($"{context[position]}_warped_y", $"({context[position]}.y + {context[b1]} * {context[warpingScale2]}.y)");
+        return context.DefineVariable<float2>($"{context[position]}_warped", $"float2({context[a2]}, {context[b2]})");
+    }
+}
+
+
+/*
+
+public class Warper {
+    private Noise noise;
+    
+
 
     public Warper(Noise noise) {
         this.noise = noise;
@@ -101,13 +161,7 @@ public class Warper {
     }
 
     public Var<float2> Warp(Var<float2> position) {
-        Var<float2> a_offseted = Var<float2>.CreateFromName(position.name + "_x_offset", $"({position.name} + float2({offsets_x.x}, {offsets_x.y}))");
-        Var<float2> b_offseted = Var<float2>.CreateFromName(position.name + "_y_offset", $"({position.name} + float2({offsets_y.x}, {offsets_y.y}))");
-
-        Var<float> a = Var<float>.CreateFromName(position.name + "_warped_x", $"({position.name}.x + {noise.Evaluate(a_offseted).name} * {scale.name}.x)");
-        Var<float> b = Var<float>.CreateFromName(position.name + "_warped_y", $"({position.name}.y + {noise.Evaluate(b_offseted).name} * {scale.name}.y)");
-
-        Var<float2> reconstructed = Var<float2>.CreateFromName(position.name + "_warped", $"float2({a.name}, {b.name})");
+        
         return reconstructed;
     }
 }

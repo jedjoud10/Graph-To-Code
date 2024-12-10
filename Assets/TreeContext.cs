@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Android.Types;
 
 
 public class PreHandle {
@@ -25,6 +26,11 @@ public class PreHandle {
     }
 
     public void RegisterDependency(TreeNode node) {
+        UnityEngine.Debug.Log(node.ToString());
+        if (node == null) {
+            UnityEngine.Debug.Log("aa");
+        }
+
         this.symbols.Add(node);
         this.remaining++;
     }
@@ -89,6 +95,27 @@ public class TreeContext {
         string suffix = constant ? "const " : "";
         lines.Add(suffix + type.ToStringType() + " " + newName + " = " + value + ";");
         return newName;
+    }
+
+    public string DefineVariable<T>(string name, string value, bool constant = false) {
+        string newName = GenId(name);
+        string suffix = constant ? "const " : "";
+        lines.Add(suffix + Utils.TypeOf<T>().ToStringType() + " " + newName + " = " + value + ";");
+        return newName;
+    }
+
+    public Variable<T> DefineVariableNoOp<T>(string name, string value) {
+        string newName = GenId(name);
+        lines.Add(Utils.TypeOf<T>().ToStringType() + " " + newName + " = " + value + ";");
+        var a = new NoOP<T> { };
+        this.Add(a, newName);
+        return a;
+    }
+
+    public Variable<T> Bind<T>(string newName) {
+        var a = new NoOP<T> { };
+        this.Add(a, newName);
+        return a;
     }
 
     public List<string> Combine() {

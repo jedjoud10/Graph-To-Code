@@ -1,88 +1,45 @@
 using System;
 using Unity.Mathematics;
 
+
+[Serializable]
+public abstract class TreeNode {
+    // Goes over the tree node before flattening the array
+    public virtual void PreHandle(PreHandle context) { }
+
+    // Outputs the name of the tree node
+    public abstract string Handle(TreeContext context);
+}
+
+[Serializable]
+public abstract class Variable<T> : TreeNode {
+
+    public static implicit operator Variable<T>(T value) {
+        return new DefineNode<T> { value = value.ToString() };
+    }
+
+    public static Variable<T> operator +(Variable<T> a, Variable<T> b) {
+        return new SimpleBinOpNode<T> { a = a, b = b, op = "+" };
+    }
+
+    public static Variable<T> operator -(Variable<T> a, Variable<T> b) {
+        return new SimpleBinOpNode<T> { a = a, b = b, op = "-" };
+    }
+
+    public static Variable<T> operator *(Variable<T> a, Variable<T> b) {
+        return new SimpleBinOpNode<T> { a = a, b = b, op = "*" };
+    }
+    public static Variable<T> operator /(Variable<T> a, Variable<T> b) {
+        return new SimpleBinOpNode<T> { a = a, b = b, op = "/" };
+    }
+
+    public static implicit operator Variable<T>(Inject<T> value) {
+        return new InjectedNode<T> { calback = () => value.x };
+    }
+}
+
 /*
 public class Var<T> {
-    // the name of the variable. automatically generated
-    public string name;
-
-    public static Var<T> CreateFromName(string name, string value) {
-        string newName = ShaderManager.singleton.DefineVariable<T>(name, value);
-
-        return new Var<T> {
-            name = newName,
-        };
-    }
-
-    // Get the dimensionality of the variable
-    public int Dimensionality {
-        get {
-            switch (Utils.TypeOf<T>()) {
-                case Utils.StrictType.Float:
-                    return 1;
-                case Utils.StrictType.Float2:
-                    return 2;
-                case Utils.StrictType.Float3:
-                    return 3;
-                case Utils.StrictType.Float4:
-                    return 4;
-                case Utils.StrictType.Uint:
-                    return 1;
-                case Utils.StrictType.Int:
-                    return 1;
-            }
-
-            return -1;
-        }
-    }
-
-    // Implicitly convert a constant value to a variable
-    public static implicit operator Var<T>(T value) {
-        return new Var<T> {
-            name = ShaderManager.singleton.DefineVariable<T>("st_", Utils.ToDefinableString(value), true),
-        };
-    }
-
-    public static implicit operator Var<T>(Inject<T> value) {
-        return new Var<T> {
-            name = ShaderManager.singleton.Inject<T>("inj_" + Utils.TypeOf<T>().ToStringType(), () => value.x),
-        };
-    }
-
-
-
-    // Inject a custom variable that will update its value dynamically based on the given callback 
-    // Mainly used to pass inputs from fields from the unity editor to the graph
-    public static Var<T> Inject(Func<T> callback) {
-        // hook on before on graph execution (runtime) 
-        // update "internal" value
-        // send value to shader using uniform (make sure name matches up)
-        return new Var<T> {
-            name = ShaderManager.singleton.Inject<T>("inj_" + Utils.TypeOf<T>().ToStringType(), callback),
-        };
-    }
-
-    // Common operators
-    public static Var<T> operator +(Var<T> a, Var<T> b) {
-        return new Var<T> {
-            name = ShaderManager.singleton.DefineVariable<T>(a.name + "_p_" + b.name, a.name + " + " + b.name)
-        };
-    }
-    public static Var<T> operator -(Var<T> a, Var<T> b) {
-        return new Var<T> {
-            name = ShaderManager.singleton.DefineVariable<T>(a.name + "_s_" + b.name, a.name + " - " + b.name)
-        };
-    }
-    public static Var<T> operator *(Var<T> a, Var<T> b) {
-        return new Var<T> {
-            name = ShaderManager.singleton.DefineVariable<T>(a.name + "_m_" + b.name, a.name + " * " + b.name)
-        };
-    }
-    public static Var<T> operator /(Var<T> a, Var<T> b) {
-        return new Var<T> {
-            name = ShaderManager.singleton.DefineVariable<T>(a.name + "_d_" + b.name, a.name + " / " + b.name)
-        };
-    }
 
     // TODO: Keep track of the inputs used for this variable so that we can use a 2d texture instead of a 3d one each time
     // TODO: Must create a different compute shader with required variables
