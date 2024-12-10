@@ -5,10 +5,12 @@ using UnityEngine;
 public class PreHandle {
     private List<TreeNode> symbols;
     private int remaining;
+    public int hash;
 
     public PreHandle(TreeNode head) {
         this.symbols = new List<TreeNode>() { head };
         this.remaining = 1;
+        this.hash = 0;
     }
 
     public List<TreeNode> TreeNodate(TreeContext ctx) {
@@ -24,14 +26,27 @@ public class PreHandle {
         return symbols;
     }
 
-    public void RegisterDependency(TreeNode node) {
-        UnityEngine.Debug.Log(node.ToString());
-        if (node == null) {
-            UnityEngine.Debug.Log("aa");
-        }
+    public void Hash(object val) {
+        hash = HashCode.Combine(hash, val.GetHashCode());
+    }
 
+    public void RegisterDependency(TreeNode node) {
         this.symbols.Add(node);
         this.remaining++;
+    }
+}
+
+public class PropertyInjector {
+    public PropertyInjector() {
+        this.injected = new Dictionary<string, (Utils.StrictType, Func<object>)>();
+    }
+
+    public Dictionary<string, (Utils.StrictType, Func<object>)> injected;
+
+    public void UpdateInjected(ComputeShader shader) {
+        foreach (var (name, (type, func)) in injected) {
+            Utils.SetComputeShaderObj(shader, name, func(), type);
+        }
     }
 }
 
@@ -39,7 +54,7 @@ public class TreeContext {
     private List<string> lines;
     private Dictionary<TreeNode, string> namesToNodes;
     private Dictionary<string, int> varNamesToId;
-    private Dictionary<string, (Utils.StrictType, Func<object>)> injected;
+    public PropertyInjector injector;
     private List<string> properties;
     private int counter;
     private bool debugNames;
@@ -55,7 +70,7 @@ public class TreeContext {
         this.lines = new List<string>();
         this.properties = new List<string>();
         this.namesToNodes = new Dictionary<TreeNode, string>();
-        this.injected = new Dictionary<string, (Utils.StrictType, Func<object>)>();
+        this.injector = new PropertyInjector();
         this.varNamesToId = new Dictionary<string, int>();
         this.debugNames = debugNames;
         this.counter = 0;
@@ -63,15 +78,9 @@ public class TreeContext {
 
     public string Inject(Utils.StrictType type, string name, Func<object> func) {
         string newName = GenId(name);
-        injected.Add(newName, (type, () => func()));
+        injector.injected.Add(newName, (type, () => func()));
         properties.Add(type.ToStringType() + " " + newName + ";");
         return newName;
-    }
-
-    public void UpdateInjected(ComputeShader shader) {
-        foreach (var (name, (type, func)) in injected) {
-            Utils.SetComputeShaderObj(shader, name, func(), type);
-        }
     }
 
     public void Add(TreeNode node, string name) {
@@ -130,10 +139,7 @@ public class TreeContext {
         return a;
     }
 
-    public void Parse(TreeNode head) {
-        PreHandle preHandle = new PreHandle(head);
-        var symbols = preHandle.TreeNodate(this);
-
+    public void Parse(List<TreeNode> symbols) {
         // forward pass to convert each node to its string representation
         for (int i = symbols.Count - 1; i >= 0; i--) {
             if (!Contains(symbols[i])) {
@@ -141,5 +147,11 @@ public class TreeContext {
                 Add(symbols[i], name);
             }
         }
+    }
+
+    public (List<TreeNode>, int) Handlinate(TreeNode head) {
+        PreHandle preHandle = new PreHandle(head);
+        var symbols = preHandle.TreeNodate(this);
+        return (symbols, preHandle.hash);
     }
 }

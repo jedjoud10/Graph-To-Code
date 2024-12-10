@@ -5,10 +5,20 @@ using UnityEngine;
 public class DefineNode<T> : Variable<T> {
     [SerializeField]
     public string value;
+    public bool constant;
 
     public override string Handle(TreeContext ctx) {
-        return ctx.DefineVariable<T>("c", $"{value}", true);
+        return ctx.DefineVariable<T>("c", $"{value}", constant);
     }
+
+    /*
+    public static DefineNode<T> Define(T val, bool constant = true) {
+        return new DefineNode<T> {
+            value = Utils.ToDefinableString(val),
+            constant = constant
+        };
+    }
+    */
 }
 
 [Serializable]
@@ -56,10 +66,29 @@ public class SwizzleNode<I, O> : Variable<O> {
 
 [Serializable]
 public class InjectedNode<T> : Variable<T> {
-    public Func<object> calback;
-
+    public Inject<T> a;
     public override string Handle(TreeContext ctx) {
-        return ctx.Inject(Utils.TypeOf<T>(), "inj", calback);
+        return ctx.Inject(Utils.TypeOf<T>(), "inj", () => a.x);
+    }
+}
+
+[Serializable]
+public class Cached<T> : Variable<T> {
+    public Variable<T> a;
+
+
+    // looks up all the dependencies of a and makes sure that they are 2D (could be xy, yx, xz, whatever)
+    // clones those dependencies to a secondary compute kernel
+    // create temporary texture that is written to by that kernel
+    // read said texture with appropriate swizzles in the main kernel
+
+    public override string Handle(TreeContext context) {
+        return "";
+        //throw new NotImplementedException();
+    }
+
+    public override void PreHandle(PreHandle context) {
+        //context.RegisterDependency(a);
     }
 }
 

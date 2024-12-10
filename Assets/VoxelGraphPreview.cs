@@ -20,10 +20,6 @@ public class VoxelGraphPreview : MonoBehaviour {
 
     public void OnValidate() {
         size = Mathf.Max(Mathf.ClosestPowerOfTwo(size), 16);
-
-        if (previewing && texture == null || (texture != null && texture.width != size)) {
-            texture = Create3DRenderTexture(size, GraphicsFormat.R32_SFloat);
-        }
     }
 
     static uint3 IndexToPos(int index, uint size) {
@@ -49,5 +45,11 @@ public class VoxelGraphPreview : MonoBehaviour {
         texture.enableRandomWrite = true;
         texture.Create();
         return texture;
+    }
+
+    public void CreateIfNull() {
+        if (previewing && texture == null || (texture != null && texture.width != size)) {
+            texture = Create3DRenderTexture(size, GraphicsFormat.R32_SFloat);
+        }
     }
 }

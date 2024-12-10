@@ -13,9 +13,5 @@ public class VoxelGraphCustomEditor : Editor {
         if (GUILayout.Button("Recompile")) {
             script.Compile();
         }
-
-        if (GUILayout.Button("Randomize Seed")) {
-            script.RandomizeSeed();
-        }
     }
 }

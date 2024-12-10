@@ -55,6 +55,11 @@ public class VoronoiNode<T> : AbstractNoiseNode<T, float> {
 
     public Voronoi.Type type;
 
+    public override void PreHandle(PreHandle context) {
+        base.PreHandle(context);
+        context.Hash(type);
+    }
+
     public override string Handle(TreeContext context) {
         string suffix = "";
         string fn = "";
@@ -148,28 +153,8 @@ public class WarperNode : Variable<float2> {
 }
 
 
-/*
-
-public class Warper {
-    private Noise noise;
-    
-
-
-    public Warper(Noise noise) {
-        this.noise = noise;
-        this.scale = new float3(1.0f, 1.0f, 1.0f);
-    }
-
-    public Var<float2> Warp(Var<float2> position) {
-        
-        return reconstructed;
-    }
-}
-
-
-
-// Fractal noise is a type of noise that implement fBm (either Ridged, Billow, or Sum mode)
-public class FractalNoise : Noise {
+[Serializable]
+public class FractalNoise<T> : AbstractNoiseNode<T, float> {
     public enum FractalMode {
         Ridged,
         Billow,
@@ -177,65 +162,66 @@ public class FractalNoise : Noise {
         Mul,
     }
 
-
     public FractalMode mode;
-    public Var<float> lacunarity;
-    public Var<float> persistence;
+    public Variable<float> lacunarity;
+    public Variable<float> persistence;
     public int octaves;
-    private Noise noise;
 
-    public override bool Supports3D => noise.Supports3D;
+    [SerializeReference]
+    public AbstractNoiseNode<T, float> noise;
 
-    public FractalNoise(Noise noise, FractalMode mode, Var<float> lacunarity, Var<float> persistence, int octaves) {
-        this.noise = noise;
-        this.lacunarity = lacunarity;
-        this.persistence = persistence;
-        this.mode = mode;
-        this.octaves = octaves;
+    public override object Clone() {
+        return new FractalNoise<T> {
+            noise = this.noise,
+            lacunarity = this.lacunarity,
+            persistence = this.persistence,
+            octaves = this.octaves,
+            mode = this.mode,
+        };
     }
 
-    public FractalNoise(Noise noise, FractalMode mode, int octaves) {
-        this.noise = noise;
-        this.lacunarity = 2.0f;
-        this.persistence= 0.5f;
-        this.octaves = octaves;
-        this.mode = mode;
-    }
+    public override string Handle(TreeContext context) {
+        Variable<float> sum = context.DefineVariableNoOp<float>($"{context[position]}_fbm", mode == FractalMode.Mul ? "1.0" : "0.0");
+        Variable<float> fbm_scale = context.DefineVariableNoOp<float>($"{context[position]}_fbm_scale", "1.0");
+        Variable<float> fbm_amplitude = context.DefineVariableNoOp<float>($"{context[position]}_fbm_amplitude", "1.0");
 
-    public override string Internal(string name) {
-        ShaderManager.singleton.HashenateMaxx(mode);
-        ShaderManager.singleton.HashenateMaxx(octaves);
 
-        Var<float> sum = Var<float>.CreateFromName(name + "_noised_fbm", mode == FractalMode.Mul ? "1.0" : "0.0");
-        Var<float> _s = Var<float>.CreateFromName(name + "_noised_fbm_scale", "1.0");
-        Var<float> _a = Var<float>.CreateFromName(name + "_noised_fbm_amplitude", "1.0");
+        context.Lines.Add("[unroll]");
+        context.Lines.Add($"for(uint i = 0; i < {octaves}; i++) {{");
 
-        ShaderManager.singleton.AddLine("[unroll]");
-        ShaderManager.singleton.AddLine($"for(uint i = 0; i < {octaves}; i++) {{");
-        ShaderManager.singleton.BeginIndentScope();
-        string test = $"{name} * {_s.name} + hash31(float(i))";
+
+        Variable<T> fbmed = context.DefineVariableNoOp<T>($"{context[position]}_fmb_pos", $"{context[position]} * {context[fbm_scale]} + hash31(float(i))");
+
+        var new_noise = (AbstractNoiseNode<T, float>)noise.Clone();
+        new_noise.position = fbmed;
+        Variable<float> fbmedOutput = context.Bind<float>(new_noise.Handle(context));
+
 
         switch (mode) {
             case FractalMode.Billow:
-                ShaderManager.singleton.AddLine($"{sum.name} += ({noise.amplitude.name} - abs({noise.Internal(test)})) * {_a.name};");
+                context.Lines.Add($"{context[sum]} += ({context[noise.amplitude]} - abs({context[fbmedOutput]})) * {context[fbm_amplitude]};");
                 break;
             case FractalMode.Ridged:
-                ShaderManager.singleton.AddLine($"{sum.name} += abs({noise.Internal(test)}) * {_a.name};");
+                context.Lines.Add($"{context[sum]} += abs({context[fbmedOutput]}) * {context[fbm_amplitude]};");
                 break;
             case FractalMode.Sum:
-                ShaderManager.singleton.AddLine($"{sum.name} += {noise.Internal(test)} * {_a.name};");
+                context.Lines.Add($"{context[sum]} += {context[fbmedOutput]} * {context[fbm_amplitude]};");
                 break;
             case FractalMode.Mul:
-                ShaderManager.singleton.AddLine($"{sum.name} *= {noise.Internal(test)} * {_a.name};");
+                context.Lines.Add($"{context[sum]} *= {context[fbmedOutput]} * {context[fbm_amplitude]};");
                 break;
         }
 
-        ShaderManager.singleton.AddLine($"{_s.name} *= {lacunarity.name};");
-        ShaderManager.singleton.AddLine($"{_a.name} *= {persistence.name};");
-        ShaderManager.singleton.EndIndentScope();
-        ShaderManager.singleton.AddLine("}");
+        context.Lines.Add("}");
 
-        return sum.name;
+        return context[sum];
+    }
+
+    public override void PreHandle(PreHandle context) {
+        base.PreHandle(context);
+        context.RegisterDependency(lacunarity);
+        context.RegisterDependency(persistence);
+        context.Hash(mode);
+        context.Hash(octaves);
     }
 }
-*/

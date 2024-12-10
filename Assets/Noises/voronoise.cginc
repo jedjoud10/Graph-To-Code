@@ -40,6 +40,8 @@
 
 float voronoise( in float2 p, float u, float v )
 {
+	v = clamp(v, 0, 1);
+	u = clamp(u, 0, 1);
 	float k = 1.0+63.0*pow(1.0-v,6.0);
 
     float2 i = floor(p);

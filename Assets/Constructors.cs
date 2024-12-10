@@ -147,6 +147,26 @@ public class Warper {
     }
 }
 
+/*
+
+
+    public FractalNoise(AbstractNoiseNode<T, float> noise, FractalMode mode, Variable<float> lacunarity, Variable<float> persistence, int octaves) {
+        this.noise = noise;
+        this.lacunarity = lacunarity;
+        this.persistence = persistence;
+        this.mode = mode;
+        this.octaves = octaves;
+    }
+
+    public FractalNoise(AbstractNoiseNode<T, float> noise, FractalMode mode, int octaves) {
+        this.noise = noise;
+        this.lacunarity = 2.0f;
+        this.persistence= 0.5f;
+        this.octaves = octaves;
+        this.mode = mode;
+    }
+*/
+
 
 /*
 public abstract class Noise {

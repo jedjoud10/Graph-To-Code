@@ -7,21 +7,14 @@ public class Test : VoxelGraph {
     public Inject<float> mul;
     public Inject<float> scale;
     public Inject<float> amplitude;
-    public Inject<float2> warpingScale;
-    public Inject<float2> warpingScale2;
-    public Inject<float> scale2;
-    public Inject<float> amplitude2;
+    public Voronoi.Type type;
 
     public override void Execute(Variable<float3> position, out Variable<float> density) {
-        Simplex simplex = new Simplex { amplitude = amplitude, scale = scale };
-        Simplex simplex2 = new Simplex { amplitude = amplitude2, scale = scale2 };
-        Warper warper = new Warper() { noisinator = simplex, warpingScale = warpingScale, warpingScale2 = warpingScale2 };
         var output = position.Swizzle<float>("y");
-
         var temp = position.Swizzle<float2>("xz");
-        output += simplex2.Evaluate(warper.Warpinate(temp));
-
-        
+        //Voronoise voronoise = new Voronoise { amplitude = amplitude, randomness = randomness, lerpValue = lerping, scale = scale };
+        Voronoi voronoi = new Voronoi { amplitude = amplitude, scale = scale, type = type };
+        output += voronoi.Evaluate(temp);
         density = output + offset;
         density *= mul;
         /*

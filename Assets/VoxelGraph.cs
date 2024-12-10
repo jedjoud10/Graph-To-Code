@@ -8,11 +8,11 @@ using UnityEngine.Experimental.Rendering;
 
 // A voxel graph is the base class to inherit from to be able to write custom voxel stuff
 public abstract class VoxelGraph : MonoBehaviour {
-    private ComputeShader shader;
-    public int seed = 1234;
-    public Vector3Int permutationSeed;
-    public Vector3Int moduloSeed;
-    private TreeContext ctx;
+    [HideInInspector]
+    public ComputeShader shader;
+    [HideInInspector]
+    public PropertyInjector injector;
+    private int hash;
 
     // Execute the voxel graph at a specific position and fetch the density and material values
     public abstract void Execute(Variable<float3> position, out Variable<float> density);
@@ -20,10 +20,12 @@ public abstract class VoxelGraph : MonoBehaviour {
     // This transpile the voxel graph into HLSL code that can be executed on the GPU
     // This can be done outside the editor, but shader compilation MUST be done in editor
     public string Transpile() {
-        ctx = new TreeContext(false);
+        TreeContext ctx = new TreeContext(false);
         Variable<float3> position = ctx.Bind<float3>("position");
         Execute(position, out Variable<float> density);
-        ctx.Parse(density);
+        (var symbols, var hash) =  ctx.Handlinate(density);
+
+        ctx.Parse(symbols);
         ctx.Set("density", density);
         IEnumerable<string> parsed2 = ctx.Lines.SelectMany(str => str.Split(new[] { "\r\n", "\n" }, System.StringSplitOptions.None)).Select(x => $"{x}");
 
@@ -33,6 +35,7 @@ public abstract class VoxelGraph : MonoBehaviour {
         lines.Add("RWTexture3D<float> voxels;");
 
         lines.Add("int3 permuationSeed;\nint3 moduloSeed;");
+        lines.Add("float3 scale;\nfloat3 offset;");
 
         // imports
         lines.Add("#include \"Assets/Noises.cginc\"");
@@ -48,10 +51,12 @@ public abstract class VoxelGraph : MonoBehaviour {
 [numthreads(8, 8, 8)]
 void CSVoxel(uint3 id : SV_DispatchThreadID) {
     float density = 0.0;
-    Func(float3(id) * 0.01, density);
+    Func((float3(id) + offset) * scale, density);
     voxels[id] = density;
 }");
 
+
+        injector = ctx.injector;
         return lines.Aggregate("", (a, b) => a + "\n" + b);
     }
 
@@ -61,58 +66,21 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
         VoxelGraph[] graph = Object.FindObjectsOfType<VoxelGraph>();
 
         foreach (var item in graph) {
-            //item.currentHash = 0;
             item.Compile();
         }
     }
 
     private void OnValidate() {
-        var temp = GetComponent<VoxelGraphPreview>();
-        if (temp != null) {
-            temp.OnValidate();
+        TreeContext ctx = new TreeContext(false);
+        Variable<float3> position = ctx.Bind<float3>("position");
+        Execute(position, out Variable<float> density);
+        (var symbols, var newHash) =  ctx.Handlinate(density);
+
+        if (hash != newHash) {
+            hash = newHash;
+            Debug.Log("Hash changed, recompiling...");
+            Compile();
         }
-
-        ComputeSecondarySeeds();
-    }
-
-    public void ExecuteShader(RenderTexture texture, int size) {
-        if (shader == null) {
-            Debug.LogWarning("Shader is not set. You must compile!!");
-            return;
-        }
-
-        if (texture == null) {
-            Debug.LogWarning("Texture is not set!!!");
-            return;
-        }
-
-        if (ctx == null) {
-            Transpile();
-        }
-
-        //counter++;
-        //int3 offset = (int3)IndexToPos(counter % (4*4*4), 4);
-        //shader.SetInts("offset", new int[] { offset.x, offset.y, offset.z });
-        shader.SetTexture(0, "voxels", texture);
-        shader.SetInts("permuationSeed", new int[] { permutationSeed.x, permutationSeed.y, permutationSeed.z });
-        shader.SetInts("moduloSeed", new int[] { moduloSeed.x, moduloSeed.y, moduloSeed.z });
-        shader.Dispatch(0, size/8, size/8, size/8);
-        ctx.UpdateInjected(shader);
-    }
-
-    private void ComputeSecondarySeeds() {
-        var random = new System.Random(seed);
-        permutationSeed.x = random.Next(-1000, 1000);
-        permutationSeed.y = random.Next(-1000, 1000);
-        permutationSeed.z = random.Next(-1000, 1000);
-        moduloSeed.x = random.Next(-1000, 1000);
-        moduloSeed.y = random.Next(-1000, 1000);
-        moduloSeed.z = random.Next(-1000, 1000);
-    }
-
-    public void RandomizeSeed() {
-        seed = UnityEngine.Random.Range(-9999, 9999);
-        ComputeSecondarySeeds();
     }
 
     public void Compile() {

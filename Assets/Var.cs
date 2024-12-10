@@ -15,7 +15,7 @@ public abstract class TreeNode {
 public abstract class Variable<T> : TreeNode {
 
     public static implicit operator Variable<T>(T value) {
-        return new DefineNode<T> { value = value.ToString() };
+        return new DefineNode<T> { value = Utils.ToDefinableString(value), constant = true };
     }
 
     public static Variable<T> operator +(Variable<T> a, Variable<T> b) {
@@ -34,7 +34,7 @@ public abstract class Variable<T> : TreeNode {
     }
 
     public static implicit operator Variable<T>(Inject<T> value) {
-        return new InjectedNode<T> { calback = () => value.x };
+        return new InjectedNode<T> { a = value };
     }
 
     public Variable<U> Swizzle<U>(string swizzle) {
