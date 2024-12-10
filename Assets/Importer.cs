@@ -3,8 +3,8 @@ using UnityEditor.AssetImporters;
 using System.IO;
 using UnityEditor;
 
-[ScriptedImporter(1, "baka")]
-public class CubeImporter : ScriptedImporter {
+[ScriptedImporter(1, "voxel")]
+public class Importer : ScriptedImporter {
     public override void OnImportAsset(AssetImportContext ctx) {
         string code = File.ReadAllText(ctx.assetPath);
         ComputeShader shader = ShaderUtil.CreateComputeShaderAsset(ctx, code);

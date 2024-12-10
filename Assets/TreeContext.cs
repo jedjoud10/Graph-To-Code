@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Unity.Android.Types;
-
 
 public class PreHandle {
     private List<TreeNode> symbols;
@@ -44,6 +42,9 @@ public class TreeContext {
     private List<string> properties;
     private int counter;
     private bool debugNames;
+
+    public List<string> Lines { get { return lines; } }
+    public List<string> Properties { get { return properties; } }
 
     public string this[TreeNode node] {
         get => namesToNodes[node];
@@ -112,34 +113,26 @@ public class TreeContext {
         return a;
     }
 
+    public void Set<T>(string name, Variable<T> hmm) {
+        lines.Add(name + " = " + this[hmm] + ";");
+    }
+
     public Variable<T> Bind<T>(string newName) {
         var a = new NoOP<T> { };
         this.Add(a, newName);
         return a;
     }
 
-    public List<string> Combine() {
-        List<string> result = new List<string>();
-        result.AddRange(properties);
-        result.AddRange(lines);
-        return result;
-    }
-
-    public static void Parse(TreeNode head) {
-        TreeContext ctx = new TreeContext(false);
+    public void Parse(TreeNode head) {
         PreHandle preHandle = new PreHandle(head);
-        var symbols = preHandle.TreeNodate(ctx);
+        var symbols = preHandle.TreeNodate(this);
 
         // forward pass to convert each node to its string representation
         for (int i = symbols.Count - 1; i >= 0; i--) {
-            if (!ctx.Contains(symbols[i])) {
-                string name = symbols[i].Handle(ctx);
-                ctx.Add(symbols[i], name);
+            if (!Contains(symbols[i])) {
+                string name = symbols[i].Handle(this);
+                Add(symbols[i], name);
             }
-        }
-
-        foreach (string line in ctx.Combine()) {
-            UnityEngine.Debug.Log(line);
         }
     }
 }

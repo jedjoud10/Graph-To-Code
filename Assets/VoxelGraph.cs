@@ -6,112 +6,63 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 
-/*
 // A voxel graph is the base class to inherit from to be able to write custom voxel stuff
 public abstract class VoxelGraph : MonoBehaviour {
-    public ComputeShader shader;
-    public RenderTexture texture;
-    private ShaderManager manager;
-    public bool preview;
-    public Gradient previewGradient;
-    public float previewOpacity;
-    public int previewQuality;
-    public Vector3Int moduloSeed;
-    public Vector3Int permutationSeed;
-    private int currentHash;
+    private ComputeShader shader;
 
     // Execute the voxel graph at a specific position and fetch the density and material values
-    public abstract void Execute(Var<float3> position, out Var<float> density, out Var<uint> material);
+    public abstract void Execute(Variable<float3> position, out Variable<float> density);
 
     // This transpile the voxel graph into HLSL code that can be executed on the GPU
     // This can be done outside the editor, but shader compilation MUST be done in editor
-    public string Transpile(bool hashOnly = false) {
-        manager = new ShaderManager(hashOnly);
-        ShaderManager.singleton = manager;
+    public string Transpile() {
+        TreeContext ctx = new TreeContext(false);
+        Variable<float3> position = ctx.Bind<float3>("position");
+        Execute(position, out Variable<float> density);
+        ctx.Parse(density);
+        ctx.Set("density", density);
+        IEnumerable<string> parsed2 = ctx.Lines.SelectMany(str => str.Split(new[] { "\r\n", "\n" }, System.StringSplitOptions.None)).Select(x => $"{x}");
 
-        Var<float3> position = new Var<float3> {
-            name = "position"
-        };
+        List<string> lines = new List<string>();
+        lines.Add("#pragma kernel CSVoxel");
+        lines.AddRange(ctx.Properties);
+        lines.Add("RWTexture3D<float> voxels;");
 
-        Var<float> density = new Var<float> {
-            name = "density"
-        };
+        lines.Add("int3 permuationSeed;\nint3 moduloSeed;");
 
-        Var<uint> material = new Var<uint> {
-            name = "material"
-        };
+        // imports
+        lines.Add("#include \"Assets/Noises.cginc\"");
+        lines.Add("#include \"Assets/SDF.cginc\"");
 
-        manager.BeginIndentScope();
+        // function definition
+        lines.Add("void Func(float3 position, out float density) {");
+        lines.AddRange(parsed2);
+        lines.Add("}");
 
-        Execute(position, out Var<float> _density, out Var<uint> _material);
-        manager.SetVariable("density", _density.name);
-        manager.SetVariable("material", _material.name);
-
-        ShaderManager.singleton = null;
-        manager.EndIndentScope();
-
-        if (hashOnly) {
-            return "";
-        }
-
-        List<string> strings = new List<string>();
-
-        strings.Add("#pragma kernel CSVoxel");
-        strings.AddRange(manager.properties);
-        strings.Add("RWTexture3D<float> voxels;");
-
-        strings.Add("int3 permuationSeed;\nint3 moduloSeed;");
-        
-        strings.Add("#include \"Assets/Noises.cginc\"");
-        strings.Add("#include \"Assets/SDF.cginc\"");
-
-        strings.Add("void Func(float3 position, out float density, out uint material) {");
-        strings.AddRange(manager.lines.SelectMany(str => str.Split(new[] { "\r\n", "\n" }, System.StringSplitOptions.None)).Select(x => $"{x}"));
-        strings.Add("}");
-
-        strings.Add(@"
-int3 offset;
+        lines.Add(@"
+#pragma kernel CSVoxel
 [numthreads(8, 8, 8)]
 void CSVoxel(uint3 id : SV_DispatchThreadID) {
-    float3 position = float3(id + offset * 32);
-    float density = 0.0;
-    uint material = 0;
-    Func(position * 0.01, density, material);
-    voxels[id + offset * 32] = density;
-}
-        ");
+}");
 
-        this.currentHash = manager.hash;
-        return strings.Aggregate("", (a, b) => a + "\n" + b);
-    }
-
-    public void OnValidate() {
-        int oldHash = currentHash;
-        Transpile();
-
-        if (oldHash != currentHash) {
-            Compile();
-        }
-
-        ExecuteShader();
-    }
-
-    int counter;
-
-    public static uint3 IndexToPos(int index, uint size) {
-        uint index2 = (uint)index;
-
-        // N(ABC) -> N(A) x N(BC)
-        uint y = index2 / (size * size);   // x in N(A)
-        uint w = index2 % (size * size);  // w in N(BC)
-
-        // N(BC) -> N(B) x N(C)
-        uint z = w / size;        // y in N(B)
-        uint x = w % size;        // z in N(C)
-        return new uint3(x, y, z);
+        return lines.Aggregate("", (a, b) => a + "\n" + b);
     }
 
     public void ExecuteShader() {
+        /*
+        static uint3 IndexToPos(int index, uint size) {
+            uint index2 = (uint)index;
+
+            // N(ABC) -> N(A) x N(BC)
+            uint y = index2 / (size * size);   // x in N(A)
+            uint w = index2 % (size * size);  // w in N(BC)
+
+            // N(BC) -> N(B) x N(C)
+            uint z = w / size;        // y in N(B)
+            uint x = w % size;        // z in N(C)
+            return new uint3(x, y, z);
+        }
+
         Transpile();
         counter++;
 
@@ -127,6 +78,7 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
         shader.SetInts("offset", new int[] { offset.x, offset.y, offset.z });
         shader.Dispatch(0, 4, 4, 4);
         manager.UpdateInjected(shader);
+        */
     }
 
     public static RenderTexture Create3DRenderTexture(int size, GraphicsFormat format) {
@@ -142,12 +94,13 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
     }
 
 
+    // Recompiles the graph every time we reload the domain thingy
     [InitializeOnLoadMethod]
     static void Test() {
         VoxelGraph[] graph = Object.FindObjectsOfType<VoxelGraph>();
 
         foreach (var item in graph) {
-            item.currentHash = 0;
+            //item.currentHash = 0;
             item.Compile();
         }
     }
@@ -162,7 +115,7 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
             string guid = AssetDatabase.CreateFolder("Assets", folder);
         }
 
-        string filePath = "Assets/" + folder + "/" + name.ToLower() + ".baka";
+        string filePath = "Assets/" + folder + "/" + name.ToLower() + ".voxel";
         using (StreamWriter sw = File.CreateText(filePath)) {
             sw.Write(source);
         }
@@ -178,4 +131,3 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
 #endif
     }
 }
-*/

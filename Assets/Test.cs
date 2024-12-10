@@ -2,43 +2,17 @@ using System;
 using Unity.Mathematics;
 using UnityEngine;
 
-/*
 public class Test : VoxelGraph {
-    public float offset;
+    public Inject<float> offset;
+    public Inject<float> scale;
+    public Inject<float> amplitude;
 
-    [Range(0, 1)]
-    public float scale;
-
-    [Range(0, 1)]
-    public float scale2;
-
-    [Range(-10, 10)]
-    public float amplitude;
-
-    [Range(1, 5)]
-    public int octaves;
-    
-    [Range(0, 2)]
-    public float persistence;
-
-    [Range(0, 2)]
-    public float lacunarity;
-
-    public Inject<float> warperNoiseScale;
-    public Inject<float> warperNoiseAmplitude;
-    public Inject<float> scale23;
-
-    public Inject<float> scale5;
-
-    public FractalNoise.FractalMode mode;
-    public Voronoi.Type type;
-
-    public Bounds bounds;
-
-    public override void Execute(Var<float3> position, out Var<float> density, out Var<uint> material) {
+    public override void Execute(Variable<float3> position, out Variable<float> density) {
+        Simplex simplex = new Simplex { amplitude = amplitude, scale = scale };
+        density = offset + simplex.Evaluate(position);
+        /*
         density = null;
         material = null;
-        /*
         Simplex noise = new Simplex() {
             scale = Var<float>.Inject(() => scale),
             amplitude = Var<float>.Inject(() => amplitude),
@@ -67,8 +41,7 @@ public class Test : VoxelGraph {
         //density = box.Evaluate(position);
         density = temp;
         material = 0;
-        
+        */
     }
 
 }
-*/

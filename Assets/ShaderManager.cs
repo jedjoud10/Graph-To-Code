@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+/*
 // Handles initializing variables, functions, and other shader stuff
 public class ShaderManager {
     public static ShaderManager singleton;
@@ -76,3 +77,4 @@ public class ShaderManager {
     }
 }
 
+*/

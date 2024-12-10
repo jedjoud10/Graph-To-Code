@@ -1,0 +1,20 @@
+
+#pragma kernel CSVoxel
+float _1;
+float _2;
+float _4;
+RWTexture3D<float> voxels;
+int3 permuationSeed;
+int3 moduloSeed;
+#include "Assets/Noises.cginc"
+#include "Assets/SDF.cginc"
+void Func(float3 position, out float density) {
+float _3 = (snoise((position) * _1)) * _2;
+float _5 = _4 + _3;
+density = _5;
+}
+
+#pragma kernel CSVoxel
+[numthreads(8, 8, 8)]
+void CSVoxel(uint3 id : SV_DispatchThreadID) {
+}

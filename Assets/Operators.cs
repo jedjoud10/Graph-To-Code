@@ -3,6 +3,7 @@ using UnityEngine;
 
 [Serializable]
 public class DefineNode<T> : Variable<T> {
+    [SerializeField]
     public string value;
 
     public override string Handle(TreeContext ctx) {
@@ -21,7 +22,10 @@ public class NoOP<T> : Variable<T> {
 [Serializable]
 public class SimpleBinOpNode<T> : Variable<T> {
     [SerializeReference]
-    public Variable<T> a, b;
+    public Variable<T> a;
+    [SerializeReference]
+    public Variable<T> b;
+    [SerializeField]
     public string op;
 
     public override string Handle(TreeContext ctx) {

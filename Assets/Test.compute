@@ -1,9 +1,0 @@
-#pragma kernel CSGoDown
-
-RWTexture3D<uint> sdfVoxels;
-RWTexture3D<uint> sdfVoxelsHigherMip;
-
-[numthreads(8, 8, 8)]
-void CSGoDown(uint3 id : SV_DispatchThreadID) {
-	InterlockedOr(sdfVoxelsHigherMip[id / 2], sdfVoxels[id]);
-}
