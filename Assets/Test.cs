@@ -4,12 +4,26 @@ using UnityEngine;
 
 public class Test : VoxelGraph {
     public Inject<float> offset;
+    public Inject<float> mul;
     public Inject<float> scale;
     public Inject<float> amplitude;
+    public Inject<float2> warpingScale;
+    public Inject<float2> warpingScale2;
+    public Inject<float> scale2;
+    public Inject<float> amplitude2;
 
     public override void Execute(Variable<float3> position, out Variable<float> density) {
         Simplex simplex = new Simplex { amplitude = amplitude, scale = scale };
-        density = offset + simplex.Evaluate(position);
+        Simplex simplex2 = new Simplex { amplitude = amplitude2, scale = scale2 };
+        Warper warper = new Warper() { noisinator = simplex, warpingScale = warpingScale, warpingScale2 = warpingScale2 };
+        var output = position.Swizzle<float>("y");
+
+        var temp = position.Swizzle<float2>("xz");
+        output += simplex2.Evaluate(warper.Warpinate(temp));
+
+        
+        density = output + offset;
+        density *= mul;
         /*
         density = null;
         material = null;

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 public class PreHandle {
     private List<TreeNode> symbols;
@@ -65,6 +66,12 @@ public class TreeContext {
         injected.Add(newName, (type, () => func()));
         properties.Add(type.ToStringType() + " " + newName + ";");
         return newName;
+    }
+
+    public void UpdateInjected(ComputeShader shader) {
+        foreach (var (name, (type, func)) in injected) {
+            Utils.SetComputeShaderObj(shader, name, func(), type);
+        }
     }
 
     public void Add(TreeNode node, string name) {

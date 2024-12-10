@@ -1,20 +1,39 @@
 
 #pragma kernel CSVoxel
-float _1;
-float _2;
+float2 _2;
+float2 _3;
 float _4;
+float _5;
+float _13;
+float _14;
+float _17;
+float _19;
 RWTexture3D<float> voxels;
 int3 permuationSeed;
 int3 moduloSeed;
 #include "Assets/Noises.cginc"
 #include "Assets/SDF.cginc"
 void Func(float3 position, out float density) {
-float _3 = (snoise((position) * _1)) * _2;
-float _5 = _4 + _3;
-density = _5;
+float2 _1 = position.xz;
+float2 _6 = ((_1 + float2(123.8544, 32.22354)) * _2.x);
+float2 _7 = ((_1 + float2(65.4238, -551.1535)) * _2.y);
+float _8 = (snoise((_6) * _4)) * _5;
+float _9 = (snoise((_6) * _4)) * _5;
+float _10 = (_1.x + _8 * _3.x);
+float _11 = (_1.y + _9 * _3.y);
+float2 _12 = float2(_10, _11);
+float _15 = (snoise((_12) * _13)) * _14;
+float _16 = position.y;
+float _18 = _16 + _15;
+float _20 = _18 + _17;
+float _21 = _20 * _19;
+density = _21;
 }
 
 #pragma kernel CSVoxel
 [numthreads(8, 8, 8)]
 void CSVoxel(uint3 id : SV_DispatchThreadID) {
+    float density = 0.0;
+    Func(float3(id) * 0.01, density);
+    voxels[id] = density;
 }

@@ -87,7 +87,15 @@ public static class Utils {
         }
     }
 
+
+
     /*
+    public static Variable<float> y(this Var<float3> vec3) {
+        return new Var<float> {
+            name = ShaderManager.singleton.DefineVariable<float>(vec3.name + "_x", vec3.name + ".x"),
+        };
+    } 
+    
     // Get the x value of the float3
     public static Var<float> X(this Var<float3> vec3) {
         return new Var<float> {

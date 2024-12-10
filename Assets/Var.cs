@@ -36,6 +36,10 @@ public abstract class Variable<T> : TreeNode {
     public static implicit operator Variable<T>(Inject<T> value) {
         return new InjectedNode<T> { calback = () => value.x };
     }
+
+    public Variable<U> Swizzle<U>(string swizzle) {
+        return new SwizzleNode<T, U> { a = this, swizzleOp = swizzle };
+    } 
 }
 
 /*

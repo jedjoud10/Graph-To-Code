@@ -9,6 +9,10 @@ using UnityEngine.Experimental.Rendering;
 // A voxel graph is the base class to inherit from to be able to write custom voxel stuff
 public abstract class VoxelGraph : MonoBehaviour {
     private ComputeShader shader;
+    public int seed = 1234;
+    public Vector3Int permutationSeed;
+    public Vector3Int moduloSeed;
+    private TreeContext ctx;
 
     // Execute the voxel graph at a specific position and fetch the density and material values
     public abstract void Execute(Variable<float3> position, out Variable<float> density);
@@ -16,7 +20,7 @@ public abstract class VoxelGraph : MonoBehaviour {
     // This transpile the voxel graph into HLSL code that can be executed on the GPU
     // This can be done outside the editor, but shader compilation MUST be done in editor
     public string Transpile() {
-        TreeContext ctx = new TreeContext(false);
+        ctx = new TreeContext(false);
         Variable<float3> position = ctx.Bind<float3>("position");
         Execute(position, out Variable<float> density);
         ctx.Parse(density);
@@ -43,56 +47,13 @@ public abstract class VoxelGraph : MonoBehaviour {
 #pragma kernel CSVoxel
 [numthreads(8, 8, 8)]
 void CSVoxel(uint3 id : SV_DispatchThreadID) {
+    float density = 0.0;
+    Func(float3(id) * 0.01, density);
+    voxels[id] = density;
 }");
 
         return lines.Aggregate("", (a, b) => a + "\n" + b);
     }
-
-    public void ExecuteShader() {
-        /*
-        static uint3 IndexToPos(int index, uint size) {
-            uint index2 = (uint)index;
-
-            // N(ABC) -> N(A) x N(BC)
-            uint y = index2 / (size * size);   // x in N(A)
-            uint w = index2 % (size * size);  // w in N(BC)
-
-            // N(BC) -> N(B) x N(C)
-            uint z = w / size;        // y in N(B)
-            uint x = w % size;        // z in N(C)
-            return new uint3(x, y, z);
-        }
-
-        Transpile();
-        counter++;
-
-        int3 offset = (int3)IndexToPos(counter % (4*4*4), 4);
-
-
-        if (texture == null)
-            texture = Create3DRenderTexture(128, GraphicsFormat.R32_SFloat);
-        
-        shader.SetTexture(0, "voxels", texture);
-        shader.SetInts("permuationSeed", new int[] { permutationSeed.x, permutationSeed.y, permutationSeed.z });
-        shader.SetInts("moduloSeed", new int[] { moduloSeed.x, moduloSeed.y, moduloSeed.z });
-        shader.SetInts("offset", new int[] { offset.x, offset.y, offset.z });
-        shader.Dispatch(0, 4, 4, 4);
-        manager.UpdateInjected(shader);
-        */
-    }
-
-    public static RenderTexture Create3DRenderTexture(int size, GraphicsFormat format) {
-        RenderTexture texture = new RenderTexture(size, size, 0, format);
-        texture.height = size;
-        texture.width = size;
-        texture.depth = 0;
-        texture.volumeDepth = size;
-        texture.dimension = UnityEngine.Rendering.TextureDimension.Tex3D;
-        texture.enableRandomWrite = true;
-        texture.Create();
-        return texture;
-    }
-
 
     // Recompiles the graph every time we reload the domain thingy
     [InitializeOnLoadMethod]
@@ -103,6 +64,55 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
             //item.currentHash = 0;
             item.Compile();
         }
+    }
+
+    private void OnValidate() {
+        var temp = GetComponent<VoxelGraphPreview>();
+        if (temp != null) {
+            temp.OnValidate();
+        }
+
+        ComputeSecondarySeeds();
+    }
+
+    public void ExecuteShader(RenderTexture texture, int size) {
+        if (shader == null) {
+            Debug.LogWarning("Shader is not set. You must compile!!");
+            return;
+        }
+
+        if (texture == null) {
+            Debug.LogWarning("Texture is not set!!!");
+            return;
+        }
+
+        if (ctx == null) {
+            Transpile();
+        }
+
+        //counter++;
+        //int3 offset = (int3)IndexToPos(counter % (4*4*4), 4);
+        //shader.SetInts("offset", new int[] { offset.x, offset.y, offset.z });
+        shader.SetTexture(0, "voxels", texture);
+        shader.SetInts("permuationSeed", new int[] { permutationSeed.x, permutationSeed.y, permutationSeed.z });
+        shader.SetInts("moduloSeed", new int[] { moduloSeed.x, moduloSeed.y, moduloSeed.z });
+        shader.Dispatch(0, size/8, size/8, size/8);
+        ctx.UpdateInjected(shader);
+    }
+
+    private void ComputeSecondarySeeds() {
+        var random = new System.Random(seed);
+        permutationSeed.x = random.Next(-1000, 1000);
+        permutationSeed.y = random.Next(-1000, 1000);
+        permutationSeed.z = random.Next(-1000, 1000);
+        moduloSeed.x = random.Next(-1000, 1000);
+        moduloSeed.y = random.Next(-1000, 1000);
+        moduloSeed.z = random.Next(-1000, 1000);
+    }
+
+    public void RandomizeSeed() {
+        seed = UnityEngine.Random.Range(-9999, 9999);
+        ComputeSecondarySeeds();
     }
 
     public void Compile() {
