@@ -2,16 +2,16 @@ using System;
 using UnityEngine;
 
 [Serializable]
-public class DefineNode<T> : Variable<T> {
+public class DefineNode : Variable {
     public string value;
 
     public override string Handle(TreeContext ctx) {
-        return ctx.DefineVariable(Utils.TypeOf<T>(), "c", $"{value}", true);
+        return ctx.DefineVariable(this.type, "c", $"{value}", true);
     }
 }
 
 [Serializable]
-public class NoOP<T> : Variable<T> {
+public class NoOP : Variable {
     public override string Handle(TreeContext ctx) {
         throw new Exception();
         return "";
@@ -19,13 +19,13 @@ public class NoOP<T> : Variable<T> {
 }
 
 [Serializable]
-public class SimpleBinOpNode<T> : Variable<T> {
+public class SimpleBinOpNode : Variable {
     [SerializeReference]
-    public Variable<T> a, b;
+    public Variable a, b;
     public string op;
 
     public override string Handle(TreeContext ctx) {
-        return ctx.DefineVariable(Utils.TypeOf<T>(), $"{ctx[a]}_op_{ctx[b]}", $"{ctx[a]} {op} {ctx[b]}");
+        return ctx.DefineVariable(this.type, $"{ctx[a]}_op_{ctx[b]}", $"{ctx[a]} {op} {ctx[b]}");
     }
 
     public override void PreHandle(PreHandle context) {
@@ -35,12 +35,11 @@ public class SimpleBinOpNode<T> : Variable<T> {
 }
 
 [Serializable]
-public class InjectedNode<T> : Variable<T> {
+public class InjectedNode : Variable {
     public Func<object> calback;
-    public Utils.StrictType type;
 
     public override string Handle(TreeContext ctx) {
-        return ctx.Inject(type, "inj", calback);
+        return ctx.Inject(this.type, "inj", calback);
     }
 }
 

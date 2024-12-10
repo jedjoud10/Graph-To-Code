@@ -12,29 +12,34 @@ public abstract class TreeNode {
 }
 
 [Serializable]
-public abstract class Variable<T> : TreeNode {
+public abstract class Variable : TreeNode {
+    public Utils.StrictType type;
 
-    public static implicit operator Variable<T>(T value) {
-        return new DefineNode<T> { value = value.ToString() };
+    public static implicit operator Variable(float value) {
+        return new DefineNode { value = value.ToString(), type = Utils.TypeOf<float>() };
     }
 
-    public static Variable<T> operator +(Variable<T> a, Variable<T> b) {
-        return new SimpleBinOpNode<T> { a = a, b = b, op = "+" };
+    public static implicit operator Variable(float2 value) {
+        return new DefineNode { value = value.ToString(), type = Utils.TypeOf<float2>() };
     }
 
-    public static Variable<T> operator -(Variable<T> a, Variable<T> b) {
-        return new SimpleBinOpNode<T> { a = a, b = b, op = "-" };
+    public static Variable operator +(Variable a, Variable b) {
+        return new SimpleBinOpNode { a = a, b = b, op = "+" };
     }
 
-    public static Variable<T> operator *(Variable<T> a, Variable<T> b) {
-        return new SimpleBinOpNode<T> { a = a, b = b, op = "*" };
-    }
-    public static Variable<T> operator /(Variable<T> a, Variable<T> b) {
-        return new SimpleBinOpNode<T> { a = a, b = b, op = "/" };
+    public static Variable operator -(Variable a, Variable b) {
+        return new SimpleBinOpNode { a = a, b = b, op = "-" };
     }
 
-    public static implicit operator Variable<T>(Inject<T> value) {
-        return new InjectedNode<T> { calback = () => value.x };
+    public static Variable operator *(Variable a, Variable b) {
+        return new SimpleBinOpNode { a = a, b = b, op = "*" };
+    }
+    public static Variable operator /(Variable a, Variable b) {
+        return new SimpleBinOpNode { a = a, b = b, op = "/" };
+    }
+
+    public static implicit operator Variable(Inject<float> value) {
+        return new InjectedNode { calback = () => value.x, type = Utils.TypeOf<float>() };
     }
 }
 

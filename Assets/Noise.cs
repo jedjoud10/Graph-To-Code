@@ -6,13 +6,13 @@ using UnityEngine;
 
 
 [Serializable]
-public abstract class AbstractNoiseNode<I, O> : Variable<O>, ICloneable {
+public abstract class AbstractNoiseNode : Variable, ICloneable {
     [SerializeReference]
-    public Variable<float> amplitude;
+    public Variable amplitude;
     [SerializeReference]
-    public Variable<float> scale;
+    public Variable scale;
     [SerializeReference]
-    public Variable<I> position;
+    public Variable position;
 
     public abstract object Clone();
 
@@ -26,9 +26,9 @@ public abstract class AbstractNoiseNode<I, O> : Variable<O>, ICloneable {
 }
 
 [Serializable]
-public class SimplexNoiseNode<T> : AbstractNoiseNode<T, float> {
+public class SimplexNoiseNode : AbstractNoiseNode {
     public override object Clone() {
-        return new SimplexNoiseNode<T> {
+        return new SimplexNoiseNode {
             amplitude = this.amplitude,
             scale = this.scale,
             position = this.position
@@ -43,9 +43,9 @@ public class SimplexNoiseNode<T> : AbstractNoiseNode<T, float> {
 }
 
 [Serializable]
-public class VoronoiNode<T> : AbstractNoiseNode<T, float> {
+public class VoronoiNode : AbstractNoiseNode {
     public override object Clone() {
-        return new VoronoiNode<T> {
+        return new VoronoiNode {
             amplitude = this.amplitude,
             scale = this.scale,
             position = this.position,
@@ -77,11 +77,11 @@ public class VoronoiNode<T> : AbstractNoiseNode<T, float> {
 }
 
 [Serializable]
-public class VoronoiseNode<T> : AbstractNoiseNode<T, float> {
+public class VoronoiseNode : AbstractNoiseNode {
     [SerializeReference]
-    public Variable<float> lerpValue;
+    public Variable lerpValue;
     [SerializeReference]
-    public Variable<float> randomness;
+    public Variable randomness;
 
     public override object Clone() {
         return new VoronoiseNode<T> {
@@ -107,15 +107,15 @@ public class VoronoiseNode<T> : AbstractNoiseNode<T, float> {
 }
 
 [Serializable]
-public class WarperNode : Variable<float2> {
+public class WarperNode : Variable {
     [SerializeReference]
-    public AbstractNoiseNode<float2, float> toClone;
+    public AbstractNoiseNode toClone;
     [SerializeReference]
-    public Variable<float2> warpingScale2;
+    public Variable warpingScale2;
     [SerializeReference]
-    public Variable<float2> warpingScale;
+    public Variable warpingScale;
     [SerializeReference]
-    public Variable<float2> position;
+    public Variable position;
 
     public override void PreHandle(PreHandle context) {
         toClone.PreHandle(context);
@@ -129,20 +129,20 @@ public class WarperNode : Variable<float2> {
     public float3 offsets_z = new float3(-43.85454f, -3346.234f, 54.7653f);
 
     public override string Handle(TreeContext context) {
-        Variable<float2> a_offsetted = context.DefineVariableNoOp<float2>($"{context[position]}_x_offset", $"(({context[position]} + float2({offsets_x.x}, {offsets_x.y})) * {context[warpingScale]}.x)");
-        Variable<float2> b_offsetted = context.DefineVariableNoOp<float2>($"{context[position]}_y_offset", $"(({context[position]} + float2({offsets_y.x}, {offsets_y.y})) * {context[warpingScale]}.y)");
+        Variable a_offsetted = context.DefineVariableNoOp<float2>($"{context[position]}_x_offset", $"(({context[position]} + float2({offsets_x.x}, {offsets_x.y})) * {context[warpingScale]}.x)");
+        Variable b_offsetted = context.DefineVariableNoOp<float2>($"{context[position]}_y_offset", $"(({context[position]} + float2({offsets_y.x}, {offsets_y.y})) * {context[warpingScale]}.y)");
 
-        var a = (AbstractNoiseNode<float2, float>)toClone.Clone();
+        var a = (AbstractNoiseNode)toClone.Clone();
         a.position = a_offsetted;
-        var b = (AbstractNoiseNode<float2, float>)toClone.Clone();
+        var b = (AbstractNoiseNode)toClone.Clone();
         b.position = b_offsetted;
 
-        Variable<float> a1 = context.Bind<float>(a.Handle(context));
-        Variable<float> b1 = context.Bind<float>(a.Handle(context));
+        Variable a1 = context.Bind<float>(a.Handle(context));
+        Variable b1 = context.Bind<float>(a.Handle(context));
 
 
-        Variable<float> a2 = context.DefineVariableNoOp<float>($"{context[position]}_warped_x", $"({context[position]}.x + {context[a1]} * {context[warpingScale2]}.x)");
-        Variable<float> b2 = context.DefineVariableNoOp<float>($"{context[position]}_warped_y", $"({context[position]}.y + {context[b1]} * {context[warpingScale2]}.y)");
+        Variable a2 = context.DefineVariableNoOp<float>($"{context[position]}_warped_x", $"({context[position]}.x + {context[a1]} * {context[warpingScale2]}.x)");
+        Variable b2 = context.DefineVariableNoOp<float>($"{context[position]}_warped_y", $"({context[position]}.y + {context[b1]} * {context[warpingScale2]}.y)");
         return context.DefineVariable<float2>($"{context[position]}_warped", $"float2({context[a2]}, {context[b2]})");
     }
 }

@@ -104,16 +104,16 @@ public class TreeContext {
         return newName;
     }
 
-    public Variable<T> DefineVariableNoOp<T>(string name, string value) {
+    public Variable DefineVariableNoOp<T>(string name, string value) {
         string newName = GenId(name);
         lines.Add(Utils.TypeOf<T>().ToStringType() + " " + newName + " = " + value + ";");
-        var a = new NoOP<T> { };
+        var a = new NoOP { };
         this.Add(a, newName);
         return a;
     }
 
-    public Variable<T> Bind<T>(string newName) {
-        var a = new NoOP<T> { };
+    public Variable Bind<T>(string newName) {
+        var a = new NoOP { };
         this.Add(a, newName);
         return a;
     }

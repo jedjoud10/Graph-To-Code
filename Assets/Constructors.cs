@@ -2,14 +2,14 @@ using System;
 using Unity.Mathematics;
 using UnityEngine.UIElements;
 
-public abstract class Noise<O> {
-    public abstract AbstractNoiseNode<I, O> CreateAbstractYetToEval<I>();
-    public abstract Variable<O> Evaluate<T>(Variable<T> position);
+public abstract class Noise {
+    public abstract AbstractNoiseNode CreateAbstractYetToEval<I>();
+    public abstract Variable Evaluate(Variable position);
 }
 
-public class Simplex : Noise<float> {
-    public Variable<float> amplitude;
-    public Variable<float> scale;
+public class Simplex : Noise {
+    public Variable amplitude;
+    public Variable scale;
 
     public Simplex() {
         amplitude = 1.0f;
@@ -21,29 +21,29 @@ public class Simplex : Noise<float> {
         this.scale = scale;
     }
 
-    public override AbstractNoiseNode<I, float> CreateAbstractYetToEval<I>() {
-        return new SimplexNoiseNode<I>() {
+    public override AbstractNoiseNode CreateAbstractYetToEval<I>() {
+        return new SimplexNoiseNode() {
             amplitude = amplitude,
             scale = scale,
             position = null,
         };
     }
 
-    public override Variable<float> Evaluate<T>(Variable<T> position) {
+    public override Variable Evaluate<T>(Variable position) {
         var type = Utils.TypeOf<T>();
         if (type != Utils.StrictType.Float2 && type != Utils.StrictType.Float3) {
             throw new Exception("Type not supported");
         }
 
-        AbstractNoiseNode<T, float> a = CreateAbstractYetToEval<T>();
+        AbstractNoiseNode a = CreateAbstractYetToEval<T>();
         a.position = position;
         return a;
     }
 }
 
-public class Voronoi : Noise<float> {
-    public Variable<float> amplitude;
-    public Variable<float> scale;
+public class Voronoi : Noise {
+    public Variable amplitude;
+    public Variable scale;
     public Type type;
 
     public enum Type {
