@@ -5,10 +5,13 @@ using Unity.Mathematics;
 [Serializable]
 public abstract class TreeNode {
     // Goes over the tree node before flattening the array
+    // All this does is adds all required symbols in a list, where the last element is the first symbol (no dependencies)
+    // is and first element the last symbol (multiple dependencies leading back to first symbol)
+    // Then all we do is start from the back and expand each symbol out from back to front
     public virtual void PreHandle(PreHandle context) { }
 
-    // Outputs the name of the tree node
-    public abstract string Handle(TreeContext context);
+    // Expands this tree node. Could expand to multiple variable definitions or just to a singular one
+    public abstract void Handle(TreeContext context);
 }
 
 [Serializable]
@@ -40,6 +43,25 @@ public abstract class Variable<T> : TreeNode {
     public Variable<U> Swizzle<U>(string swizzle) {
         return new SwizzleNode<T, U> { a = this, swizzleOp = swizzle };
     } 
+}
+
+public class NoOp<T> : Variable<T> {
+    public override void Handle(TreeContext context) {
+    }
+}
+
+public class AssignOnly<T> : Variable<T> {
+    public string name;
+    public Variable<T> inner;
+
+    public override void Handle(TreeContext ctx) {
+        ctx.DefineAndBindNode<T>(this, name, ctx[inner], false, false, true);
+    }
+
+    public override void PreHandle(PreHandle ctx) {
+        base.PreHandle(ctx);
+        ctx.RegisterDependency(inner);
+    }
 }
 
 /*

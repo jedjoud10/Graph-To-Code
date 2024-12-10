@@ -20,13 +20,15 @@ public abstract class VoxelGraph : MonoBehaviour {
     // This transpile the voxel graph into HLSL code that can be executed on the GPU
     // This can be done outside the editor, but shader compilation MUST be done in editor
     public string Transpile() {
-        TreeContext ctx = new TreeContext(false);
-        Variable<float3> position = ctx.Bind<float3>("position");
+        TreeContext ctx = new TreeContext(true);
+        Variable<float3> position = ctx.AliasExternalInput<float3>("position");
         Execute(position, out Variable<float> density);
-        (var symbols, var hash) =  ctx.Handlinate(density);
+        var density2 = ctx.AssignOnly("density", density);
+        (var symbols, var hash) = ctx.Handlinate(density2);
 
         ctx.Parse(symbols);
-        ctx.Set("density", density);
+        
+
         IEnumerable<string> parsed2 = ctx.Lines.SelectMany(str => str.Split(new[] { "\r\n", "\n" }, System.StringSplitOptions.None)).Select(x => $"{x}");
 
         List<string> lines = new List<string>();
@@ -72,7 +74,7 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
 
     private void OnValidate() {
         TreeContext ctx = new TreeContext(false);
-        Variable<float3> position = ctx.Bind<float3>("position");
+        Variable<float3> position = ctx.AliasExternalInput<float3>("position");
         Execute(position, out Variable<float> density);
         (var symbols, var newHash) =  ctx.Handlinate(density);
 

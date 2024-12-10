@@ -7,8 +7,8 @@ public class DefineNode<T> : Variable<T> {
     public string value;
     public bool constant;
 
-    public override string Handle(TreeContext ctx) {
-        return ctx.DefineVariable<T>("c", $"{value}", constant);
+    public override void Handle(TreeContext ctx) {
+        ctx.DefineAndBindNode(this, Utils.TypeOf<T>(), "c", value, constant);
     }
 
     /*
@@ -22,14 +22,6 @@ public class DefineNode<T> : Variable<T> {
 }
 
 [Serializable]
-public class NoOP<T> : Variable<T> {
-    public override string Handle(TreeContext ctx) {
-        throw new Exception();
-        return "";
-    }
-}
-
-[Serializable]
 public class SimpleBinOpNode<T> : Variable<T> {
     [SerializeReference]
     public Variable<T> a;
@@ -38,8 +30,8 @@ public class SimpleBinOpNode<T> : Variable<T> {
     [SerializeField]
     public string op;
 
-    public override string Handle(TreeContext ctx) {
-        return ctx.DefineVariable<T>($"{ctx[a]}_op_{ctx[b]}", $"{ctx[a]} {op} {ctx[b]}");
+    public override void Handle(TreeContext ctx) {
+        ctx.DefineAndBindNode<T>(this, $"{ctx[a]}_op_{ctx[b]}", $"{ctx[a]} {op} {ctx[b]}");
     }
 
     public override void PreHandle(PreHandle context) {
@@ -55,8 +47,8 @@ public class SwizzleNode<I, O> : Variable<O> {
     [SerializeField]
     public string swizzleOp;
 
-    public override string Handle(TreeContext ctx) {
-        return ctx.DefineVariable<O>($"{ctx[a]}_swizzle", $"{ctx[a]}.{swizzleOp}");
+    public override void Handle(TreeContext ctx) {
+        ctx.DefineAndBindNode<O>(this, $"{ctx[a]}_swizzle", $"{ctx[a]}.{swizzleOp}");
     }
 
     public override void PreHandle(PreHandle context) {
@@ -67,8 +59,8 @@ public class SwizzleNode<I, O> : Variable<O> {
 [Serializable]
 public class InjectedNode<T> : Variable<T> {
     public Inject<T> a;
-    public override string Handle(TreeContext ctx) {
-        return ctx.Inject(Utils.TypeOf<T>(), "inj", () => a.x);
+    public override void Handle(TreeContext ctx) {
+        ctx.Inject<T>(this, "inj", () => a.x);
     }
 }
 
@@ -82,8 +74,7 @@ public class Cached<T> : Variable<T> {
     // create temporary texture that is written to by that kernel
     // read said texture with appropriate swizzles in the main kernel
 
-    public override string Handle(TreeContext context) {
-        return "";
+    public override void Handle(TreeContext context) {
         //throw new NotImplementedException();
     }
 
@@ -95,4 +86,8 @@ public class Cached<T> : Variable<T> {
 [Serializable]
 public class Inject<T> {
     public T x;
+
+    public Inject(T a) {
+        this.x = a;
+    }
 }

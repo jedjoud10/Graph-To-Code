@@ -1,9 +1,9 @@
 
 #pragma kernel CSVoxel
-float _2;
-float _3;
-float _6;
-float _8;
+float inj_0;
+float inj_1;
+float inj_2;
+float inj_3;
 RWTexture3D<float> voxels;
 int3 permuationSeed;
 int3 moduloSeed;
@@ -12,13 +12,26 @@ float3 offset;
 #include "Assets/Noises.cginc"
 #include "Assets/SDF.cginc"
 void Func(float3 position, out float density) {
-float2 _1 = position.xz;
-float _4 = (cellular((_1) * _2).x - 0.5) * _3;
-float _5 = position.y;
-float _7 = _5 + _4;
-float _9 = _7 + _6;
-float _10 = _9 * _8;
-density = _10;
+const float c_0 = 0.5;
+const float c_1 = 2;
+float2 position_swizzle_0 = position.xz;
+const float c_2 = 1;
+const float c_3 = 1;
+float position_swizzle_0_fbm_0 = 0.0;
+float position_swizzle_0_fbm_scale_0 = 1.0;
+float position_swizzle_0_fbm_amplitude_0 = 1.0;
+[unroll]
+for(uint i = 0; i < 3; i++) {
+float2 position_swizzle_0_fmb_pos_0 = position_swizzle_0 * position_swizzle_0_fbm_scale_0 + hash31(float(i));
+float position_swizzle_0_fmb_pos_0_noised_0 = (cellular((position_swizzle_0_fmb_pos_0) * inj_0).x - 0.5) * inj_1;
+position_swizzle_0_fbm_0 += position_swizzle_0_fmb_pos_0_noised_0 * position_swizzle_0_fbm_amplitude_0;
+}
+float position_swizzle_0_fbm_1 = position_swizzle_0_fbm_0;
+float position_swizzle_1 = position.y;
+float position_swizzle_1_op_position_swizzle_0_fbm_1_0 = position_swizzle_1 + position_swizzle_0_fbm_1;
+float position_swizzle_1_op_position_swizzle_0_fbm_1_0_op_inj_2_0 = position_swizzle_1_op_position_swizzle_0_fbm_1_0 + inj_2;
+float position_swizzle_1_op_position_swizzle_0_fbm_1_0_op_inj_2_0_op_inj_3_0 = position_swizzle_1_op_position_swizzle_0_fbm_1_0_op_inj_2_0 * inj_3;
+density = position_swizzle_1_op_position_swizzle_0_fbm_1_0_op_inj_2_0_op_inj_3_0;
 }
 
 #pragma kernel CSVoxel

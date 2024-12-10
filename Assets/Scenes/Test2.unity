@@ -308,7 +308,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
---- !u!84 &1284324687
+--- !u!84 &1022160239
 RenderTexture:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -354,6 +354,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2080444268}
+  - component: {fileID: 2080444271}
   - component: {fileID: 2080444269}
   - component: {fileID: 2080444270}
   m_Layer: 0
@@ -390,21 +391,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6069082256f621d409621e46d0e9ea14, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  seed: -6414
-  permutationSeed: {x: 124, y: 608, z: -847}
-  moduloSeed: {x: 162, y: -929, z: 478}
+  shader: {fileID: -5579638545521383746, guid: 24c52c645c125964bb398227a33316a7, type: 3}
   offset:
-    x: -0.44
+    x: -0.7
   mul:
-    x: 18.29
+    x: -32.98
   scale:
-    x: 14.63
+    x: 4.47
   amplitude:
-    x: 0.1
-  randomness:
-    x: 1
-  lerping:
-    x: 0.4
+    x: 0.12
+  type: 0
+  mode: 2
+  octaves: 2
 --- !u!114 &2080444270
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -450,9 +448,26 @@ MonoBehaviour:
     m_ColorSpace: 0
     m_NumColorKeys: 4
     m_NumAlphaKeys: 2
-  filterMode: 2
-  texture: {fileID: 1284324687}
+  filterMode: 1
+  texture: {fileID: 1022160239}
   size: 64
+--- !u!114 &2080444271
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2080444267}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bff9610f717f4a14eaddd395ae55d5c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  seed: 5066
+  permutationSeed: {x: -335, y: -448, z: 682}
+  moduloSeed: {x: 720, y: -135, z: 450}
+  transformScale: {x: 0.01, y: -0.01, z: 0.01}
+  transformOffset: {x: 8.6, y: -85.12, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
