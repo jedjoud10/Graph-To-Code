@@ -308,7 +308,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
---- !u!84 &1022160239
+--- !u!84 &1320707269
 RenderTexture:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -393,16 +393,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shader: {fileID: -5579638545521383746, guid: 24c52c645c125964bb398227a33316a7, type: 3}
   offset:
-    x: -0.7
+    x: -0.47
   mul:
     x: -32.98
   scale:
     x: 4.47
   amplitude:
-    x: 0.12
+    x: 0.17
   type: 0
   mode: 2
-  octaves: 2
+  octaves: 3
 --- !u!114 &2080444270
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -449,7 +449,7 @@ MonoBehaviour:
     m_NumColorKeys: 4
     m_NumAlphaKeys: 2
   filterMode: 1
-  texture: {fileID: 1022160239}
+  texture: {fileID: 1320707269}
   size: 64
 --- !u!114 &2080444271
 MonoBehaviour:

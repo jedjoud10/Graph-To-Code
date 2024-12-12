@@ -21,7 +21,9 @@ float position_swizzle_0_fbm_0 = 0.0;
 float position_swizzle_0_fbm_scale_0 = 1.0;
 float position_swizzle_0_fbm_amplitude_0 = 1.0;
 [unroll]
-for(uint i = 0; i < 3; i++) {
+for(uint i = 0; i < 1; i++) {
+position_swizzle_0_fbm_scale_0 *= c_1;
+position_swizzle_0_fbm_amplitude_0 *= c_0;
 float2 position_swizzle_0_fmb_pos_0 = position_swizzle_0 * position_swizzle_0_fbm_scale_0 + hash31(float(i));
 float position_swizzle_0_fmb_pos_0_noised_0 = (cellular((position_swizzle_0_fmb_pos_0) * inj_0).x - 0.5) * inj_1;
 position_swizzle_0_fbm_0 += position_swizzle_0_fmb_pos_0_noised_0 * position_swizzle_0_fbm_amplitude_0;

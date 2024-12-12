@@ -123,6 +123,21 @@ public class TreeContext {
         };
     }
 
+    public Variable<T> AssignOnly2<T>(Variable<T> input, string value) {
+        return new AssignOnly2<T> {
+            value = value,
+            inner = input,
+        };
+    }
+
+    public Variable<T> InPlaceUnary<T>(Variable<T> input, string op, string value) {
+        return new SimpleUnOpNodeInPlace<T> {
+            value = value,
+            op = op,
+            a = input,
+        };
+    }
+
     // Assign a new variable using its inner value and a name given for it
     // Internally returns a NoOp
     public Variable<T> AssignTempVariable<T>(string name, string value) {
@@ -143,6 +158,13 @@ public class TreeContext {
                 lines.Add(suffix + type.ToStringType() + " " + newName + " = " + value + ";");
             }
             Add(node, newName);
+        }
+    }
+
+    public void ApplyInPlaceUnaryOp(TreeNode node, string name, string op, string value) {
+        if (!Contains(node)) {
+            lines.Add(name + $" {op}= " + value + ";");
+            Add(node, name);
         }
     }
 

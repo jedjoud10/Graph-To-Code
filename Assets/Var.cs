@@ -64,6 +64,19 @@ public class AssignOnly<T> : Variable<T> {
     }
 }
 
+public class AssignOnly2<T> : Variable<T> {
+    public string value;
+    public Variable<T> inner;
+
+    public override void Handle(TreeContext ctx) {
+        ctx.DefineAndBindNode<T>(this, ctx[inner], value, false, false, true);
+    }
+
+    public override void PreHandle(PreHandle ctx) {
+        ctx.RegisterDependency(inner);
+    }
+}
+
 /*
 public class Var<T> {
 

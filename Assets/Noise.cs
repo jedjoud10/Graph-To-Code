@@ -180,6 +180,13 @@ public class FractalNoiseNode<T> : AbstractNoiseNode<T, float> {
         context.Lines.Add("[unroll]");
         context.Lines.Add($"for(uint i = 0; i < {octaves}; i++) {{");
 
+        fbm_scale = context.InPlaceUnary(fbm_scale, "*", $"{context[lacunarity]}");
+        fbm_scale.Handle(context);
+        fbm_amplitude = context.InPlaceUnary(fbm_amplitude, "*", $"{context[persistence]}");
+        fbm_amplitude.Handle(context);
+
+        //context.Lines.Add($"{context[fbm_scale]} *= {context[lacunarity]};");
+        //context.Lines.Add($"{context[fbm_amplitude]} *= {context[persistence]};");
 
         Variable<T> fbmed = context.AssignTempVariable<T>($"{context[position]}_fmb_pos", $"{context[position]} * {context[fbm_scale]} + hash31(float(i))");
 

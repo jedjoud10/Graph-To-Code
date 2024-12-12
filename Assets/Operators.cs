@@ -41,6 +41,24 @@ public class SimpleBinOpNode<T> : Variable<T> {
 }
 
 [Serializable]
+public class SimpleUnOpNodeInPlace<T> : Variable<T> {
+    [SerializeReference]
+    public Variable<T> a;
+    [SerializeField]
+    public string op;
+    [SerializeField]
+    public string value;
+
+    public override void Handle(TreeContext ctx) {
+        ctx.ApplyInPlaceUnaryOp(this, ctx[a], op, value);
+    }
+
+    public override void PreHandle(PreHandle context) {
+        context.RegisterDependency(a);
+    }
+}
+
+[Serializable]
 public class SwizzleNode<I, O> : Variable<O> {
     [SerializeReference]
     public Variable<I> a;
