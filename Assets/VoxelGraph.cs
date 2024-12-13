@@ -36,8 +36,6 @@ public abstract class VoxelGraph : MonoBehaviour {
         ctx.Parse(density);
 
         List<string> lines = new List<string>();
-        lines.Add("#pragma kernel CSVoxel");
-        lines.Add("SamplerState my_trilinear_clamp_sampler;");
         lines.AddRange(ctx.Properties);
         lines.Add("RWTexture3D<float> voxels;");
 
@@ -48,6 +46,7 @@ public abstract class VoxelGraph : MonoBehaviour {
 
         // imports
         lines.Add("#include \"Assets/Noises.cginc\"");
+        lines.Add("#include \"Assets/Other.cginc\"");
         lines.Add("#include \"Assets/SDF.cginc\"");
 
         ctx.scopes.Sort((TreeContext.KernelScope a, TreeContext.KernelScope b) => { return b.depth.CompareTo(a.depth); });
@@ -128,7 +127,7 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
             string guid = AssetDatabase.CreateFolder("Assets", folder);
         }
 
-        string filePath = "Assets/" + folder + "/" + name.ToLower() + ".voxel";
+        string filePath = "Assets/" + folder + "/" + name.ToLower() + ".compute";
         using (StreamWriter sw = File.CreateText(filePath)) {
             sw.Write(source);
         }

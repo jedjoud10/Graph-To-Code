@@ -21,6 +21,7 @@ public class VoxelGraphExecutor : MonoBehaviour {
     private VoxelGraph graph;
 
     public Dictionary<string, RenderTexture> textures;
+    public List<RenderTexture> texturesList;
     public bool dirtyTexturesRecompilation;
 
     public void CreateIfNull(int size) {
@@ -48,14 +49,17 @@ public class VoxelGraphExecutor : MonoBehaviour {
                 }
             }
 
+            texturesList = new List<RenderTexture>();
             textures = new Dictionary<string, RenderTexture> {
-                { "voxels", Utils.Create3DRenderTexture(size, GraphicsFormat.R32_SFloat, FilterMode.Trilinear, TextureWrapMode.Repeat) }
+                { "voxels", Utils.Create3DRenderTexture(size, GraphicsFormat.R32_SFloat, FilterMode.Trilinear, TextureWrapMode.Repeat, false) }
             };
 
             foreach (var temp in graph.tempTextures) {
-                RenderTexture rt = Utils.Create3DRenderTexture(size / (1 << temp.sizeReductionPower), ToGfxFormat(temp.type), temp.filter, temp.wrap);
+                RenderTexture rt = Utils.Create3DRenderTexture(size / (1 << temp.sizeReductionPower), ToGfxFormat(temp.type), temp.filter, temp.wrap, temp.mips);
                 textures.Add(temp.name, rt);
             }
+
+            texturesList = textures.Values.ToList();
         }
     }
 
@@ -95,6 +99,10 @@ public class VoxelGraphExecutor : MonoBehaviour {
             foreach (var readKernel in temp.readKernels) {
                 int readKernelId = shader.FindKernel(readKernel);
                 shader.SetTexture(readKernelId, temp.name + "_read", textures[temp.name]);
+            }
+
+            if (temp.mips) {
+                textures[temp.name].GenerateMips();
             }
         }
 

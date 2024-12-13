@@ -9,18 +9,9 @@ public class DefineNode<T> : Variable<T> {
     public string value;
     public bool constant;
 
-    public override void Handle(TreeContext ctx) {
+    public override void HandleInternal(TreeContext ctx) {
         ctx.DefineAndBindNode(this, Utils.TypeOf<T>(), "c", value, constant);
     }
-
-    /*
-    public static DefineNode<T> Define(T val, bool constant = true) {
-        return new DefineNode<T> {
-            value = Utils.ToDefinableString(val),
-            constant = constant
-        };
-    }
-    */
 }
 
 [Serializable]
@@ -32,7 +23,7 @@ public class SimpleBinOpNode<T> : Variable<T> {
     [SerializeField]
     public string op;
 
-    public override void Handle(TreeContext ctx) {
+    public override void HandleInternal(TreeContext ctx) {
         a.Handle(ctx);
         b.Handle(ctx);
         ctx.DefineAndBindNode<T>(this, $"{ctx[a]}_op_{ctx[b]}", $"{ctx[a]} {op} {ctx[b]}");
@@ -44,7 +35,7 @@ public class CastNode<I, O> : Variable<O> {
     [SerializeReference]
     public Variable<I> a;
 
-    public override void Handle(TreeContext ctx) {
+    public override void HandleInternal(TreeContext ctx) {
         a.Handle(ctx);
         ctx.DefineAndBindNode<O>(this, $"{ctx[a]}_casted", $"{ctx[a]}");
     }
@@ -57,7 +48,7 @@ public class SwizzleNode<I, O> : Variable<O> {
     [SerializeField]
     public string swizzle;
 
-    public override void Handle(TreeContext ctx) {
+    public override void HandleInternal(TreeContext ctx) {
         a.Handle(ctx);
         ctx.DefineAndBindNode<O>(this, $"{ctx[a]}_swizzled", $"{ctx[a]}.{swizzle}");
     }
@@ -76,7 +67,7 @@ public class ConstructNode<I, O> : Variable<O> {
 
 
 
-    public override void Handle(TreeContext ctx) {
+    public override void HandleInternal(TreeContext ctx) {
         string C(Variable<I> variable) {
             if (variable == null) {
                 return "0.0";
@@ -110,19 +101,25 @@ public class ConstructNode<I, O> : Variable<O> {
 [Serializable]
 public class InjectedNode<T> : Variable<T> {
     public Inject<T> a;
-    public override void Handle(TreeContext ctx) {
+    public override void HandleInternal(TreeContext ctx) {
         ctx.Inject<T>(this, "inj", () => a.x);
+    }
+}
+
+public class FiniteDiffer<I, O> {
+    public Variable<O> FiniteDiffThatThang(Variable<I> input, float4 epsilon) {
+        return null;
     }
 }
 
 // Create a function with this an input and output as function in/out, where the function is called 3 or 4 times (depending on dimensionality)
 // Small changes in the input variable along those axis (with specified epsilon) and calculating the final changes in the output variable
-public class FiniteDifferenciated<I, O> : Variable<O> {
+public class FiniteDifferenciatedNode<I, O> : Variable<O> {
     public Variable<I> input;
     public Variable<O> output;
     public float4 diff;
 
-    public override void Handle(TreeContext context) {
+    public override void HandleInternal(TreeContext context) {
         throw new NotImplementedException();
     }
 }

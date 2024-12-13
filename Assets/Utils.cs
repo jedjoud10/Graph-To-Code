@@ -1,4 +1,5 @@
 //using System.Diagnostics;
+using System.Drawing;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -16,74 +17,23 @@ public static class Utils {
         Int,
     }
 
-    public enum Swizzle2Mode {
-        XY,
-        XZ,
-        YX,
-        YZ,
-        ZX,
-        ZY,
-    }
-
-    public enum Swizzle3Mode {
-        XYX,
-        XYZ,
-        XZX,
-        XZY,
-        YXY,
-        YXZ,
-        YZX,
-        YZY,
-        ZXY,
-        ZXZ,
-        ZYX,
-        ZYZ,
-    }
-
-    public enum Swizzle4Mode {
-        XYXY,
-        XYXZ,
-        XYZX,
-        XYZY,
-        XZXY,
-        XZXZ,
-        XZYX,
-        XZYZ,
-        YXYX,
-        YXYZ,
-        YXZX,
-        YXZY,
-        YZXY,
-        YZXZ,
-        YZYX,
-        YZYZ,
-        ZXYX,
-        ZXYZ,
-        ZXZX,
-        ZXZY,
-        ZYXY,
-        ZYXZ,
-        ZYZX,
-        ZYZY,
-    }
-
     public static string ToStringType(this StrictType data) {
         return data.ToString().ToLower();
     }
 
     public static string ToDefinableString<T>(T value) {
         string a = value.ToString();
-        object cock = (object)value;
+        object temp = (object)value;
 
         switch (Utils.TypeOf<T>()) {
             case Utils.StrictType.Float2:
-                float2 f2 = (float2)cock;
+                float2 f2 = (float2)temp;
                 return $"float2({f2.x},{f2.y})";
             case Utils.StrictType.Float3:
-                float3 f3 = (float3)cock;
+                float3 f3 = (float3)temp;
                 return $"float3({f3.x},{f3.y},{f3.z})";
             case Utils.StrictType.Float4:
-                float4 f4 = (float4)cock;
+                float4 f4 = (float4)temp;
                 return $"float3({f4.x},{f4.y},{f4.z})";
             default:
                 return value.ToString();
@@ -153,17 +103,40 @@ public static class Utils {
         }
     }
 
-    public static RenderTexture Create3DRenderTexture(int size, GraphicsFormat format, FilterMode filter, TextureWrapMode wrap) {
-        RenderTexture texture = new RenderTexture(size, size, 0, format);
-        texture.height = size;
-        texture.width = size;
+    public static RenderTexture Create3DRenderTexture(int width, int height, int depth, GraphicsFormat format, FilterMode filter, TextureWrapMode wrap, bool mips) {
+        RenderTexture texture = new RenderTexture(width, height, 0, format);
+        texture.width = width;
+        texture.height = height;
         texture.depth = 0;
-        texture.volumeDepth = size;
+        texture.volumeDepth = depth;
         texture.dimension = UnityEngine.Rendering.TextureDimension.Tex3D;
         texture.enableRandomWrite = true;
+        texture.useMipMap = mips;
+        texture.autoGenerateMips = false;
         texture.filterMode = filter;
         texture.wrapMode = wrap;
         texture.Create();
         return texture;
+    }
+
+    public static RenderTexture Create3DRenderTexture(int size, GraphicsFormat format, FilterMode filter, TextureWrapMode wrap, bool mips) {
+        return Create3DRenderTexture(size, size, size, format, filter, wrap, mips);
+    }
+
+    public static RenderTexture Create2DRenderTexture(int size, GraphicsFormat format, FilterMode filter, TextureWrapMode wrap, bool mips) {
+        return Create3DRenderTexture(size, size, 1, format, filter, wrap, mips);
+    }
+
+    public static string SwizzleFromFloat4<T>() {
+        switch (TypeOf<T>()) {
+            case StrictType.Float:
+                return "x";
+            case StrictType.Float2:
+                return "xy";
+            case StrictType.Float3:
+                return "xyz";
+            default:
+                throw new System.Exception();
+        }
     }
 }

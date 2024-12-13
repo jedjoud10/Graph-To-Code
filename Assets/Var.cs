@@ -5,10 +5,22 @@ using UnityEngine;
 using static TreeContext;
 
 
+enum RelationToPositionDimension {
+    One,
+    Two,
+    Three,
+    Other
+}
+
 [Serializable]
 public abstract class TreeNode {
-    // RECURSIVE!!!
-    public abstract void Handle(TreeContext context);
+    public virtual void Handle(TreeContext context) {
+        if (!context.Contains(this)) {
+            HandleInternal(context);
+        }
+    }
+    public abstract void HandleInternal(TreeContext context);
+
 }
 
 [Serializable]
@@ -45,13 +57,57 @@ public abstract class Variable<T> : TreeNode {
         return new CastNode<T, U> { a = this };
     }
 
-    public Variable<T> Cached(int sizeReductionPower, Variable<float> scale, FilterMode filter = FilterMode.Trilinear, TextureWrapMode wrap = TextureWrapMode.Mirror) {
-        return new Cached<T> { inner = this, sizeReductionPower = sizeReductionPower, wrap = wrap, filter = filter, scale = scale };
+    public Variable<T> Cached(int sizeReductionPower) {
+        return new CachedNode<T> { inner = this, sizeReductionPower = sizeReductionPower, sampler = new CachedSampler(), };
     }
 }
 
+public class Cacher<T> {
+    public int sizeReductionPower;
+    public Variable<float> scale;
+    public CachedSampler sampler;
+
+    public Cacher() {
+        this.sizeReductionPower = 0;
+        this.scale = 1.0f;
+        this.sampler = new CachedSampler();
+    }
+
+    public Variable<T> Cache(Variable<T> input) {
+        return new CachedNode<T> {
+            inner = input,
+            sizeReductionPower = sizeReductionPower,
+            sampler = sampler,
+        };
+    }
+}
+
+public class CachedSampler {
+    public Variable<float3> scale;
+    public Variable<float3> offset;
+
+    public FilterMode filter;
+    public TextureWrapMode wrap;
+    
+    public Variable<float> level;
+    public bool generateMips;
+
+    public bool bicubic;
+
+    public CachedSampler() {
+        this.scale = new float3(1.0);
+        this.filter = FilterMode.Trilinear;
+        this.wrap = TextureWrapMode.Clamp;
+        this.offset = float3.zero;
+        this.level = 0.0f;
+        this.bicubic = false;
+        this.generateMips = false;
+    }
+}
+
+
 public class NoOp<T> : Variable<T> {
-    public override void Handle(TreeContext context) {
+    public override void HandleInternal(TreeContext context) {
     }
 }
 
@@ -59,7 +115,7 @@ public class AssignOnly<T> : Variable<T> {
     public string name;
     public Variable<T> inner;
 
-    public override void Handle(TreeContext ctx) {
+    public override void HandleInternal(TreeContext ctx) {
         inner.Handle(ctx);
         ctx.DefineAndBindNode<T>(this, name, ctx[inner], false, false, true);
     }
@@ -69,7 +125,7 @@ public class AssignOnly2<T> : Variable<T> {
     public string value;
     public Variable<T> inner;
 
-    public override void Handle(TreeContext ctx) {
+    public override void HandleInternal(TreeContext ctx) {
         inner.Handle(ctx);
         ctx.DefineAndBindNode<T>(this, ctx[inner], value, false, false, true);
     }
@@ -83,27 +139,34 @@ public class AssignOnly2<T> : Variable<T> {
 // done, this now does the recursive handling within another scope so it's fine
 
 // TODO: Must create texture and create a variable that reads from it in the OG shader
+// yep, done! even comes with a texture scale parameter to scale the texture if we wish to do so
+
+
 // sub-TODO: can squish multiple cached calls into a single RGBA texture (of the same size) to help performance
 
 // TODO: dedupe stuff pls thx
+// fixed
 [Serializable]
-public class Cached<T> : Variable<T> {
+// TODO: Figure out why I set all of the variable stuff to be serializable to even begin with
+public class CachedNode<T> : Variable<T> {
     public Variable<T> inner;
     public int sizeReductionPower;
-    public FilterMode filter;
-    public TextureWrapMode wrap;
-    public Variable<float> scale;
+    public CachedSampler sampler;
 
     // looks up all the dependencies of a and makes sure that they are 2D (could be xy, yx, xz, whatever)
     // clones those dependencies to a secondary compute kernel
     // create temporary texture that is written to by that kernel
     // read said texture with appropriate swizzles in the main kernel
 
-    public override void Handle(TreeContext context) {
+    public override void HandleInternal(TreeContext context) {
         context.Hash(sizeReductionPower);
-        context.Hash(filter);
-        context.Hash(wrap);
-        scale.Handle(context);
+        context.Hash(sampler.filter);
+        context.Hash(sampler.wrap);
+        context.Hash(sampler.generateMips);
+        context.Hash(sampler.bicubic);
+        sampler.scale.Handle(context);
+        sampler.offset.Handle(context);
+        sampler.level.Handle(context);
 
         string scopeName = context.GenId($"CachedScope");
         string textureName = context.GenId($"_cached_texture");
@@ -138,8 +201,15 @@ public class Cached<T> : Variable<T> {
         context.currentScope = oldScopeIndex;
 
         int frac = (1 << sizeReductionPower);
+        string aa = $"(float3(1.0,1.0,1.0) * size / {frac})";
 
-        context.DefineAndBindNode<T>(this, $"{tempName}_cached", $"{textureName}_read.SampleLevel(sampler{textureName}_read, (float3(id) / size) * {context[scale]}, 0).x");
+        if (sampler.bicubic) {
+            context.DefineAndBindNode<T>(this, $"{tempName}_cached", $"SampleBicubic({textureName}_read, sampler{textureName}_read, (float3(id) / size) * {context[sampler.scale]}, {context[sampler.level]}, {aa}).{Utils.SwizzleFromFloat4<T>()}");
+        } else {
+            context.DefineAndBindNode<T>(this, $"{tempName}_cached", $"SampleBounded({textureName}_read, sampler{textureName}_read, (float3(id) / size) * {context[sampler.scale]} + {context[sampler.offset]}, {context[sampler.level]}, {aa}).{Utils.SwizzleFromFloat4<T>()}");
+        }
+
+        //context.DefineAndBindNode<T>(this, $"{tempName}_cached", $"{textureName}_read.SampleLevel(sampler{textureName}_read, (float3(id) / size) * {context[sampler.scale]} + {context[sampler.offset]}, {context[sampler.level]}).{Utils.SwizzleFromFloat4<T>()}");
 
         string compute = $@"
 #pragma kernel CS{scopeName}
@@ -159,8 +229,9 @@ void CS{scopeName}(uint3 id : SV_DispatchThreadID) {{
             sizeReductionPower = sizeReductionPower,
             type = Utils.TypeOf<T>(),
             writeKernel = $"CS{scopeName}",
-            filter = filter,
-            wrap = wrap,
+            filter = sampler.filter,
+            wrap = sampler.wrap,
+            mips = sampler.generateMips,
             readKernels = new List<string>() { $"CS{context.scopes[oldScopeIndex].name}" },
         });
     }

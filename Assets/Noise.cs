@@ -15,7 +15,7 @@ public abstract class AbstractNoiseNode<I, O> : Variable<O>, ICloneable {
 
     public abstract object Clone();
 
-    public override void Handle(TreeContext context) {
+    public override void HandleInternal(TreeContext context) {
         amplitude.Handle(context);
         scale.Handle(context);
         position.Handle(context);
@@ -32,8 +32,8 @@ public class SimplexNoiseNode<T> : AbstractNoiseNode<T, float> {
         };
     }
 
-    public override void Handle(TreeContext context) {
-        base.Handle(context);
+    public override void HandleInternal(TreeContext context) {
+        base.HandleInternal(context);
         string inner = $"({context[position]}) * {context[scale]}";
         string value = $"(snoise({inner})) * {context[amplitude]}";
         context.DefineAndBindNode<float>(this, $"{context[position]}_noised", value);
@@ -54,8 +54,8 @@ public class VoronoiNode<T> : AbstractNoiseNode<T, float> {
     public Voronoi.Type type;
 
 
-    public override void Handle(TreeContext context) {
-        base.Handle(context);
+    public override void HandleInternal(TreeContext context) {
+        base.HandleInternal(context);
         context.Hash(type);
         string suffix = "";
         string fn = "";
@@ -94,10 +94,10 @@ public class VoronoiseNode<T> : AbstractNoiseNode<T, float> {
         };
     }
 
-    public override void Handle(TreeContext context) {
+    public override void HandleInternal(TreeContext context) {
         lerpValue.Handle(context);
         randomness.Handle(context);
-        base.Handle(context);
+        base.HandleInternal(context);
         string inner = $"({context[position]}) * {context[scale]}";
         string value = $"(voronoise({inner}, {context[randomness]}, {context[lerpValue]})) * {context[amplitude]}";
         context.DefineAndBindNode<float>(this, $"{context[position]}_noised", value);
@@ -119,7 +119,7 @@ public class WarperNode : Variable<float2> {
     public float3 offsets_y = new float3(65.4238f, -551.15353f, 159.5435f);
     public float3 offsets_z = new float3(-43.85454f, -3346.234f, 54.7653f);
 
-    public override void Handle(TreeContext context) {
+    public override void HandleInternal(TreeContext context) {
         warpingScale2.Handle(context);
         warpingScale.Handle(context);
         position.Handle(context);
@@ -163,7 +163,7 @@ public class FractalNoiseNode<T> : AbstractNoiseNode<T, float> {
         };
     }
 
-    public override void Handle(TreeContext context) {
+    public override void HandleInternal(TreeContext context) {
         lacunarity.Handle(context);
         position.Handle(context);
         persistence.Handle(context);
@@ -203,8 +203,8 @@ public class FractalNoiseNode<T> : AbstractNoiseNode<T, float> {
                 break;
         }
 
-        context.AddLine("}");
         context.Indent--;
+        context.AddLine("}");
 
         context.DefineAndBindNode<float>(this, $"{context[position]}_fbm", context[sum]);
     }

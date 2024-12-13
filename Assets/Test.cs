@@ -9,6 +9,8 @@ public class Test : VoxelGraph {
     public Inject<float> amplitude;
     public Inject<float> scale2;
     public Inject<float> amplitude2;
+    public Inject<float3> offset2;
+    public bool bicubic;
     public Voronoi.Type type;
     public FractalNoise.FractalMode mode;
     public int octaves;
@@ -25,7 +27,13 @@ public class Test : VoxelGraph {
 
         // cache the result of the first noise (diff. compute kernel -> lower res texture)
         var test = fractal.Evaluate(temp);
-        var cached = test.Cached(reduction, 1.0f);
+
+        var cacher = new Cacher<float>() {
+            sizeReductionPower = reduction,
+            sampler = new CachedSampler() { offset = offset2, bicubic = bicubic },
+        };
+
+        var cached = cacher.Cache(test);
 
         // high-res noise (applied at base level)
         Simplex simplex2 = new Simplex { amplitude = amplitude2, scale = scale2 };

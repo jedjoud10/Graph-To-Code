@@ -51,6 +51,7 @@ public class TreeContext {
         public List<string> readKernels;
         public string writeKernel;
         public int sizeReductionPower;
+        public bool mips;
     }
 
     [Serializable]
@@ -194,32 +195,7 @@ public class TreeContext {
         DefineAndBindNode(node, Utils.TypeOf<T>(), name, value, constant, rngName, assignOnly);
     }
 
-    /*
-    public string DefineVariable<T>(string name, string value, bool constant = false) {
-        string newName = GenId(name);
-        string suffix = constant ? "const " : "";
-        lines.Add(suffix + Utils.TypeOf<T>().ToStringType() + " " + newName + " = " + value + ";");
-        return newName;
-    }
-
-
-    */
-
-
-
-    /*
-
-    */
-
     public void Parse(TreeNode head) {
         head.Handle(this);
     }
-
-    /*
-    public (List<TreeNode>, int) Handlinate(TreeNode head) {
-        PreHandle preHandle = new PreHandle(head);
-        var symbols = preHandle.TreeNodate(this);
-        return (symbols, preHandle.hash);
-    }
-    */
 }

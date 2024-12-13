@@ -119,6 +119,43 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!84 &366749260
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 64
+  m_Height: 64
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 49
+  m_MipMap: 0
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 2
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 3
+  m_VolumeDepth: 64
+  m_ShadowSamplingMode: 2
 --- !u!1 &864127146
 GameObject:
   m_ObjectHideFlags: 0
@@ -308,7 +345,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
---- !u!84 &1320707269
+--- !u!84 &1630952088
 RenderTexture:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -320,14 +357,14 @@ RenderTexture:
     Hash: 00000000000000000000000000000000
   m_IsAlphaChannelOptional: 0
   serializedVersion: 6
-  m_Width: 64
-  m_Height: 64
+  m_Width: 32
+  m_Height: 32
   m_AntiAliasing: 1
   m_MipCount: -1
   m_DepthStencilFormat: 0
   m_ColorFormat: 49
   m_MipMap: 0
-  m_GenerateMips: 1
+  m_GenerateMips: 0
   m_SRGB: 0
   m_UseDynamicScale: 0
   m_UseDynamicScaleExplicit: 0
@@ -336,14 +373,14 @@ RenderTexture:
   m_EnableRandomWrite: 1
   m_TextureSettings:
     serializedVersion: 2
-    m_FilterMode: 1
+    m_FilterMode: 2
     m_Aniso: 1
     m_MipBias: 0
     m_WrapU: 1
     m_WrapV: 1
     m_WrapW: 1
   m_Dimension: 3
-  m_VolumeDepth: 64
+  m_VolumeDepth: 32
   m_ShadowSamplingMode: 2
 --- !u!1 &2080444267
 GameObject:
@@ -391,18 +428,46 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6069082256f621d409621e46d0e9ea14, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shader: {fileID: -5579638545521383746, guid: 24c52c645c125964bb398227a33316a7, type: 3}
+  shader: {fileID: 7200000, guid: e44d8a16101462a4a9a707f536b21736, type: 3}
+  computeKernelNameAndDepth:
+  - name: CS_4
+    depth: 1
+    sizeReductionPower: 1
+  - name: CSVoxel
+    depth: 0
+    sizeReductionPower: 0
+  tempTextures:
+  - name: _5
+    type: 0
+    filter: 2
+    wrap: 1
+    readKernels:
+    - CSVoxel
+    writeKernel: CS_4
+    sizeReductionPower: 1
+    mips: 0
+  debugName: 0
   offset:
     x: -0.3
   mul:
-    x: -21.48
+    x: 0.09
   scale:
-    x: 2.77
+    x: 0.01
   amplitude:
-    x: 0.3
+    x: 42.13
+  scale2:
+    x: 0.1
+  amplitude2:
+    x: 0
+  offset2:
+    x:
+      x: 0
+      y: 0
+      z: 0
   type: 0
   mode: 2
-  octaves: 3
+  octaves: 1
+  reduction: 1
 --- !u!114 &2080444270
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -417,7 +482,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   previewing: 1
   opacity: 1
-  quality: 2
+  quality: 1
   gradient:
     serializedVersion: 2
     key0: {r: 1, g: 1, b: 1, a: 1}
@@ -449,7 +514,6 @@ MonoBehaviour:
     m_NumColorKeys: 4
     m_NumAlphaKeys: 2
   filterMode: 1
-  texture: {fileID: 1320707269}
   size: 64
 --- !u!114 &2080444271
 MonoBehaviour:
@@ -463,11 +527,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bff9610f717f4a14eaddd395ae55d5c8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  seed: 5066
-  permutationSeed: {x: -335, y: -448, z: 682}
-  moduloSeed: {x: 720, y: -135, z: 450}
-  transformScale: {x: 0.01, y: -0.01, z: 0.01}
-  transformOffset: {x: 8.6, y: -38.04, z: 0}
+  seed: -671
+  permutationSeed: {x: -453, y: 402, z: 577}
+  moduloSeed: {x: 556, y: -695, z: 888}
+  transformScale: {x: 2, y: 2, z: 2}
+  transformOffset: {x: 12.75, y: -38.04, z: 0}
+  texturesList:
+  - {fileID: 366749260}
+  - {fileID: 1630952088}
+  dirtyTexturesRecompilation: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
