@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Mathematics;
+using UnityEngine;
 using static TreeContext;
 
 
@@ -44,8 +45,8 @@ public abstract class Variable<T> : TreeNode {
         return new CastNode<T, U> { a = this };
     }
 
-    public Variable<T> Cached(string name, int sizeReductionPower) {
-        return new Cached<T> { inner = this, name = name, sizeReductionPower = sizeReductionPower };
+    public Variable<T> Cached(int sizeReductionPower, Variable<float> scale, FilterMode filter = FilterMode.Trilinear, TextureWrapMode wrap = TextureWrapMode.Mirror) {
+        return new Cached<T> { inner = this, sizeReductionPower = sizeReductionPower, wrap = wrap, filter = filter, scale = scale };
     }
 }
 
@@ -88,8 +89,10 @@ public class AssignOnly2<T> : Variable<T> {
 [Serializable]
 public class Cached<T> : Variable<T> {
     public Variable<T> inner;
-    public string name;
     public int sizeReductionPower;
+    public FilterMode filter;
+    public TextureWrapMode wrap;
+    public Variable<float> scale;
 
     // looks up all the dependencies of a and makes sure that they are 2D (could be xy, yx, xz, whatever)
     // clones those dependencies to a secondary compute kernel
@@ -98,16 +101,20 @@ public class Cached<T> : Variable<T> {
 
     public override void Handle(TreeContext context) {
         context.Hash(sizeReductionPower);
+        context.Hash(filter);
+        context.Hash(wrap);
+        scale.Handle(context);
 
-        string textureNameWrite = context.GenId($"{name}_cached_texture_write");
-        string textureNameRead = context.GenId($"{name}_cached_texture_read");
-        context.properties.Add($"RWTexture3D<{Utils.TypeOf<T>().ToStringType()}> {textureNameWrite};");
-        context.properties.Add($"Texture3D {textureNameRead};");
+        string scopeName = context.GenId($"CachedScope");
+        string textureName = context.GenId($"_cached_texture");
+        context.properties.Add($"RWTexture3D<{Utils.TypeOf<T>().ToStringType()}> {textureName}_write;");
+        context.properties.Add($"Texture3D {textureName}_read;");
+        context.properties.Add($"SamplerState sampler{textureName}_read;");
 
         int index = context.scopes.Count;
         int oldScopeIndex = context.currentScope;
         context.scopes.Add(new TreeContext.KernelScope(context.scopeDepth + 1) {
-            name = name,
+            name = scopeName,
             output = (Utils.TypeOf<T>(), inner),
         });
 
@@ -132,27 +139,28 @@ public class Cached<T> : Variable<T> {
 
         int frac = (1 << sizeReductionPower);
 
-        context.DefineAndBindNode<T>(this, $"{tempName}_cached", $"{textureNameRead}.SampleLevel(my_trilinear_clamp_sampler, (float3(id) / 64.0) / {frac}, 0).x");
+        context.DefineAndBindNode<T>(this, $"{tempName}_cached", $"{textureName}_read.SampleLevel(sampler{textureName}_read, (float3(id) / size) * {context[scale]}, 0).x");
 
         string compute = $@"
-#pragma kernel CS{name}
+#pragma kernel CS{scopeName}
 [numthreads(8, 8, 8)]
-void CS{name}(uint3 id : SV_DispatchThreadID) {{
-    {textureNameWrite}[id] = {name}((float3(id * {frac}) + offset) * scale, id);
+void CS{scopeName}(uint3 id : SV_DispatchThreadID) {{
+    {textureName}_write[id] = {scopeName}((float3(id * {frac}) + offset) * scale, id);
 }}";
 
         context.computeKernels.Add(compute);
         context.computeKernelNameAndDepth.Add(new ComputeKernelDispatch {
-            name = $"CS{name}",
+            name = $"CS{scopeName}",
             depth = context.scopeDepth + 1,
             sizeReductionPower = sizeReductionPower,
         });
         context.tempTextures.Add(new TreeContext.TempTexture {
-            readName = textureNameRead,
-            writeName = textureNameWrite,
+            name = textureName,
             sizeReductionPower = sizeReductionPower,
             type = Utils.TypeOf<T>(),
-            writeKernel = $"CS{name}",
+            writeKernel = $"CS{scopeName}",
+            filter = filter,
+            wrap = wrap,
             readKernels = new List<string>() { $"CS{context.scopes[oldScopeIndex].name}" },
         });
     }

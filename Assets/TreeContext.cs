@@ -3,6 +3,7 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class PropertyInjector {
     public PropertyInjector() {
@@ -41,15 +42,18 @@ public class TreeContext {
         }
     }
 
+    [Serializable]
     public class TempTexture {
-        public string writeName;
-        public string readName;
+        public string name;
         public Utils.StrictType type;
+        public FilterMode filter;
+        public TextureWrapMode wrap;
         public List<string> readKernels;
         public string writeKernel;
         public int sizeReductionPower;
     }
 
+    [Serializable]
     public class ComputeKernelDispatch {
         public string name;
         public int depth;

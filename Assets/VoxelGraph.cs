@@ -13,11 +13,10 @@ public abstract class VoxelGraph : MonoBehaviour {
     public ComputeShader shader;
     [HideInInspector]
     public PropertyInjector injector;
-    [HideInInspector]
     public List<TreeContext.ComputeKernelDispatch> computeKernelNameAndDepth;
-    [HideInInspector]
     public List<TreeContext.TempTexture> tempTextures;
     private int hash;
+    public bool debugName = true;
 
     // Execute the voxel graph at a specific position and fetch the density and material values
     public abstract void Execute(Variable<float3> position, out Variable<float> density);
@@ -25,7 +24,7 @@ public abstract class VoxelGraph : MonoBehaviour {
     // This transpile the voxel graph into HLSL code that can be executed on the GPU
     // This can be done outside the editor, but shader compilation MUST be done in editor
     public string Transpile() {
-        TreeContext ctx = new TreeContext(true);
+        TreeContext ctx = new TreeContext(debugName);
         
         Variable<float3> position = ctx.AliasExternalInput<float3>("position");
         ctx.start = position;
@@ -42,6 +41,7 @@ public abstract class VoxelGraph : MonoBehaviour {
         lines.AddRange(ctx.Properties);
         lines.Add("RWTexture3D<float> voxels;");
 
+        lines.Add("int size;");
         lines.Add("int3 permuationSeed;\nint3 moduloSeed;");
         lines.Add("float3 scale;\nfloat3 offset;");
 

@@ -49,13 +49,12 @@ public class VoxelGraphExecutor : MonoBehaviour {
             }
 
             textures = new Dictionary<string, RenderTexture> {
-                { "voxels", Utils.Create3DRenderTexture(size, GraphicsFormat.R32_SFloat) }
+                { "voxels", Utils.Create3DRenderTexture(size, GraphicsFormat.R32_SFloat, FilterMode.Trilinear, TextureWrapMode.Repeat) }
             };
 
             foreach (var temp in graph.tempTextures) {
-                RenderTexture rt = Utils.Create3DRenderTexture(size / (1 << temp.sizeReductionPower), ToGfxFormat(temp.type));
-                textures.Add(temp.readName, rt);
-                textures.Add(temp.writeName, rt);
+                RenderTexture rt = Utils.Create3DRenderTexture(size / (1 << temp.sizeReductionPower), ToGfxFormat(temp.type), temp.filter, temp.wrap);
+                textures.Add(temp.name, rt);
             }
         }
     }
@@ -79,6 +78,7 @@ public class VoxelGraphExecutor : MonoBehaviour {
         //shader.SetInts("offset", new int[] { offset.x, offset.y, offset.z });
         var shader = graph.shader;
         shader.SetTexture(0, "voxels", textures["voxels"]);
+        shader.SetInt("size", size);
         shader.SetInts("permuationSeed", new int[] { permutationSeed.x, permutationSeed.y, permutationSeed.z });
         shader.SetInts("moduloSeed", new int[] { moduloSeed.x, moduloSeed.y, moduloSeed.z });
         shader.SetVector("offset", transformOffset);
@@ -87,12 +87,14 @@ public class VoxelGraphExecutor : MonoBehaviour {
 
         
         foreach (var temp in graph.tempTextures) {
+            // Set the texture for the kernel that will write to the texture
             int writeKernelId = shader.FindKernel(temp.writeKernel);
-            shader.SetTexture(writeKernelId, temp.writeName, textures[temp.writeName]);
+            shader.SetTexture(writeKernelId, temp.name + "_write", textures[temp.name]);
 
+            // Set the texture for the kernels that will read from the texture
             foreach (var readKernel in temp.readKernels) {
                 int readKernelId = shader.FindKernel(readKernel);
-                shader.SetTexture(readKernelId, temp.readName, textures[temp.readName]);
+                shader.SetTexture(readKernelId, temp.name + "_read", textures[temp.name]);
             }
         }
 

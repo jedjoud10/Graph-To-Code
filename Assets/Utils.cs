@@ -153,7 +153,7 @@ public static class Utils {
         }
     }
 
-    public static RenderTexture Create3DRenderTexture(int size, GraphicsFormat format) {
+    public static RenderTexture Create3DRenderTexture(int size, GraphicsFormat format, FilterMode filter, TextureWrapMode wrap) {
         RenderTexture texture = new RenderTexture(size, size, 0, format);
         texture.height = size;
         texture.width = size;
@@ -161,6 +161,8 @@ public static class Utils {
         texture.volumeDepth = size;
         texture.dimension = UnityEngine.Rendering.TextureDimension.Tex3D;
         texture.enableRandomWrite = true;
+        texture.filterMode = filter;
+        texture.wrapMode = wrap;
         texture.Create();
         return texture;
     }
