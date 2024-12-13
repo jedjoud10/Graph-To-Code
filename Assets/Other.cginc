@@ -48,6 +48,27 @@ float4 SampleBicubic(Texture3D tex, SamplerState test, float3 uv, float lod, flo
 	return result;
 }
 
+// https://gist.github.com/supertask/702439b84a341e5f45c79358135c9df6
+float Remap(float v, float minOld, float maxOld, float minNew, float maxNew)
+{
+	return minNew + (v - minOld) * (maxNew - minNew) / (maxOld - minOld);
+}
+
+float2 Remap(float2 v, float2 minOld, float2 maxOld, float2 minNew, float2 maxNew)
+{
+	return minNew + (v - minOld) * (maxNew - minNew) / (maxOld - minOld);
+}
+
+float3 Remap(float3 v, float3 minOld, float3 maxOld, float3 minNew, float3 maxNew)
+{
+	return minNew + (v - minOld) * (maxNew - minNew) / (maxOld - minOld);
+}
+
+float4 Remap(float4 v, float4 minOld, float4 maxOld, float4 minNew, float4 maxNew)
+{
+	return minNew + (v - minOld) * (maxNew - minNew) / (maxOld - minOld);
+}
+
 float4 SampleBounded(Texture3D tex, SamplerState test, float3 uv, float lod, float3 texSize)
 {
 	if (any(uv < 0.0) || any(uv >= 1.0))

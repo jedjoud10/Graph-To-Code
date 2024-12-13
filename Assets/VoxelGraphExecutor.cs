@@ -20,8 +20,8 @@ public class VoxelGraphExecutor : MonoBehaviour {
     public Vector3 transformOffset;
     private VoxelGraph graph;
 
-    public Dictionary<string, RenderTexture> textures;
-    public List<RenderTexture> texturesList;
+    public Dictionary<string, Texture> textures;
+    public List<Texture> texturesList;
     public bool dirtyTexturesRecompilation;
 
     public void CreateIfNull(int size) {
@@ -45,18 +45,26 @@ public class VoxelGraphExecutor : MonoBehaviour {
 
             if (textures != null) {
                 foreach (var (name, tex) in textures) {
-                    tex.Release();
+                    if (tex is RenderTexture casted) {
+                        casted.Release();
+                    }
                 }
             }
 
-            texturesList = new List<RenderTexture>();
-            textures = new Dictionary<string, RenderTexture> {
+            texturesList = new List<Texture>();
+            textures = new Dictionary<string, Texture> {
                 { "voxels", Utils.Create3DRenderTexture(size, GraphicsFormat.R32_SFloat, FilterMode.Trilinear, TextureWrapMode.Repeat, false) }
             };
 
-            foreach (var temp in graph.tempTextures) {
+            foreach (var (no, temp) in graph.tempTextures) {
                 RenderTexture rt = Utils.Create3DRenderTexture(size / (1 << temp.sizeReductionPower), ToGfxFormat(temp.type), temp.filter, temp.wrap, temp.mips);
                 textures.Add(temp.name, rt);
+            }
+
+            foreach (var (no, temp) in graph.gradientTextures) {
+                Texture2D texture = new Texture2D(temp.size, 1, DefaultFormat.LDR, TextureCreationFlags.None);
+                texture.wrapMode = TextureWrapMode.Clamp;
+                textures.Add(temp.name, texture);
             }
 
             texturesList = textures.Values.ToList();
@@ -87,10 +95,18 @@ public class VoxelGraphExecutor : MonoBehaviour {
         shader.SetInts("moduloSeed", new int[] { moduloSeed.x, moduloSeed.y, moduloSeed.z });
         shader.SetVector("offset", transformOffset);
         shader.SetVector("scale", transformScale);
-        graph.injector.UpdateInjected(shader);
+        graph.injector.UpdateInjected(shader, textures);
 
-        
-        foreach (var temp in graph.tempTextures) {
+        foreach (var (no, temp) in graph.gradientTextures) {
+            // Set the texture for the kernels that will read from the texture
+            foreach (var readKernel in temp.readKernels) {
+                int readKernelId = shader.FindKernel(readKernel);
+                shader.SetTexture(readKernelId, temp.name + "_read", textures[temp.name]);
+            }
+        }
+
+
+        foreach (var (no, temp) in graph.tempTextures) {
             // Set the texture for the kernel that will write to the texture
             int writeKernelId = shader.FindKernel(temp.writeKernel);
             shader.SetTexture(writeKernelId, temp.name + "_write", textures[temp.name]);
@@ -102,7 +118,9 @@ public class VoxelGraphExecutor : MonoBehaviour {
             }
 
             if (temp.mips) {
-                textures[temp.name].GenerateMips();
+                if (textures[temp.name] is RenderTexture texture) {
+                    texture.GenerateMips();
+                }
             }
         }
 

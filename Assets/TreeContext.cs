@@ -6,15 +6,16 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 public class PropertyInjector {
+    public List<Action<ComputeShader, Dictionary<string, Texture>>> injected;
+
     public PropertyInjector() {
-        this.injected = new Dictionary<string, (Utils.StrictType, Func<object>)>();
+        this.injected = new List<Action<ComputeShader, Dictionary<string, Texture>>>();
     }
 
-    public Dictionary<string, (Utils.StrictType, Func<object>)> injected;
 
-    public void UpdateInjected(ComputeShader shader) {
-        foreach (var (name, (type, func)) in injected) {
-            Utils.SetComputeShaderObj(shader, name, func(), type);
+    public void UpdateInjected(ComputeShader shader, Dictionary<string, Texture> textures) {
+        foreach (var item in injected) {
+            item.Invoke(shader, textures);
         }
     }
 }
@@ -55,13 +56,21 @@ public class TreeContext {
     }
 
     [Serializable]
+    public class GradientTexture {
+        public string name;
+        public List<string> readKernels;
+        public int size;
+    }
+
+    [Serializable]
     public class ComputeKernelDispatch {
         public string name;
         public int depth;
         public int sizeReductionPower;
     }
 
-    public List<TempTexture> tempTextures;
+    public Dictionary<string, TempTexture> tempTextures;
+    public Dictionary<string, GradientTexture> gradientTextures;
     public List<string> computeKernels;
     public List<ComputeKernelDispatch> computeKernelNameAndDepth;
     public Dictionary<string, int> varNamesToId;
@@ -103,16 +112,24 @@ public class TreeContext {
         this.counter = 0;
         this.computeKernels = new List<string>();
         this.computeKernelNameAndDepth = new List<ComputeKernelDispatch>();
-        this.tempTextures = new List<TempTexture>();
+        this.tempTextures = new Dictionary<string, TempTexture>();
+        this.gradientTextures = new Dictionary<string, GradientTexture>();
     }
 
     public void Inject<T>(InjectedNode<T> node, string name, Func<object> func) {
         if (!Contains(node)) {
             string newName = GenId(name);
-            injector.injected.Add(newName, (Utils.TypeOf<T>(), () => func()));
+            injector.injected.Add((compute, textures) => {
+                Utils.SetComputeShaderObj(compute, newName, func(), Utils.TypeOf<T>());
+            });
             properties.Add(Utils.TypeOf<T>().ToStringType() + " " + newName + ";");
             Add(node, newName);
         }
+    }
+
+    public void Inject2(string name, Action<ComputeShader, Dictionary<string, Texture>> func) {
+        string newName = GenId(name);
+        injector.injected.Add(func);
     }
 
     // TODO: Create a function header with the specific variables as either input variables or output variables

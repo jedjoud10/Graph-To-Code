@@ -153,6 +153,15 @@ public class CachedNode<T> : Variable<T> {
     public int sizeReductionPower;
     public CachedSampler sampler;
 
+    public override void Handle(TreeContext context) {
+        if (!context.Contains(this)) {
+            HandleInternal(context);
+        } else {
+            string name = context[this];
+            context.tempTextures[name].readKernels.Add($"CS{context.scopes[context.currentScope].name}");
+        }
+    }
+
     // looks up all the dependencies of a and makes sure that they are 2D (could be xy, yx, xz, whatever)
     // clones those dependencies to a secondary compute kernel
     // create temporary texture that is written to by that kernel
@@ -224,7 +233,7 @@ void CS{scopeName}(uint3 id : SV_DispatchThreadID) {{
             depth = context.scopeDepth + 1,
             sizeReductionPower = sizeReductionPower,
         });
-        context.tempTextures.Add(new TreeContext.TempTexture {
+        context.tempTextures.Add($"{tempName}_cached", new TreeContext.TempTexture {
             name = textureName,
             sizeReductionPower = sizeReductionPower,
             type = Utils.TypeOf<T>(),

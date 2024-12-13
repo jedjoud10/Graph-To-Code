@@ -119,7 +119,53 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!84 &366749260
+--- !u!28 &326178704
+Texture2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 3
+  m_Width: 32
+  m_Height: 1
+  m_CompleteImageSize: 128
+  m_MipsStripped: 0
+  m_TextureFormat: 4
+  m_MipCount: 1
+  m_IsReadable: 1
+  m_IsPreProcessed: 0
+  m_IgnoreMipmapLimit: 1
+  m_MipmapLimitGroupName: 
+  m_StreamingMipmaps: 0
+  m_StreamingMipmapsPriority: 0
+  m_VTOnly: 0
+  m_AlphaIsTransparency: 0
+  m_ImageCount: 1
+  m_TextureDimension: 2
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_LightmapFormat: 0
+  m_ColorSpace: 0
+  m_PlatformBlob: 
+  image data: 128
+  _typelessdata: 000000ff000000ff000000ff000000ff000000ff000000ff202020ff5b5b5bff969696ffd1d1d1ffe6e6e6ffe0e0e0ffdadadaffd4d4d4ffd8d8d8ffe3e3e3ffeeeeeefff9f9f9fffafafaffefefefffe3e3e3ffd7d7d7ffccccccffc0c0c0ffb8b8b8ffc1c1c1ffcacacaffd3d3d3ffdcdcdcffe5e5e5ffedededfff6f6f6ff
+  m_StreamData:
+    serializedVersion: 2
+    offset: 0
+    size: 0
+    path: 
+--- !u!84 &643467536
 RenderTexture:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -150,9 +196,9 @@ RenderTexture:
     m_FilterMode: 2
     m_Aniso: 1
     m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
   m_Dimension: 3
   m_VolumeDepth: 64
   m_ShadowSamplingMode: 2
@@ -345,7 +391,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
---- !u!84 &1630952088
+--- !u!84 &1387144829
 RenderTexture:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -357,8 +403,8 @@ RenderTexture:
     Hash: 00000000000000000000000000000000
   m_IsAlphaChannelOptional: 0
   serializedVersion: 6
-  m_Width: 32
-  m_Height: 32
+  m_Width: 64
+  m_Height: 64
   m_AntiAliasing: 1
   m_MipCount: -1
   m_DepthStencilFormat: 0
@@ -376,11 +422,11 @@ RenderTexture:
     m_FilterMode: 2
     m_Aniso: 1
     m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
   m_Dimension: 3
-  m_VolumeDepth: 32
+  m_VolumeDepth: 64
   m_ShadowSamplingMode: 2
 --- !u!1 &2080444267
 GameObject:
@@ -430,44 +476,69 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shader: {fileID: 7200000, guid: e44d8a16101462a4a9a707f536b21736, type: 3}
   computeKernelNameAndDepth:
-  - name: CS_4
+  - name: CS_6
     depth: 1
-    sizeReductionPower: 1
+    sizeReductionPower: 0
   - name: CSVoxel
     depth: 0
     sizeReductionPower: 0
-  tempTextures:
-  - name: _5
-    type: 0
-    filter: 2
-    wrap: 1
-    readKernels:
-    - CSVoxel
-    writeKernel: CS_4
-    sizeReductionPower: 1
-    mips: 0
   debugName: 0
   offset:
     x: -0.3
   mul:
     x: 0.09
   scale:
-    x: 0.01
+    x: 0.005
   amplitude:
-    x: 42.13
+    x: 15
   scale2:
     x: 0.1
   amplitude2:
-    x: 0
+    x: 0.21
   offset2:
     x:
       x: 0
       y: 0
       z: 0
+  minimum:
+    x: -7.7
+  maximum:
+    x: 16.68
+  bicubic: 1
   type: 0
   mode: 2
-  octaves: 1
-  reduction: 1
+  gradient:
+    serializedVersion: 2
+    key0: {r: 0, g: 0, b: 0, a: 1}
+    key1: {r: 0.9150943, g: 0.9150943, b: 0.9150943, a: 1}
+    key2: {r: 0.8207547, g: 0.8207547, b: 0.8207547, a: 0}
+    key3: {r: 1, g: 1, b: 1, a: 0}
+    key4: {r: 0.7169812, g: 0.7169812, b: 0.7169812, a: 0}
+    key5: {r: 1, g: 1, b: 1, a: 0}
+    key6: {r: 0, g: 0, b: 0, a: 0}
+    key7: {r: 0, g: 0, b: 0, a: 0}
+    ctime0: 11180
+    ctime1: 19275
+    ctime2: 27371
+    ctime3: 36044
+    ctime4: 48766
+    ctime5: 65535
+    ctime6: 0
+    ctime7: 0
+    atime0: 0
+    atime1: 65535
+    atime2: 0
+    atime3: 0
+    atime4: 0
+    atime5: 0
+    atime6: 0
+    atime7: 0
+    m_Mode: 0
+    m_ColorSpace: 0
+    m_NumColorKeys: 6
+    m_NumAlphaKeys: 2
+  octaves: 3
+  reduction: 0
 --- !u!114 &2080444270
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -533,8 +604,9 @@ MonoBehaviour:
   transformScale: {x: 2, y: 2, z: 2}
   transformOffset: {x: 12.75, y: -38.04, z: 0}
   texturesList:
-  - {fileID: 366749260}
-  - {fileID: 1630952088}
+  - {fileID: 1387144829}
+  - {fileID: 643467536}
+  - {fileID: 326178704}
   dirtyTexturesRecompilation: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

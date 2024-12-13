@@ -5,6 +5,7 @@ using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
+using static TreeContext;
 using static UnityEditor.Timeline.TimelinePlaybackControls;
 
 // A voxel graph is the base class to inherit from to be able to write custom voxel stuff
@@ -14,7 +15,8 @@ public abstract class VoxelGraph : MonoBehaviour {
     [HideInInspector]
     public PropertyInjector injector;
     public List<TreeContext.ComputeKernelDispatch> computeKernelNameAndDepth;
-    public List<TreeContext.TempTexture> tempTextures;
+    public Dictionary<string, TreeContext.TempTexture> tempTextures;
+    public Dictionary<string, TreeContext.GradientTexture> gradientTextures;
     private int hash;
     public bool debugName = true;
 
@@ -85,9 +87,12 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
 
         injector = ctx.injector;
         ctx.computeKernelNameAndDepth.Sort((TreeContext.ComputeKernelDispatch a, TreeContext.ComputeKernelDispatch b) => { return b.depth.CompareTo(a.depth); });
+        
         computeKernelNameAndDepth = ctx.computeKernelNameAndDepth;
-        GetComponent<VoxelGraphExecutor>().dirtyTexturesRecompilation = true;
         tempTextures = ctx.tempTextures;
+        gradientTextures = ctx.gradientTextures;
+
+        GetComponent<VoxelGraphExecutor>().dirtyTexturesRecompilation = true;
         return lines.Aggregate("", (a, b) => a + "\n" + b);
     }
 

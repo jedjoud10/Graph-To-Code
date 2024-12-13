@@ -34,10 +34,38 @@ public static class Utils {
                 return $"float3({f3.x},{f3.y},{f3.z})";
             case Utils.StrictType.Float4:
                 float4 f4 = (float4)temp;
-                return $"float3({f4.x},{f4.y},{f4.z})";
+                return $"float4({f4.x},{f4.y},{f4.z},{f4.w})";
             default:
                 return value.ToString();
         }
+    }
+
+    public static Variable<T> Zero<T>() {
+        T def = default(T);
+        return new DefineNode<T> { value = ToDefinableString(def), constant = true };
+    }
+
+    public static Variable<T> One<T>(bool negate = false) {
+        string Test(StrictType value) {
+            switch (value) {
+                case Utils.StrictType.Float2:
+                    return "float2(1.0,1.0)";
+                case Utils.StrictType.Float3:
+                    return "float3(1.0,1.0,1.0)";
+                case Utils.StrictType.Float4:
+                    return "float4(1.0,1.0,1.0)";
+                default:
+                    return value.ToString();
+            }
+        }
+
+        string temp = Test(TypeOf<T>());
+
+        if (negate) {
+            temp = $"(-{temp})";
+        }
+
+        return new DefineNode<T> { value = temp, constant = true };
     }
 
     // Convert type data to string

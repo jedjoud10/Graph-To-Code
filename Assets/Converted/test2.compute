@@ -1,13 +1,17 @@
 
-float3 _2;
-RWTexture3D<float> _5_write;
-Texture3D _5_read;
-SamplerState sampler_5_read;
-float _13;
-float _14;
-float _18;
-float _19;
-float _24;
+float _1;
+float _2;
+float3 _4;
+RWTexture3D<float> _7_write;
+Texture3D _7_read;
+SamplerState sampler_7_read;
+float _15;
+float _16;
+Texture1D _20_read;
+SamplerState sampler_20_read;
+float _26;
+float _27;
+float _32;
 RWTexture3D<float> voxels;
 int size;
 int3 permuationSeed;
@@ -18,36 +22,40 @@ float3 offset;
 #include "Assets/Other.cginc"
 #include "Assets/SDF.cginc"
 // defined nodes: 12, depth: 1, total lines: 15 
-float _4(float3 position, uint3 id) {
-	const float _6 = 2;
-	float2 _7 = position.xz;
-	const float _8 = 0.5;
-	float _9 = 0.0;
-	float _10 = 1.0;
-	float _11 = 1.0;
+float _6(float3 position, uint3 id) {
+	const float _8 = 2;
+	float2 _9 = position.xz;
+	const float _10 = 0.5;
+	float _11 = 0.0;
+	float _12 = 1.0;
+	float _13 = 1.0;
 	[unroll]
-	for(uint i = 0; i < 1; i++) {
-		_10 *= _6;
-		_11 *= _8;
-		float2 _12 = _7 * _10 + hash31(float(i));
-		float _15 = (snoise((_12) * _14)) * _13;
-		_9 += _15 * _11;
+	for(uint i = 0; i < 3; i++) {
+		_12 *= _8;
+		_13 *= _10;
+		float2 _14 = _9 * _12 + hash31(float(i));
+		float _17 = (snoise((_14) * _16)) * _15;
+		_11 += _17 * _13;
 	}
-	float _16 = _9;
-	return _16;
+	float _18 = _11;
+	return _18;
 }
 
-// defined nodes: 13, depth: 0, total lines: 8 
+// defined nodes: 19, depth: 0, total lines: 12 
 float Voxel(float3 position, uint3 id) {
-	const float3 _1 = float3(1,1,1);
-	const float _3 = 0;
-	float _17 = SampleBicubic(_5_read, sampler_5_read, (float3(id) / size) * _1, _3, (float3(1.0,1.0,1.0) * size / 1)).x;
-	float _20 = (snoise((position) * _19)) * _18;
-	float _21 = _17 + _20;
-	float _22 = position.y;
-	float _23 = _21 + _22;
-	float _25 = _23 * _24;
-	return _25;
+	const float3 _3 = float3(1,1,1);
+	const float _5 = 0;
+	float _19 = SampleBicubic(_7_read, sampler_7_read, (float3(id) / size) * _3, _5, (float3(1.0,1.0,1.0) * size / 1)).x;
+	float _22 = Remap(_19, _1, _2, 0.0, 1.0);
+	float _23 = _20_read.SampleLevel(sampler_20_read, _22, 0);
+	float _24 = Remap(_23, 0.0, 1.0, _1, _2);
+	float4 _25 = _24;
+	float _28 = (snoise((position) * _27)) * _26;
+	float _29 = _25 + _28;
+	float _30 = position.y;
+	float _31 = _29 + _30;
+	float _33 = _31 * _32;
+	return _33;
 }
 
 
@@ -57,8 +65,8 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
     voxels[id] = Voxel((float3(id) + offset) * scale, id);
 }
 
-#pragma kernel CS_4
+#pragma kernel CS_6
 [numthreads(8, 8, 8)]
-void CS_4(uint3 id : SV_DispatchThreadID) {
-    _5_write[id] = _4((float3(id * 1) + offset) * scale, id);
+void CS_6(uint3 id : SV_DispatchThreadID) {
+    _7_write[id] = _6((float3(id * 1) + offset) * scale, id);
 }
