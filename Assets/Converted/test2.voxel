@@ -1,5 +1,8 @@
 
 #pragma kernel CSVoxel
+SamplerState my_trilinear_clamp_sampler;
+RWTexture3D<float> A_cached_texture_write_0;
+Texture3D A_cached_texture_read_0;
 float inj_0;
 float inj_1;
 float inj_2;
@@ -10,35 +13,33 @@ float3 scale;
 float3 offset;
 #include "Assets/Noises.cginc"
 #include "Assets/SDF.cginc"
-// defined nodes: 7, depth: 2, total lines: 4 
-float A(float3 position) {
-	float2 position_swizzled_1 = position.xz;
-	float position_swizzled_1_noised_0 = (snoise((position_swizzled_1) * inj_1)) * inj_0;
+// defined nodes: 7, depth: 1, total lines: 4 
+float A(float3 position, uint3 id) {
+	float2 position_swizzled_0 = position.xz;
+	float position_swizzled_0_noised_0 = (snoise((position_swizzled_0) * inj_1)) * inj_0;
 	const float c_0 = 0.25;
-	float position_swizzled_1_noised_0_op_c_0_0 = position_swizzled_1_noised_0 * c_0;
-	return position_swizzled_1_noised_0_op_c_0_0;
-}
-
-// defined nodes: 4, depth: 1, total lines: 3 
-float B(float3 position) {
-	float position_swizzled_1_noised_0_op_c_0_0_cached_0 = A(position);
-	const float c_1 = 0.235;
-	float position_swizzled_1_noised_0_op_c_0_0_cached_0_op_c_1_0 = position_swizzled_1_noised_0_op_c_0_0_cached_0 + c_1;
-	return position_swizzled_1_noised_0_op_c_0_0_cached_0_op_c_1_0;
+	float position_swizzled_0_noised_0_op_c_0_0 = position_swizzled_0_noised_0 * c_0;
+	return position_swizzled_0_noised_0_op_c_0_0;
 }
 
 // defined nodes: 6, depth: 0, total lines: 4 
-float Test(float3 position) {
-	float position_swizzled_0 = position.y;
-	float position_swizzled_1_noised_0_op_c_0_0_cached_0_op_c_1_0_cached_0 = B(position);
-	float position_swizzled_0_op_position_swizzled_1_noised_0_op_c_0_0_cached_0_op_c_1_0_cached_0_0 = position_swizzled_0 + position_swizzled_1_noised_0_op_c_0_0_cached_0_op_c_1_0_cached_0;
-	float position_swizzled_0_op_position_swizzled_1_noised_0_op_c_0_0_cached_0_op_c_1_0_cached_0_0_op_inj_2_0 = position_swizzled_0_op_position_swizzled_1_noised_0_op_c_0_0_cached_0_op_c_1_0_cached_0_0 * inj_2;
-	return position_swizzled_0_op_position_swizzled_1_noised_0_op_c_0_0_cached_0_op_c_1_0_cached_0_0_op_inj_2_0;
+float Voxel(float3 position, uint3 id) {
+	float position_swizzled_0_noised_0_op_c_0_0_cached_0 = A_cached_texture_read_0.SampleLevel(my_trilinear_clamp_sampler, (float3(id) / 64.0) / 1, 0).x;
+	float position_swizzled_1 = position.y;
+	float position_swizzled_0_noised_0_op_c_0_0_cached_0_op_position_swizzled_1_0 = position_swizzled_0_noised_0_op_c_0_0_cached_0 + position_swizzled_1;
+	float position_swizzled_0_noised_0_op_c_0_0_cached_0_op_position_swizzled_1_0_op_inj_2_0 = position_swizzled_0_noised_0_op_c_0_0_cached_0_op_position_swizzled_1_0 * inj_2;
+	return position_swizzled_0_noised_0_op_c_0_0_cached_0_op_position_swizzled_1_0_op_inj_2_0;
 }
 
 
 #pragma kernel CSVoxel
 [numthreads(8, 8, 8)]
 void CSVoxel(uint3 id : SV_DispatchThreadID) {
-    voxels[id] = Test((float3(id) + offset) * scale);
+    voxels[id] = Voxel((float3(id) + offset) * scale, id);
+}
+
+#pragma kernel CSA
+[numthreads(8, 8, 8)]
+void CSA(uint3 id : SV_DispatchThreadID) {
+    A_cached_texture_write_0[id] = A((float3(id * 1) + offset) * scale, id);
 }

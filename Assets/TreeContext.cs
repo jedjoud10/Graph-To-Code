@@ -41,6 +41,24 @@ public class TreeContext {
         }
     }
 
+    public class TempTexture {
+        public string writeName;
+        public string readName;
+        public Utils.StrictType type;
+        public List<string> readKernels;
+        public string writeKernel;
+        public int sizeReductionPower;
+    }
+
+    public class ComputeKernelDispatch {
+        public string name;
+        public int depth;
+        public int sizeReductionPower;
+    }
+
+    public List<TempTexture> tempTextures;
+    public List<string> computeKernels;
+    public List<ComputeKernelDispatch> computeKernelNameAndDepth;
     public Dictionary<string, int> varNamesToId;
     public PropertyInjector injector;
     public List<string> properties;
@@ -78,6 +96,9 @@ public class TreeContext {
         this.currentScope = 0;
         this.scopeDepth = 0;
         this.counter = 0;
+        this.computeKernels = new List<string>();
+        this.computeKernelNameAndDepth = new List<ComputeKernelDispatch>();
+        this.tempTextures = new List<TempTexture>();
     }
 
     public void Inject<T>(InjectedNode<T> node, string name, Func<object> func) {

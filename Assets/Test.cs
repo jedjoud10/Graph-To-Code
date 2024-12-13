@@ -11,6 +11,9 @@ public class Test : VoxelGraph {
     public FractalNoise.FractalMode mode;
     public int octaves;
 
+    [Range(0, 3)]
+    public int reduction;
+
     public override void Execute(Variable<float3> position, out Variable<float> density) {
         var output = position.Swizzle<float>("y");
         var temp = position.Swizzle<float2>("xz");
@@ -18,13 +21,12 @@ public class Test : VoxelGraph {
         //Voronoi voronoi = new Voronoi { amplitude = amplitude, scale = scale, type = type };
         //FractalNoise fractal = new FractalNoise(voronoi, mode, octaves);
         var test = simplex.Evaluate(temp) * 0.25f;
-        var cached = test.Cached("A");
-        cached += 0.235f;
-        var doubleCached = cached.Cached("B");
+        var cached = test.Cached("A", reduction);
+        //var doubleCached = cached.Cached("B");
 
 
         //density = cached + doubleCached + output + offset;
-        density = output + doubleCached;
+        density = cached + output;
         density *= mul;
     }
 

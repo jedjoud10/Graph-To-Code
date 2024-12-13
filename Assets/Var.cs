@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using Unity.Mathematics;
+using static TreeContext;
 
 
 [Serializable]
@@ -42,8 +44,8 @@ public abstract class Variable<T> : TreeNode {
         return new CastNode<T, U> { a = this };
     }
 
-    public Variable<T> Cached(string name) {
-        return new Cached<T> { inner = this, name = name };
+    public Variable<T> Cached(string name, int sizeReductionPower) {
+        return new Cached<T> { inner = this, name = name, sizeReductionPower = sizeReductionPower };
     }
 }
 
@@ -81,10 +83,13 @@ public class AssignOnly2<T> : Variable<T> {
 
 // TODO: Must create texture and create a variable that reads from it in the OG shader
 // sub-TODO: can squish multiple cached calls into a single RGBA texture (of the same size) to help performance
+
+// TODO: dedupe stuff pls thx
 [Serializable]
 public class Cached<T> : Variable<T> {
     public Variable<T> inner;
     public string name;
+    public int sizeReductionPower;
 
     // looks up all the dependencies of a and makes sure that they are 2D (could be xy, yx, xz, whatever)
     // clones those dependencies to a secondary compute kernel
@@ -92,6 +97,13 @@ public class Cached<T> : Variable<T> {
     // read said texture with appropriate swizzles in the main kernel
 
     public override void Handle(TreeContext context) {
+        context.Hash(sizeReductionPower);
+
+        string textureNameWrite = context.GenId($"{name}_cached_texture_write");
+        string textureNameRead = context.GenId($"{name}_cached_texture_read");
+        context.properties.Add($"RWTexture3D<{Utils.TypeOf<T>().ToStringType()}> {textureNameWrite};");
+        context.properties.Add($"Texture3D {textureNameRead};");
+
         int index = context.scopes.Count;
         int oldScopeIndex = context.currentScope;
         context.scopes.Add(new TreeContext.KernelScope(context.scopeDepth + 1) {
@@ -118,6 +130,30 @@ public class Cached<T> : Variable<T> {
         context.scopeDepth--;
         context.currentScope = oldScopeIndex;
 
-        context.DefineAndBindNode<T>(this, $"{tempName}_cached", $"{name}(position)");
+        int frac = (1 << sizeReductionPower);
+
+        context.DefineAndBindNode<T>(this, $"{tempName}_cached", $"{textureNameRead}.SampleLevel(my_trilinear_clamp_sampler, (float3(id) / 64.0) / {frac}, 0).x");
+
+        string compute = $@"
+#pragma kernel CS{name}
+[numthreads(8, 8, 8)]
+void CS{name}(uint3 id : SV_DispatchThreadID) {{
+    {textureNameWrite}[id] = {name}((float3(id * {frac}) + offset) * scale, id);
+}}";
+
+        context.computeKernels.Add(compute);
+        context.computeKernelNameAndDepth.Add(new ComputeKernelDispatch {
+            name = $"CS{name}",
+            depth = context.scopeDepth + 1,
+            sizeReductionPower = sizeReductionPower,
+        });
+        context.tempTextures.Add(new TreeContext.TempTexture {
+            readName = textureNameRead,
+            writeName = textureNameWrite,
+            sizeReductionPower = sizeReductionPower,
+            type = Utils.TypeOf<T>(),
+            writeKernel = $"CS{name}",
+            readKernels = new List<string>() { $"CS{context.scopes[oldScopeIndex].name}" },
+        });
     }
 }

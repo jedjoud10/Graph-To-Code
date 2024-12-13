@@ -14,7 +14,6 @@ public class VoxelGraphPreview : MonoBehaviour {
     public int quality;
     public Gradient gradient;
     public FilterMode filterMode;
-    public RenderTexture texture;
     [Range(16, 64)]
     public int size = 16;
 
@@ -33,23 +32,5 @@ public class VoxelGraphPreview : MonoBehaviour {
         uint z = w / size;        // y in N(B)
         uint x = w % size;        // z in N(C)
         return new uint3(x, y, z);
-    }
-
-    public static RenderTexture Create3DRenderTexture(int size, GraphicsFormat format) {
-        RenderTexture texture = new RenderTexture(size, size, 0, format);
-        texture.height = size;
-        texture.width = size;
-        texture.depth = 0;
-        texture.volumeDepth = size;
-        texture.dimension = UnityEngine.Rendering.TextureDimension.Tex3D;
-        texture.enableRandomWrite = true;
-        texture.Create();
-        return texture;
-    }
-
-    public void CreateIfNull() {
-        if (previewing && texture == null || (texture != null && texture.width != size)) {
-            texture = Create3DRenderTexture(size, GraphicsFormat.R32_SFloat);
-        }
     }
 }

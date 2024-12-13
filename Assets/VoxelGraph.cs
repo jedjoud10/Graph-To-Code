@@ -5,6 +5,7 @@ using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
+using static UnityEditor.Timeline.TimelinePlaybackControls;
 
 // A voxel graph is the base class to inherit from to be able to write custom voxel stuff
 public abstract class VoxelGraph : MonoBehaviour {
@@ -12,6 +13,10 @@ public abstract class VoxelGraph : MonoBehaviour {
     public ComputeShader shader;
     [HideInInspector]
     public PropertyInjector injector;
+    [HideInInspector]
+    public List<TreeContext.ComputeKernelDispatch> computeKernelNameAndDepth;
+    [HideInInspector]
+    public List<TreeContext.TempTexture> tempTextures;
     private int hash;
 
     // Execute the voxel graph at a specific position and fetch the density and material values
@@ -26,18 +31,20 @@ public abstract class VoxelGraph : MonoBehaviour {
         ctx.start = position;
         Execute(position, out Variable<float> density);
         ctx.scopes[0].output = (Utils.StrictType.Float,  density);
-        ctx.scopes[0].name = "Test";
+        ctx.scopes[0].name = "Voxel";
         //(var symbols, var hash) = ctx.Handlinate(density2);
 
         ctx.Parse(density);
 
         List<string> lines = new List<string>();
         lines.Add("#pragma kernel CSVoxel");
+        lines.Add("SamplerState my_trilinear_clamp_sampler;");
         lines.AddRange(ctx.Properties);
         lines.Add("RWTexture3D<float> voxels;");
 
         lines.Add("int3 permuationSeed;\nint3 moduloSeed;");
         lines.Add("float3 scale;\nfloat3 offset;");
+
 
         // imports
         lines.Add("#include \"Assets/Noises.cginc\"");
@@ -47,7 +54,7 @@ public abstract class VoxelGraph : MonoBehaviour {
         foreach (var scope in ctx.scopes) {
             Debug.Log(scope.depth);
             lines.Add($"// defined nodes: {scope.namesToNodes.Count}, depth: {scope.depth}, total lines: {scope.lines.Count} ");
-            lines.Add($"{scope.output.Item1.ToStringType()} {scope.name}(float3 position) {{");
+            lines.Add($"{scope.output.Item1.ToStringType()} {scope.name}(float3 position, uint3 id) {{");
             scope.AddLine($"return {scope.namesToNodes[scope.output.Item2]};");
             IEnumerable<string> parsed2 = scope.lines.SelectMany(str => str.Split(new[] { "\r\n", "\n" }, System.StringSplitOptions.None)).Select(x => $"{x}");
             lines.AddRange(parsed2);
@@ -65,11 +72,23 @@ public abstract class VoxelGraph : MonoBehaviour {
 #pragma kernel CSVoxel
 [numthreads(8, 8, 8)]
 void CSVoxel(uint3 id : SV_DispatchThreadID) {
-    voxels[id] = Test((float3(id) + offset) * scale);
-}");
+    voxels[id] = Voxel((float3(id) + offset) * scale, id);
+}"
+);
+        // TODO: Convert all of the default voxel stuff to use the stuff we've defined (aka remove the shit stuff from above kekw)
+        ctx.computeKernelNameAndDepth.Add(new TreeContext.ComputeKernelDispatch {
+            name = $"CSVoxel",
+            depth = 0,
+            sizeReductionPower = 0,
+        });
 
+        lines.AddRange(ctx.computeKernels);
 
         injector = ctx.injector;
+        ctx.computeKernelNameAndDepth.Sort((TreeContext.ComputeKernelDispatch a, TreeContext.ComputeKernelDispatch b) => { return b.depth.CompareTo(a.depth); });
+        computeKernelNameAndDepth = ctx.computeKernelNameAndDepth;
+        GetComponent<VoxelGraphExecutor>().dirtyTexturesRecompilation = true;
+        tempTextures = ctx.tempTextures;
         return lines.Aggregate("", (a, b) => a + "\n" + b);
     }
 
@@ -89,7 +108,7 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
         ctx.start = position;
         Execute(position, out Variable<float> density);
         ctx.scopes[0].output = (Utils.StrictType.Float, density);
-        ctx.scopes[0].name = "Test";
+        ctx.scopes[0].name = "Voxel";
         ctx.Parse(density);
 
         if (hash != ctx.hash) {

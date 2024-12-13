@@ -1,6 +1,7 @@
 //using System.Diagnostics;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 
 // Common utils and shorthand forms
 public static class Utils {
@@ -10,6 +11,8 @@ public static class Utils {
         Float3,
         Float4,
         Uint,
+        Uint2,
+        Uint3,
         Int,
     }
 
@@ -101,6 +104,10 @@ public static class Utils {
                 output = StrictType.Float3; break;
             case "float4":
                 output = StrictType.Float4; break;
+            case "uint2":
+                output = StrictType.Uint2; break;
+            case "uint3":
+                output = StrictType.Uint3; break;
             case "UInt32":
                 output = StrictType.Uint; break;
             case "Int32":
@@ -132,9 +139,29 @@ public static class Utils {
             case StrictType.Uint:
                 shader.SetInt(id, (int)(uint)val);
                 break;
+            case StrictType.Uint2:
+                uint2 temp4 = (uint2)val;
+                shader.SetInts(id, (int)temp4.x, (int)temp4.y);
+                break;
+            case StrictType.Uint3:
+                uint3 temp5 = (uint3)val;
+                shader.SetInts(id, (int)temp5.x, (int)temp5.y, (int)temp5.z);
+                break;
             case StrictType.Int:
                 shader.SetInt(id, (int)val);
                 break;
         }
+    }
+
+    public static RenderTexture Create3DRenderTexture(int size, GraphicsFormat format) {
+        RenderTexture texture = new RenderTexture(size, size, 0, format);
+        texture.height = size;
+        texture.width = size;
+        texture.depth = 0;
+        texture.volumeDepth = size;
+        texture.dimension = UnityEngine.Rendering.TextureDimension.Tex3D;
+        texture.enableRandomWrite = true;
+        texture.Create();
+        return texture;
     }
 }
