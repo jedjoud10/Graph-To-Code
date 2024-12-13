@@ -13,8 +13,8 @@ float CubicWeight(float x)
 	return 0.0;
 }
 
-// Bicubic sampling function
-float4 SampleBicubic(Texture3D tex, SamplerState test, float3 uv, float lod, float3 texSize)
+// Bicubic sampling function generated from chat gpt lel
+float4 SampleBicubic(Texture3D tex, SamplerState test, float3 uv, float lod, float texSize)
 {
     // Map uv to texture space and calculate base and fractional coordinates
 	float3 texel = uv * texSize - 0.5;
@@ -48,6 +48,36 @@ float4 SampleBicubic(Texture3D tex, SamplerState test, float3 uv, float lod, flo
 	return result;
 }
 
+float4 SampleBicubic(Texture2D tex, SamplerState test, float2 uv, float lod, float texSize)
+{
+    // Map uv to texture space and calculate base and fractional coordinates
+	float2 texel = uv * texSize - 0.5;
+	float2 base = floor(texel);
+	float2 frac = texel - base;
+
+	float4 result = float4(0.0, 0.0, 0.0, 0.0);
+
+    // Loop through a 4x4 grid of texels
+	for (int j = -1; j <= 2; j++)
+	{
+		for (int i = -1; i <= 2; i++)
+		{
+			float2 offset = float2(i, j);
+			float2 sampleUV = (base + offset + 1.0) / texSize;
+			float4 texelColor = tex.SampleLevel(test, sampleUV, lod);
+
+			// Compute cubic weights for x and y
+			float weightX = CubicWeight(frac.x - i);
+			float weightY = CubicWeight(frac.y - j);
+
+			// Accumulate weighted color
+			result += texelColor * weightX * weightY;
+		}
+	}
+
+	return result;
+}
+
 // https://gist.github.com/supertask/702439b84a341e5f45c79358135c9df6
 float Remap(float v, float minOld, float maxOld, float minNew, float maxNew)
 {
@@ -69,7 +99,19 @@ float4 Remap(float4 v, float4 minOld, float4 maxOld, float4 minNew, float4 maxNe
 	return minNew + (v - minOld) * (maxNew - minNew) / (maxOld - minOld);
 }
 
-float4 SampleBounded(Texture3D tex, SamplerState test, float3 uv, float lod, float3 texSize)
+float4 SampleBounded(Texture3D tex, SamplerState test, float3 uv, float lod, float texSize)
+{
+	if (any(uv < 0.0) || any(uv >= 1.0))
+	{
+		const float aaa = -10000;
+		return float4(aaa, aaa, aaa, aaa);
+	}
+	
+	//return tex[uint3(uv * texSize + 1.0/texSize)];
+	return tex.SampleLevel(test, uv + (0.5 / texSize), lod);
+}
+
+float4 SampleBounded(Texture2D tex, SamplerState test, float2 uv, float lod, float texSize)
 {
 	if (any(uv < 0.0) || any(uv >= 1.0))
 	{

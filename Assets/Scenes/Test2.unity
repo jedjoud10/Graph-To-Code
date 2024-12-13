@@ -119,53 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!28 &326178704
-Texture2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 3
-  m_Width: 32
-  m_Height: 1
-  m_CompleteImageSize: 128
-  m_MipsStripped: 0
-  m_TextureFormat: 4
-  m_MipCount: 1
-  m_IsReadable: 1
-  m_IsPreProcessed: 0
-  m_IgnoreMipmapLimit: 1
-  m_MipmapLimitGroupName: 
-  m_StreamingMipmaps: 0
-  m_StreamingMipmapsPriority: 0
-  m_VTOnly: 0
-  m_AlphaIsTransparency: 0
-  m_ImageCount: 1
-  m_TextureDimension: 2
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_LightmapFormat: 0
-  m_ColorSpace: 0
-  m_PlatformBlob: 
-  image data: 128
-  _typelessdata: 000000ff000000ff000000ff000000ff000000ff000000ff202020ff5b5b5bff969696ffd1d1d1ffe6e6e6ffe0e0e0ffdadadaffd4d4d4ffd8d8d8ffe3e3e3ffeeeeeefff9f9f9fffafafaffefefefffe3e3e3ffd7d7d7ffccccccffc0c0c0ffb8b8b8ffc1c1c1ffcacacaffd3d3d3ffdcdcdcffe5e5e5ffedededfff6f6f6ff
-  m_StreamData:
-    serializedVersion: 2
-    offset: 0
-    size: 0
-    path: 
---- !u!84 &643467536
+--- !u!84 &190618942
 RenderTexture:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -177,8 +131,8 @@ RenderTexture:
     Hash: 00000000000000000000000000000000
   m_IsAlphaChannelOptional: 0
   serializedVersion: 6
-  m_Width: 64
-  m_Height: 64
+  m_Width: 16
+  m_Height: 16
   m_AntiAliasing: 1
   m_MipCount: -1
   m_DepthStencilFormat: 0
@@ -199,8 +153,8 @@ RenderTexture:
     m_WrapU: 1
     m_WrapV: 1
     m_WrapW: 1
-  m_Dimension: 3
-  m_VolumeDepth: 64
+  m_Dimension: 2
+  m_VolumeDepth: 1
   m_ShadowSamplingMode: 2
 --- !u!1 &864127146
 GameObject:
@@ -391,7 +345,53 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
---- !u!84 &1387144829
+--- !u!28 &1018462000
+Texture2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 3
+  m_Width: 32
+  m_Height: 1
+  m_CompleteImageSize: 128
+  m_MipsStripped: 0
+  m_TextureFormat: 4
+  m_MipCount: 1
+  m_IsReadable: 1
+  m_IsPreProcessed: 0
+  m_IgnoreMipmapLimit: 1
+  m_MipmapLimitGroupName: 
+  m_StreamingMipmaps: 0
+  m_StreamingMipmapsPriority: 0
+  m_VTOnly: 0
+  m_AlphaIsTransparency: 0
+  m_ImageCount: 1
+  m_TextureDimension: 2
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_LightmapFormat: 0
+  m_ColorSpace: 0
+  m_PlatformBlob: 
+  image data: 128
+  _typelessdata: 000000ff000000ff000000ff000000ff000000ff000000ff202020ff5b5b5bff969696ffd1d1d1ffe6e6e6ffe0e0e0ffdadadaffd4d4d4ffd8d8d8ffe3e3e3ffeeeeeefff9f9f9fffafafaffefefefffe3e3e3ffd7d7d7ffccccccffc0c0c0ffb8b8b8ffc1c1c1ffcacacaffd3d3d3ffdcdcdcffe5e5e5ffedededfff6f6f6ff
+  m_StreamData:
+    serializedVersion: 2
+    offset: 0
+    size: 0
+    path: 
+--- !u!84 &1617533285
 RenderTexture:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -478,10 +478,12 @@ MonoBehaviour:
   computeKernelNameAndDepth:
   - name: CS_6
     depth: 1
-    sizeReductionPower: 0
+    sizeReductionPower: 2
+    threeDimensions: 0
   - name: CSVoxel
     depth: 0
     sizeReductionPower: 0
+    threeDimensions: 1
   debugName: 0
   offset:
     x: -0.3
@@ -490,21 +492,21 @@ MonoBehaviour:
   scale:
     x: 0.005
   amplitude:
-    x: 15
+    x: 31
   scale2:
     x: 0.1
   amplitude2:
-    x: 0.21
+    x: 0
   offset2:
     x:
       x: 0
       y: 0
       z: 0
   minimum:
-    x: -7.7
+    x: -7.5
   maximum:
-    x: 16.68
-  bicubic: 1
+    x: 7.5
+  bicubic: 0
   type: 0
   mode: 2
   gradient:
@@ -538,7 +540,7 @@ MonoBehaviour:
     m_NumColorKeys: 6
     m_NumAlphaKeys: 2
   octaves: 3
-  reduction: 0
+  reduction: 2
 --- !u!114 &2080444270
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -604,9 +606,9 @@ MonoBehaviour:
   transformScale: {x: 2, y: 2, z: 2}
   transformOffset: {x: 12.75, y: -38.04, z: 0}
   texturesList:
-  - {fileID: 1387144829}
-  - {fileID: 643467536}
-  - {fileID: 326178704}
+  - {fileID: 1617533285}
+  - {fileID: 190618942}
+  - {fileID: 1018462000}
   dirtyTexturesRecompilation: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

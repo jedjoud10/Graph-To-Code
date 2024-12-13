@@ -5,13 +5,6 @@ using UnityEngine;
 using static TreeContext;
 
 
-enum RelationToPositionDimension {
-    One,
-    Two,
-    Three,
-    Other
-}
-
 [Serializable]
 public abstract class TreeNode {
     public virtual void Handle(TreeContext context) {
@@ -73,11 +66,12 @@ public class Cacher<T> {
         this.sampler = new CachedSampler();
     }
 
-    public Variable<T> Cache(Variable<T> input) {
+    public Variable<T> Cache(Variable<T> input, string swizzle = "xyz") {
         return new CachedNode<T> {
             inner = input,
             sizeReductionPower = sizeReductionPower,
             sampler = sampler,
+            swizzle = swizzle,
         };
     }
 }
@@ -152,6 +146,7 @@ public class CachedNode<T> : Variable<T> {
     public Variable<T> inner;
     public int sizeReductionPower;
     public CachedSampler sampler;
+    public string swizzle;
 
     public override void Handle(TreeContext context) {
         if (!context.Contains(this)) {
@@ -177,10 +172,13 @@ public class CachedNode<T> : Variable<T> {
         sampler.offset.Handle(context);
         sampler.level.Handle(context);
 
+        int dimensions = swizzle.Length;
+        bool _3d = dimensions == 3;
+
         string scopeName = context.GenId($"CachedScope");
         string textureName = context.GenId($"_cached_texture");
-        context.properties.Add($"RWTexture3D<{Utils.TypeOf<T>().ToStringType()}> {textureName}_write;");
-        context.properties.Add($"Texture3D {textureName}_read;");
+        context.properties.Add($"RWTexture{dimensions}D<{Utils.TypeOf<T>().ToStringType()}> {textureName}_write;");
+        context.properties.Add($"Texture{dimensions}D {textureName}_read;");
         context.properties.Add($"SamplerState sampler{textureName}_read;");
 
         int index = context.scopes.Count;
@@ -210,21 +208,63 @@ public class CachedNode<T> : Variable<T> {
         context.currentScope = oldScopeIndex;
 
         int frac = (1 << sizeReductionPower);
-        string aa = $"(float3(1.0,1.0,1.0) * size / {frac})";
+        string aa = $"(float(size) / {frac})";
 
+        string idCtor = _3d ? "float3(id)" : $"float2(id.{swizzle})";
         if (sampler.bicubic) {
-            context.DefineAndBindNode<T>(this, $"{tempName}_cached", $"SampleBicubic({textureName}_read, sampler{textureName}_read, (float3(id) / size) * {context[sampler.scale]}, {context[sampler.level]}, {aa}).{Utils.SwizzleFromFloat4<T>()}");
+            context.DefineAndBindNode<T>(this, $"{tempName}_cached", $"SampleBicubic({textureName}_read, sampler{textureName}_read, ({idCtor} / size) * {context[sampler.scale]} + {context[sampler.offset]}.{swizzle}, {context[sampler.level]}, {aa}).{Utils.SwizzleFromFloat4<T>()}");
         } else {
-            context.DefineAndBindNode<T>(this, $"{tempName}_cached", $"SampleBounded({textureName}_read, sampler{textureName}_read, (float3(id) / size) * {context[sampler.scale]} + {context[sampler.offset]}, {context[sampler.level]}, {aa}).{Utils.SwizzleFromFloat4<T>()}");
+            context.DefineAndBindNode<T>(this, $"{tempName}_cached", $"SampleBounded({textureName}_read, sampler{textureName}_read, ({idCtor} / size) * {context[sampler.scale]} + {context[sampler.offset]}.{swizzle}, {context[sampler.level]}, {aa}).{Utils.SwizzleFromFloat4<T>()}");
         }
 
-        //context.DefineAndBindNode<T>(this, $"{tempName}_cached", $"{textureName}_read.SampleLevel(sampler{textureName}_read, (float3(id) / size) * {context[sampler.scale]} + {context[sampler.offset]}, {context[sampler.level]}).{Utils.SwizzleFromFloat4<T>()}");
+        string numThreads = dimensions == 2 ? "[numthreads(8, 8, 1)]" : "[numthreads(8, 8, 8)]";
+        string writeCoords = _3d ? "id" : "id.xy";
+        string remappedCoords;
+
+        if (_3d) {
+            remappedCoords = "id";
+        } else {
+            int Indexify(char a) {
+                switch (a) {
+                    case 'x':
+                        return 0;
+                    case 'y':
+                        return 1;
+                    case 'z':
+                        return 2;
+                    default:
+                        throw new Exception();
+                }
+            }
+
+            string Clean(char temp) {
+                if (temp == '@') {
+                    return "0.0";
+                } else {
+                    return $"id.{temp}";
+                }
+            }
+
+            char[] chars = swizzle.ToCharArray();
+            char first = chars[0]; // x
+            char second = chars[1]; // z
+
+            char[] temp6 = new char[3] { '@', '@', '@' };
+            temp6[Indexify(first)] = 'x';
+            temp6[Indexify(second)] = 'y';
+
+
+            // x, 0, y
+            remappedCoords = $"{Clean(temp6[0])}, {Clean(temp6[1])}, {Clean(temp6[2])}";
+        }
 
         string compute = $@"
 #pragma kernel CS{scopeName}
-[numthreads(8, 8, 8)]
+{numThreads}
 void CS{scopeName}(uint3 id : SV_DispatchThreadID) {{
-    {textureName}_write[id] = {scopeName}((float3(id * {frac}) + offset) * scale, id);
+    uint3 remapped = uint3({remappedCoords});
+
+    {textureName}_write[{writeCoords}] = {scopeName}((float3(remapped * {frac}) + offset) * scale, id);
 }}";
 
         context.computeKernels.Add(compute);
@@ -232,6 +272,7 @@ void CS{scopeName}(uint3 id : SV_DispatchThreadID) {{
             name = $"CS{scopeName}",
             depth = context.scopeDepth + 1,
             sizeReductionPower = sizeReductionPower,
+            threeDimensions = _3d,
         });
         context.tempTextures.Add($"{tempName}_cached", new TreeContext.TempTexture {
             name = textureName,
@@ -241,6 +282,7 @@ void CS{scopeName}(uint3 id : SV_DispatchThreadID) {{
             filter = sampler.filter,
             wrap = sampler.wrap,
             mips = sampler.generateMips,
+            threeDimensions = _3d,
             readKernels = new List<string>() { $"CS{context.scopes[oldScopeIndex].name}" },
         });
     }

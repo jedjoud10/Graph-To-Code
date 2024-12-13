@@ -131,12 +131,12 @@ public static class Utils {
         }
     }
 
-    public static RenderTexture Create3DRenderTexture(int width, int height, int depth, GraphicsFormat format, FilterMode filter, TextureWrapMode wrap, bool mips) {
-        RenderTexture texture = new RenderTexture(width, height, 0, format);
-        texture.width = width;
-        texture.height = height;
+    public static RenderTexture Create3DRenderTexture(int size, GraphicsFormat format, FilterMode filter, TextureWrapMode wrap, bool mips) {
+        RenderTexture texture = new RenderTexture(size, size, 0, format);
+        texture.width = size;
+        texture.height = size;
         texture.depth = 0;
-        texture.volumeDepth = depth;
+        texture.volumeDepth = size;
         texture.dimension = UnityEngine.Rendering.TextureDimension.Tex3D;
         texture.enableRandomWrite = true;
         texture.useMipMap = mips;
@@ -147,12 +147,20 @@ public static class Utils {
         return texture;
     }
 
-    public static RenderTexture Create3DRenderTexture(int size, GraphicsFormat format, FilterMode filter, TextureWrapMode wrap, bool mips) {
-        return Create3DRenderTexture(size, size, size, format, filter, wrap, mips);
-    }
-
     public static RenderTexture Create2DRenderTexture(int size, GraphicsFormat format, FilterMode filter, TextureWrapMode wrap, bool mips) {
-        return Create3DRenderTexture(size, size, 1, format, filter, wrap, mips);
+        RenderTexture texture = new RenderTexture(size, size, 0, format);
+        texture.width = size;
+        texture.height = size;
+        texture.depth = 0;
+        texture.volumeDepth = 1;
+        texture.dimension = UnityEngine.Rendering.TextureDimension.Tex2D;
+        texture.enableRandomWrite = true;
+        texture.useMipMap = mips;
+        texture.autoGenerateMips = false;
+        texture.filterMode = filter;
+        texture.wrapMode = wrap;
+        texture.Create();
+        return texture;
     }
 
     public static string SwizzleFromFloat4<T>() {

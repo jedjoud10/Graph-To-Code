@@ -51,6 +51,7 @@ public class TreeContext {
         public TextureWrapMode wrap;
         public List<string> readKernels;
         public string writeKernel;
+        public bool threeDimensions;
         public int sizeReductionPower;
         public bool mips;
     }
@@ -67,6 +68,7 @@ public class TreeContext {
         public string name;
         public int depth;
         public int sizeReductionPower;
+        public bool threeDimensions;
     }
 
     public Dictionary<string, TempTexture> tempTextures;

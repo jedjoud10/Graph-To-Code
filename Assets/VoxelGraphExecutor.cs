@@ -57,7 +57,12 @@ public class VoxelGraphExecutor : MonoBehaviour {
             };
 
             foreach (var (no, temp) in graph.tempTextures) {
-                RenderTexture rt = Utils.Create3DRenderTexture(size / (1 << temp.sizeReductionPower), ToGfxFormat(temp.type), temp.filter, temp.wrap, temp.mips);
+                RenderTexture rt;
+                if (temp.threeDimensions) {
+                     rt = Utils.Create3DRenderTexture(size / (1 << temp.sizeReductionPower), ToGfxFormat(temp.type), temp.filter, temp.wrap, temp.mips);
+                } else {
+                    rt = Utils.Create2DRenderTexture(size / (1 << temp.sizeReductionPower), ToGfxFormat(temp.type), temp.filter, temp.wrap, temp.mips);
+                }
                 textures.Add(temp.name, rt);
             }
 
@@ -127,7 +132,12 @@ public class VoxelGraphExecutor : MonoBehaviour {
         foreach (var kernel in graph.computeKernelNameAndDepth) {
             int id = shader.FindKernel(kernel.name);
             int tempSize = size / (1 << kernel.sizeReductionPower);
-            shader.Dispatch(id, tempSize / 8, tempSize / 8, tempSize / 8);
+
+            if (kernel.threeDimensions) {
+                shader.Dispatch(id, tempSize / 8, tempSize / 8, tempSize / 8);
+            } else {
+                shader.Dispatch(id, tempSize / 8, tempSize / 8, 1);
+            }
         }
 
     }

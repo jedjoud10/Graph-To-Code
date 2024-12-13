@@ -37,7 +37,7 @@ public class Test : VoxelGraph {
             sampler = new CachedSampler() { offset = offset2, bicubic = bicubic },
         };
 
-        var cached = cacher.Cache(test);
+        var cached = cacher.Cache(test, "xz");
 
         var tahini = new Ramp<float>(gradient, minimum, maximum).Evaluate(cached);
 

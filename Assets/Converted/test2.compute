@@ -2,8 +2,8 @@
 float _1;
 float _2;
 float3 _4;
-RWTexture3D<float> _7_write;
-Texture3D _7_read;
+RWTexture2D<float> _7_write;
+Texture2D _7_read;
 SamplerState sampler_7_read;
 float _15;
 float _16;
@@ -45,7 +45,7 @@ float _6(float3 position, uint3 id) {
 float Voxel(float3 position, uint3 id) {
 	const float3 _3 = float3(1,1,1);
 	const float _5 = 0;
-	float _19 = SampleBicubic(_7_read, sampler_7_read, (float3(id) / size) * _3, _5, (float3(1.0,1.0,1.0) * size / 1)).x;
+	float _19 = SampleBounded(_7_read, sampler_7_read, (float2(id.xz) / size) * _3 + _4.xz, _5, (float(size) / 4)).x;
 	float _22 = Remap(_19, _1, _2, 0.0, 1.0);
 	float _23 = _20_read.SampleLevel(sampler_20_read, _22, 0);
 	float _24 = Remap(_23, 0.0, 1.0, _1, _2);
@@ -66,7 +66,9 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
 }
 
 #pragma kernel CS_6
-[numthreads(8, 8, 8)]
+[numthreads(8, 8, 1)]
 void CS_6(uint3 id : SV_DispatchThreadID) {
-    _7_write[id] = _6((float3(id * 1) + offset) * scale, id);
+    uint3 remapped = uint3(id.x, 0.0, id.y);
+
+    _7_write[id.xy] = _6((float3(remapped * 4) + offset) * scale, id);
 }

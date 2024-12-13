@@ -81,6 +81,7 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
             name = $"CSVoxel",
             depth = 0,
             sizeReductionPower = 0,
+            threeDimensions = true,
         });
 
         lines.AddRange(ctx.computeKernels);
