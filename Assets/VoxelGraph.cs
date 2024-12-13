@@ -21,15 +21,15 @@ public abstract class VoxelGraph : MonoBehaviour {
     // This can be done outside the editor, but shader compilation MUST be done in editor
     public string Transpile() {
         TreeContext ctx = new TreeContext(true);
-        Variable<float3> position = ctx.AliasExternalInput<float3>("position");
-        Execute(position, out Variable<float> density);
-        var density2 = ctx.AssignOnly("density", density);
-        (var symbols, var hash) = ctx.Handlinate(density2);
-
-        ctx.Parse(symbols);
         
+        Variable<float3> position = ctx.AliasExternalInput<float3>("position");
+        ctx.start = position;
+        Execute(position, out Variable<float> density);
+        ctx.scopes[0].output = (Utils.StrictType.Float,  density);
+        ctx.scopes[0].name = "Test";
+        //(var symbols, var hash) = ctx.Handlinate(density2);
 
-        IEnumerable<string> parsed2 = ctx.Lines.SelectMany(str => str.Split(new[] { "\r\n", "\n" }, System.StringSplitOptions.None)).Select(x => $"{x}");
+        ctx.Parse(density);
 
         List<string> lines = new List<string>();
         lines.Add("#pragma kernel CSVoxel");
@@ -43,18 +43,29 @@ public abstract class VoxelGraph : MonoBehaviour {
         lines.Add("#include \"Assets/Noises.cginc\"");
         lines.Add("#include \"Assets/SDF.cginc\"");
 
-        // function definition
-        lines.Add("void Func(float3 position, out float density) {");
-        lines.AddRange(parsed2);
-        lines.Add("}");
+        ctx.scopes.Sort((TreeContext.KernelScope a, TreeContext.KernelScope b) => { return b.depth.CompareTo(a.depth); });
+        foreach (var scope in ctx.scopes) {
+            Debug.Log(scope.depth);
+            lines.Add($"// defined nodes: {scope.namesToNodes.Count}, depth: {scope.depth}, total lines: {scope.lines.Count} ");
+            lines.Add($"{scope.output.Item1.ToStringType()} {scope.name}(float3 position) {{");
+            scope.AddLine($"return {scope.namesToNodes[scope.output.Item2]};");
+            IEnumerable<string> parsed2 = scope.lines.SelectMany(str => str.Split(new[] { "\r\n", "\n" }, System.StringSplitOptions.None)).Select(x => $"{x}");
+            lines.AddRange(parsed2);
+            lines.Add("}\n");
+        }
 
+        
+
+
+
+
+        // function definition
+        
         lines.Add(@"
 #pragma kernel CSVoxel
 [numthreads(8, 8, 8)]
 void CSVoxel(uint3 id : SV_DispatchThreadID) {
-    float density = 0.0;
-    Func((float3(id) + offset) * scale, density);
-    voxels[id] = density;
+    voxels[id] = Test((float3(id) + offset) * scale);
 }");
 
 
@@ -75,11 +86,14 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
     private void OnValidate() {
         TreeContext ctx = new TreeContext(false);
         Variable<float3> position = ctx.AliasExternalInput<float3>("position");
+        ctx.start = position;
         Execute(position, out Variable<float> density);
-        (var symbols, var newHash) =  ctx.Handlinate(density);
+        ctx.scopes[0].output = (Utils.StrictType.Float, density);
+        ctx.scopes[0].name = "Test";
+        ctx.Parse(density);
 
-        if (hash != newHash) {
-            hash = newHash;
+        if (hash != ctx.hash) {
+            hash = ctx.hash;
             Debug.Log("Hash changed, recompiling...");
             Compile();
         }

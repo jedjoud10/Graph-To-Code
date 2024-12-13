@@ -393,13 +393,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shader: {fileID: -5579638545521383746, guid: 24c52c645c125964bb398227a33316a7, type: 3}
   offset:
-    x: -0.47
+    x: -0.3
   mul:
-    x: -32.98
+    x: -21.48
   scale:
-    x: 4.47
+    x: 2.77
   amplitude:
-    x: 0.17
+    x: 0.3
   type: 0
   mode: 2
   octaves: 3
@@ -467,7 +467,7 @@ MonoBehaviour:
   permutationSeed: {x: -335, y: -448, z: 682}
   moduloSeed: {x: 720, y: -135, z: 450}
   transformScale: {x: 0.01, y: -0.01, z: 0.01}
-  transformOffset: {x: 8.6, y: -85.12, z: 0}
+  transformOffset: {x: 8.6, y: -38.04, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

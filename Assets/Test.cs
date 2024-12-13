@@ -14,10 +14,17 @@ public class Test : VoxelGraph {
     public override void Execute(Variable<float3> position, out Variable<float> density) {
         var output = position.Swizzle<float>("y");
         var temp = position.Swizzle<float2>("xz");
-        Voronoi voronoi = new Voronoi { amplitude = amplitude, scale = scale, type = type };
-        FractalNoise fractal = new FractalNoise(voronoi, mode, octaves);
-        output += fractal.Evaluate(temp);
-        density = output + offset;
+        Simplex simplex = new Simplex { amplitude = amplitude, scale = scale };
+        //Voronoi voronoi = new Voronoi { amplitude = amplitude, scale = scale, type = type };
+        //FractalNoise fractal = new FractalNoise(voronoi, mode, octaves);
+        var test = simplex.Evaluate(temp) * 0.25f;
+        var cached = test.Cached("A");
+        cached += 0.235f;
+        var doubleCached = cached.Cached("B");
+
+
+        //density = cached + doubleCached + output + offset;
+        density = output + doubleCached;
         density *= mul;
     }
 

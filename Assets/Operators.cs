@@ -1,4 +1,6 @@
 using System;
+using System.Reflection;
+using Unity.Mathematics;
 using UnityEngine;
 
 [Serializable]
@@ -31,30 +33,20 @@ public class SimpleBinOpNode<T> : Variable<T> {
     public string op;
 
     public override void Handle(TreeContext ctx) {
+        a.Handle(ctx);
+        b.Handle(ctx);
         ctx.DefineAndBindNode<T>(this, $"{ctx[a]}_op_{ctx[b]}", $"{ctx[a]} {op} {ctx[b]}");
-    }
-
-    public override void PreHandle(PreHandle context) {
-        context.RegisterDependency(a);
-        context.RegisterDependency(b);
     }
 }
 
 [Serializable]
-public class SimpleUnOpNodeInPlace<T> : Variable<T> {
+public class CastNode<I, O> : Variable<O> {
     [SerializeReference]
-    public Variable<T> a;
-    [SerializeField]
-    public string op;
-    [SerializeField]
-    public string value;
+    public Variable<I> a;
 
     public override void Handle(TreeContext ctx) {
-        ctx.ApplyInPlaceUnaryOp(this, ctx[a], op, value);
-    }
-
-    public override void PreHandle(PreHandle context) {
-        context.RegisterDependency(a);
+        a.Handle(ctx);
+        ctx.DefineAndBindNode<O>(this, $"{ctx[a]}_casted", $"{ctx[a]}");
     }
 }
 
@@ -63,14 +55,55 @@ public class SwizzleNode<I, O> : Variable<O> {
     [SerializeReference]
     public Variable<I> a;
     [SerializeField]
-    public string swizzleOp;
+    public string swizzle;
 
     public override void Handle(TreeContext ctx) {
-        ctx.DefineAndBindNode<O>(this, $"{ctx[a]}_swizzle", $"{ctx[a]}.{swizzleOp}");
+        a.Handle(ctx);
+        ctx.DefineAndBindNode<O>(this, $"{ctx[a]}_swizzled", $"{ctx[a]}.{swizzle}");
     }
+}
 
-    public override void PreHandle(PreHandle context) {
-        context.RegisterDependency(a);
+[Serializable]
+public class ConstructNode<I, O> : Variable<O> {
+    [SerializeReference]
+    public Variable<I> x;
+    [SerializeReference]
+    public Variable<I> y;
+    [SerializeReference]
+    public Variable<I> z;
+    [SerializeReference]
+    public Variable<I> w;
+
+
+
+    public override void Handle(TreeContext ctx) {
+        string C(Variable<I> variable) {
+            if (variable == null) {
+                return "0.0";
+            } else {
+                return ctx[variable];
+            }
+        }
+
+        x?.Handle(ctx);
+        y?.Handle(ctx);
+        z?.Handle(ctx);
+        w?.Handle(ctx);
+
+        switch (Utils.TypeOf<O>()) {
+            case Utils.StrictType.Float2:
+                ctx.DefineAndBindNode<O>(this, $"f2_ctor", $"float2({C(x)},{C(y)})");
+                break;
+            case Utils.StrictType.Float3:
+                ctx.DefineAndBindNode<O>(this, $"f3_ctor", $"float3({C(x)},{C(y)},{C(z)})");
+                break;
+            case Utils.StrictType.Float4:
+                ctx.DefineAndBindNode<O>(this, $"f4_ctor", $"float4({C(x)},{C(y)},{C(z)},{C(w)})");
+                break;
+            default:
+                throw new Exception();
+                break;
+        }
     }
 }
 
@@ -82,22 +115,15 @@ public class InjectedNode<T> : Variable<T> {
     }
 }
 
-[Serializable]
-public class Cached<T> : Variable<T> {
-    public Variable<T> a;
-
-
-    // looks up all the dependencies of a and makes sure that they are 2D (could be xy, yx, xz, whatever)
-    // clones those dependencies to a secondary compute kernel
-    // create temporary texture that is written to by that kernel
-    // read said texture with appropriate swizzles in the main kernel
+// Create a function with this an input and output as function in/out, where the function is called 3 or 4 times (depending on dimensionality)
+// Small changes in the input variable along those axis (with specified epsilon) and calculating the final changes in the output variable
+public class FiniteDifferenciated<I, O> : Variable<O> {
+    public Variable<I> input;
+    public Variable<O> output;
+    public float4 diff;
 
     public override void Handle(TreeContext context) {
-        //throw new NotImplementedException();
-    }
-
-    public override void PreHandle(PreHandle context) {
-        //context.RegisterDependency(a);
+        throw new NotImplementedException();
     }
 }
 

@@ -4,13 +4,7 @@ using Unity.Mathematics;
 
 [Serializable]
 public abstract class TreeNode {
-    // Goes over the tree node before flattening the array
-    // All this does is adds all required symbols in a list, where the last element is the first symbol (no dependencies)
-    // is and first element the last symbol (multiple dependencies leading back to first symbol)
-    // Then all we do is start from the back and expand each symbol out from back to front
-    public virtual void PreHandle(PreHandle context) { }
-
-    // Expands this tree node. Could expand to multiple variable definitions or just to a singular one
+    // RECURSIVE!!!
     public abstract void Handle(TreeContext context);
 }
 
@@ -41,8 +35,16 @@ public abstract class Variable<T> : TreeNode {
     }
 
     public Variable<U> Swizzle<U>(string swizzle) {
-        return new SwizzleNode<T, U> { a = this, swizzleOp = swizzle };
-    } 
+        return new SwizzleNode<T, U> { a = this, swizzle = swizzle };
+    }
+
+    public Variable<U> Cast<U>() {
+        return new CastNode<T, U> { a = this };
+    }
+
+    public Variable<T> Cached(string name) {
+        return new Cached<T> { inner = this, name = name };
+    }
 }
 
 public class NoOp<T> : Variable<T> {
@@ -55,12 +57,8 @@ public class AssignOnly<T> : Variable<T> {
     public Variable<T> inner;
 
     public override void Handle(TreeContext ctx) {
+        inner.Handle(ctx);
         ctx.DefineAndBindNode<T>(this, name, ctx[inner], false, false, true);
-    }
-
-    public override void PreHandle(PreHandle ctx) {
-        base.PreHandle(ctx);
-        ctx.RegisterDependency(inner);
     }
 }
 
@@ -69,32 +67,57 @@ public class AssignOnly2<T> : Variable<T> {
     public Variable<T> inner;
 
     public override void Handle(TreeContext ctx) {
+        inner.Handle(ctx);
         ctx.DefineAndBindNode<T>(this, ctx[inner], value, false, false, true);
     }
-
-    public override void PreHandle(PreHandle ctx) {
-        ctx.RegisterDependency(inner);
-    }
 }
 
-/*
-public class Var<T> {
 
-    // TODO: Keep track of the inputs used for this variable so that we can use a 2d texture instead of a 3d one each time
-    // TODO: Must create a different compute shader with required variables
-    // TODO: Must create texture and create a variable that reads from it in the OG shader
-    // sub-TODO: can squish multiple cached calls into a single RGBA texture (of the same size) to help performance
-    public CachedVar<T> Cached(int sizeReduction = 1) {
-        return null;
+// TODO: Keep track of the inputs used for this variable so that we can use a 2d texture instead of a 3d one each time
+// technically no need for this since we can just always pass the given position (since we always branch off of there)
+
+// TODO: Must create a different compute shader with required variables
+// done, this now does the recursive handling within another scope so it's fine
+
+// TODO: Must create texture and create a variable that reads from it in the OG shader
+// sub-TODO: can squish multiple cached calls into a single RGBA texture (of the same size) to help performance
+[Serializable]
+public class Cached<T> : Variable<T> {
+    public Variable<T> inner;
+    public string name;
+
+    // looks up all the dependencies of a and makes sure that they are 2D (could be xy, yx, xz, whatever)
+    // clones those dependencies to a secondary compute kernel
+    // create temporary texture that is written to by that kernel
+    // read said texture with appropriate swizzles in the main kernel
+
+    public override void Handle(TreeContext context) {
+        int index = context.scopes.Count;
+        int oldScopeIndex = context.currentScope;
+        context.scopes.Add(new TreeContext.KernelScope(context.scopeDepth + 1) {
+            name = name,
+            output = (Utils.TypeOf<T>(), inner),
+        });
+
+        var startNode = context[context.start];
+
+        // ENTER NEW SCOPE!!!
+        context.currentScope = index;
+        context.scopeDepth++;
+
+        // Add the start node (position node) to the new scope
+        context.scopes[index].namesToNodes.TryAdd(context.start, startNode);
+
+        // Call the recursive handle function within the indented scope
+        inner.Handle(context);
+
+        // Copy of the name of the inner variable
+        var tempName = context[inner];
+
+        // EXIT SCOPE!!!
+        context.scopeDepth--;
+        context.currentScope = oldScopeIndex;
+
+        context.DefineAndBindNode<T>(this, $"{tempName}_cached", $"{name}(position)");
     }
 }
-
-public class CachedVar<T> {
-    public Var<T> var;
-
-    // Central difference gradient approximation
-    public Var<float3> ApproxGradent() {
-        return float3.zero;
-    }
-}
-*/

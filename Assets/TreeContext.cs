@@ -1,40 +1,8 @@
 using System;
+using System.CodeDom.Compiler;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
-
-public class PreHandle {
-    private List<TreeNode> symbols;
-    private int remaining;
-    public int hash;
-
-    public PreHandle(TreeNode head) {
-        this.symbols = new List<TreeNode>() { head };
-        this.remaining = 1;
-        this.hash = 0;
-    }
-
-    public List<TreeNode> TreeNodate(TreeContext ctx) {
-        // forward pass, add all symbols to list
-        for (int i = 0; i < 5000; i++) {
-            if (remaining == 0) {
-                break;
-            }
-
-            symbols[i].PreHandle(this);
-            remaining--;
-        }
-        return symbols;
-    }
-
-    public void Hash(object val) {
-        hash = HashCode.Combine(hash, val.GetHashCode());
-    }
-
-    public void RegisterDependency(TreeNode node) {
-        this.symbols.Add(node);
-        this.remaining++;
-    }
-}
 
 public class PropertyInjector {
     public PropertyInjector() {
@@ -51,44 +19,95 @@ public class PropertyInjector {
 }
 
 public class TreeContext {
-    private List<string> lines;
-    private Dictionary<TreeNode, string> namesToNodes;
-    private Dictionary<string, int> varNamesToId;
-    public PropertyInjector injector;
-    private List<string> properties;
-    private int counter;
-    private bool debugNames;
+    // One scope per compute shader kernel.
+    // Multiple scopes are used when we want to execute multiple kernels sequentially
+    public class KernelScope {
+        public List<string> lines;
+        public Dictionary<TreeNode, string> namesToNodes;
+        public int depth;
 
-    public List<string> Lines { get { return lines; } }
-    public List<string> Properties { get { return properties; } }
-
-    public string this[TreeNode node] {
-        get => namesToNodes[node];
+        public (Utils.StrictType, TreeNode) output;
+        public string name;
+        public int indent;
+        
+        public KernelScope(int depth) {
+            this.lines = new List<string>();
+            this.namesToNodes = new Dictionary<TreeNode, string>();
+            this.indent = 1;
+            this.depth = depth;
+        }
+        public void AddLine(string line) {
+            lines.Add(new string('\t', indent) + line);
+        }
     }
 
+    public Dictionary<string, int> varNamesToId;
+    public PropertyInjector injector;
+    public List<string> properties;
+    public int counter;
+    public bool debugNames;
+    public int hash;
+    public List<KernelScope> scopes;
+    public int currentScope = 0;
+    public int scopeDepth = 0;
+
+    public string this[TreeNode node] {
+        get => scopes[currentScope].namesToNodes[node];
+    }
+
+    public int Indent {
+        get => scopes[currentScope].indent;
+        set => scopes[currentScope].indent = value;
+    }
+
+    public List<string> Properties { get { return properties; } }
+
+    public TreeNode start;
+
+
+
     public TreeContext(bool debugNames) {
-        this.lines = new List<string>();
         this.properties = new List<string>();
-        this.namesToNodes = new Dictionary<TreeNode, string>();
         this.injector = new PropertyInjector();
         this.varNamesToId = new Dictionary<string, int>();
         this.debugNames = debugNames;
+        this.scopes = new List<KernelScope> {
+            new TreeContext.KernelScope(0) 
+        };
+
+        this.currentScope = 0;
+        this.scopeDepth = 0;
         this.counter = 0;
     }
 
     public void Inject<T>(InjectedNode<T> node, string name, Func<object> func) {
-        string newName = GenId(name);
-        injector.injected.Add(newName, (Utils.TypeOf<T>(), () => func()));
-        properties.Add(Utils.TypeOf<T>().ToStringType() + " " + newName + ";");
-        Add(node, newName);
+        if (!Contains(node)) {
+            string newName = GenId(name);
+            injector.injected.Add(newName, (Utils.TypeOf<T>(), () => func()));
+            properties.Add(Utils.TypeOf<T>().ToStringType() + " " + newName + ";");
+            Add(node, newName);
+        }
+    }
+
+    // TODO: Create a function header with the specific variables as either input variables or output variables
+    // Input variables must be initialized first with AliasExternalInput
+    // For now, just create a simple function (with a random name) that takes in a variable of a specific type and returns a specific another variable of another type    
+    // asdgfasdsdf
+
+    public void Hash(object val) {
+        hash = HashCode.Combine(hash, val.GetHashCode());
     }
 
     public void Add(TreeNode node, string name) {
-        this.namesToNodes.Add(node, name);
+        scopes[currentScope].namesToNodes.Add(node, name);
     }
 
     public bool Contains(TreeNode node) {
-        return this.namesToNodes.ContainsKey(node);
+        return scopes[currentScope].namesToNodes.ContainsKey(node);
+    }
+
+    public void AddLine(string line) {
+        scopes[currentScope].AddLine(line);
     }
 
     public string GenId(string name) {
@@ -116,28 +135,6 @@ public class TreeContext {
         return a;
     }
 
-    public Variable<T> AssignOnly<T>(string name, Variable<T> output) {
-        return new AssignOnly<T> {
-            name = name,
-            inner = output,
-        };
-    }
-
-    public Variable<T> AssignOnly2<T>(Variable<T> input, string value) {
-        return new AssignOnly2<T> {
-            value = value,
-            inner = input,
-        };
-    }
-
-    public Variable<T> InPlaceUnary<T>(Variable<T> input, string op, string value) {
-        return new SimpleUnOpNodeInPlace<T> {
-            value = value,
-            op = op,
-            a = input,
-        };
-    }
-
     // Assign a new variable using its inner value and a name given for it
     // Internally returns a NoOp
     public Variable<T> AssignTempVariable<T>(string name, string value) {
@@ -153,9 +150,9 @@ public class TreeContext {
             string suffix = constant ? "const " : "";
             
             if (assignOnly) {
-                lines.Add(newName + " = " + value + ";");
+                AddLine(newName + " = " + value + ";");
             } else {
-                lines.Add(suffix + type.ToStringType() + " " + newName + " = " + value + ";");
+                AddLine(suffix + type.ToStringType() + " " + newName + " = " + value + ";");
             }
             Add(node, newName);
         }
@@ -163,7 +160,7 @@ public class TreeContext {
 
     public void ApplyInPlaceUnaryOp(TreeNode node, string name, string op, string value) {
         if (!Contains(node)) {
-            lines.Add(name + $" {op}= " + value + ";");
+            AddLine(name + $" {op}= " + value + ";");
             Add(node, name);
         }
     }
@@ -189,17 +186,15 @@ public class TreeContext {
 
     */
 
-    public void Parse(List<TreeNode> symbols) {
-        // forward pass to convert each node to its string representation
-        for (int i = symbols.Count - 1; i >= 0; i--) {
-            symbols[i].Handle(this);
-
-        }
+    public void Parse(TreeNode head) {
+        head.Handle(this);
     }
 
+    /*
     public (List<TreeNode>, int) Handlinate(TreeNode head) {
         PreHandle preHandle = new PreHandle(head);
         var symbols = preHandle.TreeNodate(this);
         return (symbols, preHandle.hash);
     }
+    */
 }
