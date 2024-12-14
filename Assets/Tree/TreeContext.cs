@@ -10,9 +10,9 @@ public class TreeContext {
     public Dictionary<string, int> varNamesToId;
     public PropertyInjector injector;
     public List<string> properties;
+    public Hashinator hashinator;
     public int counter;
     public bool debugNames;
-    public int hash;
     public List<KernelScope> scopes;
     public int currentScope = 0;
     public int scopeDepth = 0;
@@ -39,6 +39,8 @@ public class TreeContext {
             new KernelScope(0) 
         };
 
+        this.hashinator = new Hashinator();
+
         this.currentScope = 0;
         this.scopeDepth = 0;
         this.counter = 0;
@@ -59,8 +61,7 @@ public class TreeContext {
         }
     }
 
-    public void Inject2(string name, Action<ComputeShader, Dictionary<string, Texture>> func) {
-        string newName = GenId(name);
+    public void Inject2(Action<ComputeShader, Dictionary<string, Texture>> func) {
         injector.injected.Add(func);
     }
 
@@ -70,7 +71,7 @@ public class TreeContext {
     // asdgfasdsdf
 
     public void Hash(object val) {
-        hash = HashCode.Combine(hash, val.GetHashCode());
+        hashinator.Hash(val);
     }
 
     public void Add(TreeNode node, string name) {

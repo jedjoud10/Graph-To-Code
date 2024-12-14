@@ -26,6 +26,10 @@ public abstract class Variable<T> : TreeNode {
         return new InjectedNode<T> { a = value };
     }
 
+    public static implicit operator Variable<T>(CustomCode<T> value) {
+        return value.DoStuff();
+    }
+
     public Variable<U> Swizzle<U>(string swizzle) {
         return new SwizzleNode<T, U> { a = this, swizzle = swizzle };
     }

@@ -1,17 +1,8 @@
 
 float _1;
 float _2;
-float3 _4;
-RWTexture2D<float> _7_write;
-Texture2D _7_read;
-SamplerState sampler_7_read;
-float _15;
-float _16;
-Texture1D _20_read;
-SamplerState sampler_20_read;
-float _26;
-float _27;
-float _32;
+float4x4 _3;
+float _9;
 RWTexture3D<float> voxels;
 int size;
 int3 permuationSeed;
@@ -20,41 +11,15 @@ float3 scale;
 float3 offset;
 #include "Assets/Compute/Noises.cginc"
 #include "Assets/Compute/Other.cginc"
-// defined nodes: 12, depth: 1, total lines: 15 
-float _6(float3 position, uint3 id) {
-	const float _8 = 2;
-	float2 _9 = position.xz;
-	const float _10 = 0.5;
-	float _11 = 0.0;
-	float _12 = 1.0;
-	float _13 = 1.0;
-	[unroll]
-	for(uint i = 0; i < 4; i++) {
-		_12 *= _8;
-		_13 *= _10;
-		float2 _14 = _9 * _12 + hash31(float(i));
-		float _17 = (snoise((_14) * _16)) * _15;
-		_11 += abs(_17) * _13;
-	}
-	float _18 = _11;
-	return _18;
-}
-
-// defined nodes: 19, depth: 0, total lines: 12 
+// defined nodes: 10, depth: 0, total lines: 6 
 float Voxel(float3 position, uint3 id) {
-	const float3 _3 = float3(1,1,1);
-	const float _5 = 0;
-	float _19 = SampleBounded(_7_read, sampler_7_read, (float2(id.xz) / size) * _3 + _4.xz, _5, (float(size) / 1)).x;
-	float _22 = Remap(_19, _1, _2, 0.0, 1.0);
-	float _23 = _20_read.SampleLevel(sampler_20_read, _22, 0);
-	float _24 = Remap(_23, 0.0, 1.0, _1, _2);
-	float4 _25 = _24;
-	float _28 = (snoise((position) * _27)) * _26;
-	float _29 = _25 + _28;
-	float _30 = position.y;
-	float _31 = _29 + _30;
-	float _33 = _31 * _32;
-	return _33;
+	float3 _4 = mul(_3, float4(position, 1.0));
+	float2 _5 = _4.xz;
+	float _6 = (snoise((_5) * _2)) * _1;
+	float _7 = _4.y;
+	float _8 = _6 + _7;
+	float _10 = _8 * _9;
+	return _10;
 }
 
 
@@ -62,12 +27,4 @@ float Voxel(float3 position, uint3 id) {
 [numthreads(8, 8, 8)]
 void CSVoxel(uint3 id : SV_DispatchThreadID) {
     voxels[id] = Voxel((float3(id) + offset) * scale, id);
-}
-
-#pragma kernel CS_6
-[numthreads(8, 8, 1)]
-void CS_6(uint3 id : SV_DispatchThreadID) {
-    uint3 remapped = uint3(id.x, 0.0, id.y);
-
-    _7_write[id.xy] = _6((float3(remapped * 1) + offset) * scale, id);
 }

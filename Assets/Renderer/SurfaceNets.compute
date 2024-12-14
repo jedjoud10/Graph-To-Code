@@ -1,0 +1,52 @@
+#pragma kernel CSVertices
+#pragma kernel CSQuads
+
+#define UNITY_INDIRECT_DRAW_ARGS IndirectDrawIndexedArgs
+#include "UnityIndirect.cginc"
+
+RWTexture3D<float> densities;
+RWTexture3D<uint> vertexIds;
+
+RWStructuredBuffer<float3> vertices;
+RWStructuredBuffer<int> indices;
+
+RWStructuredBuffer<UNITY_INDIRECT_DRAW_ARGS> cmdBuffer;
+
+static uint3 edgePositions0[12] = {
+    uint3(0, 0, 0),
+    uint3(1, 0, 0),
+    uint3(1, 1, 0),
+    uint3(0, 1, 0),
+    uint3(0, 0, 1),
+    uint3(1, 0, 1),
+    uint3(1, 1, 1),
+    uint3(0, 1, 1),
+    uint3(0, 0, 0),
+    uint3(1, 0, 0),
+    uint3(1, 1, 0),
+    uint3(0, 1, 0),
+};
+
+static uint3 edgePositions1[12] = {
+    uint3(1, 0, 0),
+    uint3(1, 1, 0),
+    uint3(0, 1, 0),
+    uint3(0, 0, 0),
+    uint3(1, 0, 1),
+    uint3(1, 1, 1),
+    uint3(0, 1, 1),
+    uint3(0, 0, 1),
+    uint3(0, 0, 1),
+    uint3(1, 0, 1),
+    uint3(1, 1, 1),
+    uint3(0, 1, 1),
+};
+
+[numthreads(8, 8, 8)]
+void CSVertices(uint3 id : SV_DispatchThreadID) {
+}
+
+
+[numthreads(8, 8, 8)]
+void CSQuads(uint3 id : SV_DispatchThreadID) {
+}

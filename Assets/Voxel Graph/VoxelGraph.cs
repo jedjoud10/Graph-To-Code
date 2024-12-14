@@ -20,10 +20,14 @@ public abstract class VoxelGraph : MonoBehaviour {
     // Execute the voxel graph at a specific position and fetch the density and material values
     public abstract void Execute(Variable<float3> position, out Variable<float> density);
 
+    // Hashes extra parameters that could be used for recompilation
+    public virtual void Hashinate(Hashinator hashinator) { }
+
     // This transpile the voxel graph into HLSL code that can be executed on the GPU
     // This can be done outside the editor, but shader compilation MUST be done in editor
     public string Transpile() {
         TreeContext ctx = new TreeContext(debugName);
+        Hashinate(ctx.hashinator);
         
         Variable<float3> position = ctx.AliasExternalInput<float3>("position");
         ctx.start = position;
@@ -113,8 +117,8 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
         ctx.scopes[0].name = "Voxel";
         ctx.Parse(density);
 
-        if (hash != ctx.hash) {
-            hash = ctx.hash;
+        if (hash != ctx.hashinator.hash) {
+            hash = ctx.hashinator.hash;
             Debug.Log("Hash changed, recompiling...");
             Compile();
         }

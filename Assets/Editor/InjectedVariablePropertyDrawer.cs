@@ -2,7 +2,7 @@ using UnityEditor;
 using UnityEngine;
 
 [CustomPropertyDrawer(typeof(Inject<>))]
-public class IngredientDrawerAoao : PropertyDrawer {
+public class InjectedVariablePropertyDrawer : PropertyDrawer {
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
         // Get the "x" field inside the Aoao<T> class
         SerializedProperty xProperty = property.FindPropertyRelative("x");

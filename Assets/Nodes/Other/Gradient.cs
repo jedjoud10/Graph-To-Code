@@ -28,7 +28,7 @@ public class GradientNode<T> : Variable<T> {
         context.properties.Add($"Texture1D {textureName}_read;");
         context.properties.Add($"SamplerState sampler{textureName}_read;");
 
-        context.Inject2("inj", (compute, textures) => {
+        context.Inject2((compute, textures) => {
             Texture2D tex = (Texture2D)textures[textureName];
 
             Color32[] colors = new Color32[size];
