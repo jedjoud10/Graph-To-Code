@@ -1,7 +1,5 @@
-using Palmmedia.ReportGenerator.Core;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Experimental.Rendering;
 
 [CustomEditor(typeof(VoxelGraphExecutor), true)]
 public class VoxelExecutorCustomEditor : Editor {

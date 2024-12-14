@@ -1,80 +1,12 @@
 using System;
-using System.CodeDom.Compiler;
 using System.Collections.Generic;
-using System.Threading;
 using UnityEngine;
-using UnityEngine.Rendering;
-
-public class PropertyInjector {
-    public List<Action<ComputeShader, Dictionary<string, Texture>>> injected;
-
-    public PropertyInjector() {
-        this.injected = new List<Action<ComputeShader, Dictionary<string, Texture>>>();
-    }
-
-
-    public void UpdateInjected(ComputeShader shader, Dictionary<string, Texture> textures) {
-        foreach (var item in injected) {
-            item.Invoke(shader, textures);
-        }
-    }
-}
 
 public class TreeContext {
-    // One scope per compute shader kernel.
-    // Multiple scopes are used when we want to execute multiple kernels sequentially
-    public class KernelScope {
-        public List<string> lines;
-        public Dictionary<TreeNode, string> namesToNodes;
-        public int depth;
-
-        public (Utils.StrictType, TreeNode) output;
-        public string name;
-        public int indent;
-        
-        public KernelScope(int depth) {
-            this.lines = new List<string>();
-            this.namesToNodes = new Dictionary<TreeNode, string>();
-            this.indent = 1;
-            this.depth = depth;
-        }
-        public void AddLine(string line) {
-            lines.Add(new string('\t', indent) + line);
-        }
-    }
-
-    [Serializable]
-    public class TempTexture {
-        public string name;
-        public Utils.StrictType type;
-        public FilterMode filter;
-        public TextureWrapMode wrap;
-        public List<string> readKernels;
-        public string writeKernel;
-        public bool threeDimensions;
-        public int sizeReductionPower;
-        public bool mips;
-    }
-
-    [Serializable]
-    public class GradientTexture {
-        public string name;
-        public List<string> readKernels;
-        public int size;
-    }
-
-    [Serializable]
-    public class ComputeKernelDispatch {
-        public string name;
-        public int depth;
-        public int sizeReductionPower;
-        public bool threeDimensions;
-    }
-
     public Dictionary<string, TempTexture> tempTextures;
     public Dictionary<string, GradientTexture> gradientTextures;
     public List<string> computeKernels;
-    public List<ComputeKernelDispatch> computeKernelNameAndDepth;
+    public List<KernelDispatch> computeKernelNameAndDepth;
     public Dictionary<string, int> varNamesToId;
     public PropertyInjector injector;
     public List<string> properties;
@@ -98,22 +30,20 @@ public class TreeContext {
 
     public TreeNode start;
 
-
-
     public TreeContext(bool debugNames) {
         this.properties = new List<string>();
         this.injector = new PropertyInjector();
         this.varNamesToId = new Dictionary<string, int>();
         this.debugNames = debugNames;
         this.scopes = new List<KernelScope> {
-            new TreeContext.KernelScope(0) 
+            new KernelScope(0) 
         };
 
         this.currentScope = 0;
         this.scopeDepth = 0;
         this.counter = 0;
         this.computeKernels = new List<string>();
-        this.computeKernelNameAndDepth = new List<ComputeKernelDispatch>();
+        this.computeKernelNameAndDepth = new List<KernelDispatch>();
         this.tempTextures = new Dictionary<string, TempTexture>();
         this.gradientTextures = new Dictionary<string, GradientTexture>();
     }

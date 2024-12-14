@@ -2,128 +2,6 @@ using System;
 using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
-using static TreeContext;
-
-
-[Serializable]
-public abstract class TreeNode {
-    public virtual void Handle(TreeContext context) {
-        if (!context.Contains(this)) {
-            HandleInternal(context);
-        }
-    }
-    public abstract void HandleInternal(TreeContext context);
-
-}
-
-[Serializable]
-public abstract class Variable<T> : TreeNode {
-
-    public static implicit operator Variable<T>(T value) {
-        return new DefineNode<T> { value = Utils.ToDefinableString(value), constant = true };
-    }
-
-    public static Variable<T> operator +(Variable<T> a, Variable<T> b) {
-        return new SimpleBinOpNode<T> { a = a, b = b, op = "+" };
-    }
-
-    public static Variable<T> operator -(Variable<T> a, Variable<T> b) {
-        return new SimpleBinOpNode<T> { a = a, b = b, op = "-" };
-    }
-
-    public static Variable<T> operator *(Variable<T> a, Variable<T> b) {
-        return new SimpleBinOpNode<T> { a = a, b = b, op = "*" };
-    }
-    public static Variable<T> operator /(Variable<T> a, Variable<T> b) {
-        return new SimpleBinOpNode<T> { a = a, b = b, op = "/" };
-    }
-
-    public static implicit operator Variable<T>(Inject<T> value) {
-        return new InjectedNode<T> { a = value };
-    }
-
-    public Variable<U> Swizzle<U>(string swizzle) {
-        return new SwizzleNode<T, U> { a = this, swizzle = swizzle };
-    }
-
-    public Variable<U> Cast<U>() {
-        return new CastNode<T, U> { a = this };
-    }
-
-    public Variable<T> Cached(int sizeReductionPower) {
-        return new CachedNode<T> { inner = this, sizeReductionPower = sizeReductionPower, sampler = new CachedSampler(), };
-    }
-}
-
-public class Cacher<T> {
-    public int sizeReductionPower;
-    public Variable<float> scale;
-    public CachedSampler sampler;
-
-    public Cacher() {
-        this.sizeReductionPower = 0;
-        this.scale = 1.0f;
-        this.sampler = new CachedSampler();
-    }
-
-    public Variable<T> Cache(Variable<T> input, string swizzle = "xyz") {
-        return new CachedNode<T> {
-            inner = input,
-            sizeReductionPower = sizeReductionPower,
-            sampler = sampler,
-            swizzle = swizzle,
-        };
-    }
-}
-
-public class CachedSampler {
-    public Variable<float3> scale;
-    public Variable<float3> offset;
-
-    public FilterMode filter;
-    public TextureWrapMode wrap;
-    
-    public Variable<float> level;
-    public bool generateMips;
-
-    public bool bicubic;
-
-    public CachedSampler() {
-        this.scale = new float3(1.0);
-        this.filter = FilterMode.Trilinear;
-        this.wrap = TextureWrapMode.Clamp;
-        this.offset = float3.zero;
-        this.level = 0.0f;
-        this.bicubic = false;
-        this.generateMips = false;
-    }
-}
-
-
-public class NoOp<T> : Variable<T> {
-    public override void HandleInternal(TreeContext context) {
-    }
-}
-
-public class AssignOnly<T> : Variable<T> {
-    public string name;
-    public Variable<T> inner;
-
-    public override void HandleInternal(TreeContext ctx) {
-        inner.Handle(ctx);
-        ctx.DefineAndBindNode<T>(this, name, ctx[inner], false, false, true);
-    }
-}
-
-public class AssignOnly2<T> : Variable<T> {
-    public string value;
-    public Variable<T> inner;
-
-    public override void HandleInternal(TreeContext ctx) {
-        inner.Handle(ctx);
-        ctx.DefineAndBindNode<T>(this, ctx[inner], value, false, false, true);
-    }
-}
 
 
 // TODO: Keep track of the inputs used for this variable so that we can use a 2d texture instead of a 3d one each time
@@ -140,8 +18,6 @@ public class AssignOnly2<T> : Variable<T> {
 
 // TODO: dedupe stuff pls thx
 // fixed
-[Serializable]
-// TODO: Figure out why I set all of the variable stuff to be serializable to even begin with
 public class CachedNode<T> : Variable<T> {
     public Variable<T> inner;
     public int sizeReductionPower;
@@ -183,7 +59,7 @@ public class CachedNode<T> : Variable<T> {
 
         int index = context.scopes.Count;
         int oldScopeIndex = context.currentScope;
-        context.scopes.Add(new TreeContext.KernelScope(context.scopeDepth + 1) {
+        context.scopes.Add(new KernelScope(context.scopeDepth + 1) {
             name = scopeName,
             output = (Utils.TypeOf<T>(), inner),
         });
@@ -268,13 +144,13 @@ void CS{scopeName}(uint3 id : SV_DispatchThreadID) {{
 }}";
 
         context.computeKernels.Add(compute);
-        context.computeKernelNameAndDepth.Add(new ComputeKernelDispatch {
+        context.computeKernelNameAndDepth.Add(new KernelDispatch {
             name = $"CS{scopeName}",
             depth = context.scopeDepth + 1,
             sizeReductionPower = sizeReductionPower,
             threeDimensions = _3d,
         });
-        context.tempTextures.Add($"{tempName}_cached", new TreeContext.TempTexture {
+        context.tempTextures.Add($"{tempName}_cached", new TempTexture {
             name = textureName,
             sizeReductionPower = sizeReductionPower,
             type = Utils.TypeOf<T>(),
@@ -285,5 +161,49 @@ void CS{scopeName}(uint3 id : SV_DispatchThreadID) {{
             threeDimensions = _3d,
             readKernels = new List<string>() { $"CS{context.scopes[oldScopeIndex].name}" },
         });
+    }
+}
+
+public class Cacher<T> {
+    public int sizeReductionPower;
+    public Variable<float> scale;
+    public CachedSampler sampler;
+
+    public Cacher() {
+        this.sizeReductionPower = 0;
+        this.scale = 1.0f;
+        this.sampler = new CachedSampler();
+    }
+
+    public Variable<T> Cache(Variable<T> input, string swizzle = "xyz") {
+        return new CachedNode<T> {
+            inner = input,
+            sizeReductionPower = sizeReductionPower,
+            sampler = sampler,
+            swizzle = swizzle,
+        };
+    }
+}
+
+public class CachedSampler {
+    public Variable<float3> scale;
+    public Variable<float3> offset;
+
+    public FilterMode filter;
+    public TextureWrapMode wrap;
+
+    public Variable<float> level;
+    public bool generateMips;
+
+    public bool bicubic;
+
+    public CachedSampler() {
+        this.scale = new float3(1.0);
+        this.filter = FilterMode.Trilinear;
+        this.wrap = TextureWrapMode.Clamp;
+        this.offset = float3.zero;
+        this.level = 0.0f;
+        this.bicubic = false;
+        this.generateMips = false;
     }
 }

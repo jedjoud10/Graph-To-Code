@@ -18,9 +18,8 @@ int3 permuationSeed;
 int3 moduloSeed;
 float3 scale;
 float3 offset;
-#include "Assets/Noises.cginc"
-#include "Assets/Other.cginc"
-#include "Assets/SDF.cginc"
+#include "Assets/Compute/Noises.cginc"
+#include "Assets/Compute/Other.cginc"
 // defined nodes: 12, depth: 1, total lines: 15 
 float _6(float3 position, uint3 id) {
 	const float _8 = 2;
@@ -30,12 +29,12 @@ float _6(float3 position, uint3 id) {
 	float _12 = 1.0;
 	float _13 = 1.0;
 	[unroll]
-	for(uint i = 0; i < 3; i++) {
+	for(uint i = 0; i < 4; i++) {
 		_12 *= _8;
 		_13 *= _10;
 		float2 _14 = _9 * _12 + hash31(float(i));
 		float _17 = (snoise((_14) * _16)) * _15;
-		_11 += _17 * _13;
+		_11 += abs(_17) * _13;
 	}
 	float _18 = _11;
 	return _18;
@@ -45,7 +44,7 @@ float _6(float3 position, uint3 id) {
 float Voxel(float3 position, uint3 id) {
 	const float3 _3 = float3(1,1,1);
 	const float _5 = 0;
-	float _19 = SampleBounded(_7_read, sampler_7_read, (float2(id.xz) / size) * _3 + _4.xz, _5, (float(size) / 4)).x;
+	float _19 = SampleBounded(_7_read, sampler_7_read, (float2(id.xz) / size) * _3 + _4.xz, _5, (float(size) / 1)).x;
 	float _22 = Remap(_19, _1, _2, 0.0, 1.0);
 	float _23 = _20_read.SampleLevel(sampler_20_read, _22, 0);
 	float _24 = Remap(_23, 0.0, 1.0, _1, _2);
@@ -70,5 +69,5 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
 void CS_6(uint3 id : SV_DispatchThreadID) {
     uint3 remapped = uint3(id.x, 0.0, id.y);
 
-    _7_write[id.xy] = _6((float3(remapped * 4) + offset) * scale, id);
+    _7_write[id.xy] = _6((float3(remapped * 1) + offset) * scale, id);
 }

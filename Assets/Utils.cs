@@ -1,5 +1,4 @@
 //using System.Diagnostics;
-using System.Drawing;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;

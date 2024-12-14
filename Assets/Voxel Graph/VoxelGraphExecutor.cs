@@ -1,13 +1,6 @@
 using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using Unity.Mathematics;
-using Unity.VisualScripting;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
-using UnityEngine.Rendering;
 
 public class VoxelGraphExecutor : MonoBehaviour {
     [Header("Seeding")]
@@ -20,11 +13,20 @@ public class VoxelGraphExecutor : MonoBehaviour {
     public Vector3 transformOffset;
     private VoxelGraph graph;
 
-    public Dictionary<string, Texture> textures;
-    public List<Texture> texturesList;
-    public bool dirtyTexturesRecompilation;
+    private Dictionary<string, Texture> textures;
+    private bool dirtyTexturesRecompilation;
 
-    public void CreateIfNull(int size) {
+    public RenderTexture VoxelTexture {
+        get {
+            return (RenderTexture)textures["voxels"];
+        }
+    }
+
+    public void SetDirty() {
+        dirtyTexturesRecompilation = true;
+    }
+
+    public void CreateIntermediateTextures(int size) {
         GraphicsFormat ToGfxFormat(Utils.StrictType type) {
             switch (type) {
                 case Utils.StrictType.Float:
@@ -51,7 +53,6 @@ public class VoxelGraphExecutor : MonoBehaviour {
                 }
             }
 
-            texturesList = new List<Texture>();
             textures = new Dictionary<string, Texture> {
                 { "voxels", Utils.Create3DRenderTexture(size, GraphicsFormat.R32_SFloat, FilterMode.Trilinear, TextureWrapMode.Repeat, false) }
             };
@@ -71,15 +72,13 @@ public class VoxelGraphExecutor : MonoBehaviour {
                 texture.wrapMode = TextureWrapMode.Clamp;
                 textures.Add(temp.name, texture);
             }
-
-            texturesList = textures.Values.ToList();
         }
     }
 
     public void ExecuteShader(int size) {
         graph = GetComponent<VoxelGraph>();
 
-        CreateIfNull(size);
+        CreateIntermediateTextures(size);
 
         if (graph.shader == null) {
             Debug.LogWarning("Shader is not set. You must compile!!");
@@ -90,9 +89,6 @@ public class VoxelGraphExecutor : MonoBehaviour {
             graph.Transpile();
         }
 
-        //counter++;
-        //int3 offset = (int3)IndexToPos(counter % (4*4*4), 4);
-        //shader.SetInts("offset", new int[] { offset.x, offset.y, offset.z });
         var shader = graph.shader;
         shader.SetTexture(0, "voxels", textures["voxels"]);
         shader.SetInt("size", size);
@@ -103,29 +99,22 @@ public class VoxelGraphExecutor : MonoBehaviour {
         graph.injector.UpdateInjected(shader, textures);
 
         foreach (var (no, temp) in graph.gradientTextures) {
-            // Set the texture for the kernels that will read from the texture
             foreach (var readKernel in temp.readKernels) {
                 int readKernelId = shader.FindKernel(readKernel);
                 shader.SetTexture(readKernelId, temp.name + "_read", textures[temp.name]);
             }
         }
 
+        Dictionary<string, TempTexture> kernelsToWriteTexture = new Dictionary<string, TempTexture>();
 
         foreach (var (no, temp) in graph.tempTextures) {
-            // Set the texture for the kernel that will write to the texture
             int writeKernelId = shader.FindKernel(temp.writeKernel);
             shader.SetTexture(writeKernelId, temp.name + "_write", textures[temp.name]);
+            kernelsToWriteTexture.Add(temp.writeKernel, temp);
 
-            // Set the texture for the kernels that will read from the texture
             foreach (var readKernel in temp.readKernels) {
                 int readKernelId = shader.FindKernel(readKernel);
                 shader.SetTexture(readKernelId, temp.name + "_read", textures[temp.name]);
-            }
-
-            if (temp.mips) {
-                if (textures[temp.name] is RenderTexture texture) {
-                    texture.GenerateMips();
-                }
             }
         }
 
@@ -137,6 +126,14 @@ public class VoxelGraphExecutor : MonoBehaviour {
                 shader.Dispatch(id, tempSize / 8, tempSize / 8, tempSize / 8);
             } else {
                 shader.Dispatch(id, tempSize / 8, tempSize / 8, 1);
+            }
+
+            if (kernelsToWriteTexture.TryGetValue(kernel.name, out var temp)) {
+                if (temp.mips) {
+                    if (textures[temp.name] is RenderTexture texture) {
+                        texture.GenerateMips();
+                    }
+                }
             }
         }
 

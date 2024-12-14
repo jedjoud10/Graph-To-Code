@@ -4,9 +4,6 @@ using System.Linq;
 using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Experimental.Rendering;
-using static TreeContext;
-using static UnityEditor.Timeline.TimelinePlaybackControls;
 
 // A voxel graph is the base class to inherit from to be able to write custom voxel stuff
 public abstract class VoxelGraph : MonoBehaviour {
@@ -14,9 +11,9 @@ public abstract class VoxelGraph : MonoBehaviour {
     public ComputeShader shader;
     [HideInInspector]
     public PropertyInjector injector;
-    public List<TreeContext.ComputeKernelDispatch> computeKernelNameAndDepth;
-    public Dictionary<string, TreeContext.TempTexture> tempTextures;
-    public Dictionary<string, TreeContext.GradientTexture> gradientTextures;
+    public List<KernelDispatch> computeKernelNameAndDepth;
+    public Dictionary<string, TempTexture> tempTextures;
+    public Dictionary<string, GradientTexture> gradientTextures;
     private int hash;
     public bool debugName = true;
 
@@ -47,11 +44,11 @@ public abstract class VoxelGraph : MonoBehaviour {
 
 
         // imports
-        lines.Add("#include \"Assets/Noises.cginc\"");
-        lines.Add("#include \"Assets/Other.cginc\"");
-        lines.Add("#include \"Assets/SDF.cginc\"");
+        lines.Add("#include \"Assets/Compute/Noises.cginc\"");
+        lines.Add("#include \"Assets/Compute/Other.cginc\"");
+        //lines.Add("#include \"Assets/SDF.cginc\"");
 
-        ctx.scopes.Sort((TreeContext.KernelScope a, TreeContext.KernelScope b) => { return b.depth.CompareTo(a.depth); });
+        ctx.scopes.Sort((KernelScope a, KernelScope b) => { return b.depth.CompareTo(a.depth); });
         foreach (var scope in ctx.scopes) {
             Debug.Log(scope.depth);
             lines.Add($"// defined nodes: {scope.namesToNodes.Count}, depth: {scope.depth}, total lines: {scope.lines.Count} ");
@@ -77,7 +74,7 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
 }"
 );
         // TODO: Convert all of the default voxel stuff to use the stuff we've defined (aka remove the shit stuff from above kekw)
-        ctx.computeKernelNameAndDepth.Add(new TreeContext.ComputeKernelDispatch {
+        ctx.computeKernelNameAndDepth.Add(new KernelDispatch {
             name = $"CSVoxel",
             depth = 0,
             sizeReductionPower = 0,
@@ -87,13 +84,13 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
         lines.AddRange(ctx.computeKernels);
 
         injector = ctx.injector;
-        ctx.computeKernelNameAndDepth.Sort((TreeContext.ComputeKernelDispatch a, TreeContext.ComputeKernelDispatch b) => { return b.depth.CompareTo(a.depth); });
+        ctx.computeKernelNameAndDepth.Sort((KernelDispatch a, KernelDispatch b) => { return b.depth.CompareTo(a.depth); });
         
         computeKernelNameAndDepth = ctx.computeKernelNameAndDepth;
         tempTextures = ctx.tempTextures;
         gradientTextures = ctx.gradientTextures;
 
-        GetComponent<VoxelGraphExecutor>().dirtyTexturesRecompilation = true;
+        GetComponent<VoxelGraphExecutor>().SetDirty();
         return lines.Aggregate("", (a, b) => a + "\n" + b);
     }
 
@@ -128,12 +125,14 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
         Debug.Log("Compiling...");
         string source = Transpile();
         string folder = "Converted";
+        string root = "Assets/Compute";
 
-        if (!AssetDatabase.IsValidFolder("Assets/" + folder)) {
-            string guid = AssetDatabase.CreateFolder("Assets", folder);
+        if (!AssetDatabase.IsValidFolder(root + "/" + folder + "/")) {
+            Debug.Log("Creating converted compute shaders folders");
+            string guid = AssetDatabase.CreateFolder(root, folder);
         }
 
-        string filePath = "Assets/" + folder + "/" + name.ToLower() + ".compute";
+        string filePath = root + "/" + folder + "/" + name.ToLower() + ".compute";
         using (StreamWriter sw = File.CreateText(filePath)) {
             sw.Write(source);
         }
