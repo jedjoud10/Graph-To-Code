@@ -51,7 +51,13 @@ public class Voronoi : Noise {
         this.type = Type.F1;
     }
 
-    public Voronoi(float amplitude = 1.0f, float scale = 0.01f, Type type = Type.F1) {
+    public Voronoi(Variable<float> scale, Variable<float> amplitude) {
+        this.amplitude = amplitude;
+        this.scale = scale;
+        this.type = Type.F1;
+    }
+
+    public Voronoi(float scale = 0.01f, float amplitude = 1.0f, Type type = Type.F1) {
         this.amplitude = amplitude;
         this.scale = scale;
         this.type = type;

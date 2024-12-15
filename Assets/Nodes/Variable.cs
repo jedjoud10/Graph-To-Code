@@ -38,7 +38,7 @@ public abstract class Variable<T> : TreeNode {
         return new CastNode<T, U> { a = this };
     }
 
-    public Variable<T> Cached(int sizeReductionPower) {
-        return new CachedNode<T> { inner = this, sizeReductionPower = sizeReductionPower, sampler = new CachedSampler(), };
+    public Variable<T> Cached(int sizeReductionPower, string swizzle = "xyz") {
+        return new CachedNode<T> { inner = this, sizeReductionPower = sizeReductionPower, sampler = new CachedSampler(), swizzle = swizzle };
     }
 }

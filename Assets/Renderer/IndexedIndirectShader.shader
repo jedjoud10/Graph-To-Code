@@ -12,14 +12,15 @@ Shader "Custom/NewSurfaceShader"
         CGPROGRAM
 
         #ifdef SHADER_API_D3D11
-            StructuredBuffer<float4> vertices;
-            StructuredBuffer<float4> normals;
+            StructuredBuffer<float3> vertices;
+            StructuredBuffer<float3> normals;
+            StructuredBuffer<float3> colors;
         #endif
 
         // Use shader model 3.0 target, to get nicer looking lighting
         #pragma target 5.0
         #pragma vertex vert
-        #pragma surface surf Lambert
+        #pragma surface surf Standard 
             
 
 
@@ -28,33 +29,50 @@ Shader "Custom/NewSurfaceShader"
         struct appdata {
            float4 vertex : SV_POSITION;
            float3 normal : NORMAL;
+           float4 tangent : TANGENT;
            float4 color : COLOR;
            uint id : SV_VertexID;
         };
 
         struct Input {
-            float3 normal : NORMAL;
-            float vertexId;
+            float3 normal;
+            float3 color;
+            float3 cameraRelativeWorldPos;
+            INTERNAL_DATA
         };
 
         void vert (inout appdata v, out Input o) { //, uint inst : SV_InstanceID
-           #ifdef SHADER_API_D3D11
-           float4 vertex_position =  float4(vertices[v.id].xyz,1.0);
-           float4 vertex_normal = float4(normals[v.id].xyz, 1.0); 
-           v.vertex = vertex_position;
-           v.normal = vertex_normal;
-           #endif
-           o.vertexId = 0.0;
-           o.normal = 0.0;
+           UNITY_INITIALIZE_OUTPUT(Input,o);
 
+           #ifdef SHADER_API_D3D11
+           v.vertex = float4(vertices[v.id],1.0);
+           v.normal = float4(normals[v.id], 1.0);
+           v.color = float4(colors[v.id], 0.0);
+           o.normal = normals[v.id];
+           o.color = colors[v.id];
+           #endif
+
+           o.cameraRelativeWorldPos = mul(unity_ObjectToWorld, float4(v.vertex.xyz, 1.0)) - _WorldSpaceCameraPos.xyz;
         }
 
 
-        void surf (Input IN, inout SurfaceOutput o) {
+        void surf (Input IN, inout SurfaceOutputStandard o) {
            //o.Emission = normalize(IN.normal) * 2 - 1;
            //o.Albedo *= IN.vertexId / 20000.0;
-           o.Emission = 1.0; 
-           o.Albedo = 1.0; 
+           //o.Normal = normalize(IN.normal); 
+
+           
+           // flat world normal from position derivatives
+           half3 flatWorldNormal = normalize(cross(ddy(IN.cameraRelativeWorldPos.xyz), ddx(IN.cameraRelativeWorldPos.xyz)));
+
+           // construct world to tangent matrix
+           half3 worldT =  WorldNormalVector(IN, half3(1,0,0));
+           half3 worldB =  WorldNormalVector(IN, half3(0,1,0));
+           half3 worldN =  WorldNormalVector(IN, half3(0,0,1));
+           half3x3 tbn = half3x3(worldT, worldB, worldN);
+           
+           o.Albedo = flatWorldNormal; 
+           o.Normal = float3(0,0,0);
         }
 
         ENDCG

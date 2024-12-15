@@ -36,7 +36,7 @@ public class FractalNoiseNode<T> : AbstractNoiseNode<T> {
         context.AddLine($"for(uint i = 0; i < {actualOctaves}; i++) {{");
         context.Indent++;
 
-        Variable<T> fbmed = context.AssignTempVariable<T>($"{context[position]}_fmb_pos", $"{context[position]} * {context[fbm_scale]} + hash31(float(i))");
+        Variable<T> fbmed = context.AssignTempVariable<T>($"{context[position]}_fmb_pos", $"{context[position]} * {context[fbm_scale]} + hash31(float(i)) * 1000.0");
 
         var new_noise = (AbstractNoiseNode<T>)noise.Clone();
         new_noise.position = fbmed;

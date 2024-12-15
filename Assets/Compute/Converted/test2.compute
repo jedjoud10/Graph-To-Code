@@ -12,7 +12,6 @@ float _18;
 Texture1D _21_read;
 SamplerState sampler_21_read;
 float4x4 _27;
-float _31;
 RWTexture3D<float> voxels;
 int size;
 int3 permuationSeed;
@@ -29,10 +28,10 @@ float _4(float3 position, uint3 id) {
 	float _14 = 1.0;
 	float _15 = 1.0;
 	[unroll]
-	for(uint i = 0; i < 3; i++) {
-		float2 _16 = _11 * _14 + hash31(float(i));
-		float _19 = (snoise((_16) * _18)) * _17;
-		_13 += abs(_19) * _15;
+	for(uint i = 0; i < 4; i++) {
+		float2 _16 = _11 * _14 + hash31(float(i)) * 1000.0;
+		float _19 = (cellular((_16) * _18).x - 0.5) * _17;
+		_13 += _19 * _15;
 		_14 *= _8;
 		_15 *= _12;
 	}
@@ -44,7 +43,7 @@ float _4(float3 position, uint3 id) {
 	return _25;
 }
 
-// defined nodes: 10, depth: 0, total lines: 8 
+// defined nodes: 8, depth: 0, total lines: 7 
 float Voxel(float3 position, uint3 id) {
 	const float3 _1 = float3(1,1,1);
 	const float3 _2 = float3(0,0,0);
@@ -53,8 +52,7 @@ float Voxel(float3 position, uint3 id) {
 	float3 _28 = mul(_27, float4(position, 1.0));
 	float _29 = _28.y;
 	float _30 = _26 + _29;
-	float _32 = _30 * _31;
-	return _32;
+	return _30;
 }
 
 

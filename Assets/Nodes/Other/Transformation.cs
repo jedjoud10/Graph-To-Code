@@ -14,7 +14,7 @@ public class TransformationNode : Variable<float3> {
         ctx.properties.Add($"float4x4 {matrixName};");
 
         ctx.Inject2((compute, textures) => {
-            float4x4 matrix = transform == null ? float4x4.identity : math.AffineTransform(transform.position, transform.rotation, transform.scale);
+            float4x4 matrix = transform == null ? float4x4.identity : math.AffineTransform(transform.position, Quaternion.Euler(transform.rotation), transform.scale);
             
             compute.SetMatrix(matrixName, matrix);
         });
@@ -26,7 +26,7 @@ public class TransformationNode : Variable<float3> {
 [Serializable]
 public class InlineTransform {
     public Vector3 position = Vector3.zero;
-    public Quaternion rotation = Quaternion.identity;
+    public Vector3 rotation = Vector3.zero;
     public Vector3 scale = Vector3.one;
 }
 

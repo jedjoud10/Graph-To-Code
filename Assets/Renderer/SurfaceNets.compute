@@ -7,8 +7,12 @@
 RWTexture3D<float> densities;
 RWTexture3D<uint> vertexIds;
 
-RWStructuredBuffer<float4> vertices;
-RWStructuredBuffer<float4> normals;
+bool blocky;
+int size;
+
+RWStructuredBuffer<float3> vertices;
+RWStructuredBuffer<float3> normals;
+RWStructuredBuffer<float3> colors;
 RWStructuredBuffer<int> indices;
 
 RWStructuredBuffer<uint> atomicCounters;
@@ -84,12 +88,9 @@ float3 normalMaxx(uint3 id) {
 
 [numthreads(8, 8, 8)]
 void CSVertex(uint3 id : SV_DispatchThreadID) {
-    if (any(id >= 64)) {
+    if (any(id == size)) {
         return;
     }
-
-    //vertexIds[id] = 0;
-    AllMemoryBarrier();
 
     int count = 0;
     float3 sum = float3(0, 0, 0);
@@ -103,28 +104,36 @@ void CSVertex(uint3 id : SV_DispatchThreadID) {
 
         if (firstDensity < 0.0 ^ secondDensity < 0.0) {
             count++;
-            float unlerped = invLerp(firstDensity, secondDensity, 0.0);
-            sum += lerp(float3(first), float3(second), unlerped);
-            normalSum += lerp(normalMaxx(id + first), normalMaxx(id + second), unlerped);
+
+            if (blocky) {
+                sum = 0.5;
+                normalSum = normalMaxx(id);
+                break;
+            } else {
+                float unlerped = invLerp(firstDensity, secondDensity, 0.0);
+                sum += lerp(float3(first), float3(second), unlerped);
+                normalSum += lerp(normalMaxx(id + first), normalMaxx(id + second), unlerped);
+            }
         }
     }
 
     if (count > 0) {
         uint oldValue = 0;
         InterlockedAdd(atomicCounters[0], 1, oldValue); 
-        vertices[oldValue] = float4(float3(id) + sum/float(count), 0);
-        normals[oldValue] = float4(-normalSum / float(count), 0);
+        vertices[oldValue] = float3(id) + sum/float(count);
+        normals[oldValue] = -normalSum / float(count);
+        colors[oldValue] = float(oldValue) / 10000.0;
         vertexIds[id+1] = oldValue;   
     }
 }
 
 [numthreads(8, 8, 8)]
 void CSQuad(uint3 id : SV_DispatchThreadID) {
-    if (any(id >= 63) || any(id <= 2)) {
+    if (any(id == size-1) || any(id <= 2)) {
         return;
     }
 
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 3; i++) {
         float firstDensity = densities[id];
         float secondDensity = densities[id + test[i]];
         bool flip = firstDensity < 0.0;
@@ -154,7 +163,7 @@ void CSQuad(uint3 id : SV_DispatchThreadID) {
                 indices[oldValue + (flip ? 3 : 4)] = check[0];
                 
     
-                InterlockedAdd(cmdBuffer[0].indexCountPerInstance, 1); 
+                InterlockedAdd(cmdBuffer[0].indexCountPerInstance, 6); 
             }
         }
     }
