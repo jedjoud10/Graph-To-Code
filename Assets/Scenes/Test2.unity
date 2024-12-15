@@ -365,7 +365,7 @@ GameObject:
   - component: {fileID: 2080444268}
   - component: {fileID: 2080444271}
   - component: {fileID: 2080444269}
-  - component: {fileID: 2080444270}
+  - component: {fileID: 2080444272}
   m_Layer: 0
   m_Name: Test2
   m_TagString: Untagged
@@ -424,7 +424,7 @@ MonoBehaviour:
   persistence:
     x: 0.26
   obj:
-    position: {x: -14.36, y: 40, z: 0}
+    position: {x: -52.3, y: 40, z: 0}
     rotation: {x: 0, y: 0, z: 0, w: 1}
     scale: {x: 1, y: 1, z: 1}
   gradient:
@@ -464,55 +464,7 @@ MonoBehaviour:
   mode: 0
   reduction: 0
   bicubic: 0
-  octaves: 2
---- !u!114 &2080444270
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2080444267}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cad3bd7dcc82c9644a3bb41d0b282268, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  previewing: 1
-  opacity: 1
-  quality: 1
-  gradient:
-    serializedVersion: 2
-    key0: {r: 1, g: 1, b: 1, a: 1}
-    key1: {r: 1, g: 1, b: 1, a: 0}
-    key2: {r: 1, g: 1, b: 1, a: 0}
-    key3: {r: 0, g: 0, b: 0, a: 0}
-    key4: {r: 0, g: 0, b: 0, a: 0}
-    key5: {r: 0, g: 0, b: 0, a: 0}
-    key6: {r: 0, g: 0, b: 0, a: 0}
-    key7: {r: 0, g: 0, b: 0, a: 0}
-    ctime0: 0
-    ctime1: 13300
-    ctime2: 21395
-    ctime3: 65535
-    ctime4: 0
-    ctime5: 0
-    ctime6: 0
-    ctime7: 0
-    atime0: 0
-    atime1: 63222
-    atime2: 65535
-    atime3: 0
-    atime4: 0
-    atime5: 0
-    atime6: 0
-    atime7: 0
-    m_Mode: 0
-    m_ColorSpace: 0
-    m_NumColorKeys: 4
-    m_NumAlphaKeys: 2
-  filterMode: 1
-  size: 64
-  visualizer: {fileID: 757413643}
+  octaves: 3
 --- !u!114 &2080444271
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -530,6 +482,20 @@ MonoBehaviour:
   moduloSeed: {x: 962, y: -807, z: -249}
   transformScale: {x: 2, y: 2, z: 2}
   transformOffset: {x: 12.75, y: -38.04, z: 0}
+--- !u!114 &2080444272
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2080444267}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d5b58044d28b37438ea9d1c7f58d879, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  computeShader: {fileID: 7200000, guid: 414c71a72bcba394d921913198296aac, type: 3}
+  customRenderingMaterial: {fileID: 2100000, guid: c49387781c7cfbd4cb50fe62eea5a210, type: 2}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

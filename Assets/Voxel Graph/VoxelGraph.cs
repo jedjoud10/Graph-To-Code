@@ -123,7 +123,9 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
             Compile();
         }
 
+        var exec = GetComponent<VoxelGraphExecutor>();
         GetComponent<VoxelGraphExecutor>().ExecuteShader(64);
+        GetComponent<DensityVisualizer>().Exec(GetComponent<VoxelGraphExecutor>().VoxelTexture);
     }
 
     public void Compile() {

@@ -124,7 +124,7 @@ void CSQuad(uint3 id : SV_DispatchThreadID) {
         return;
     }
 
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 1; i++) {
         float firstDensity = densities[id];
         float secondDensity = densities[id + test[i]];
         bool flip = firstDensity < 0.0;
@@ -154,7 +154,7 @@ void CSQuad(uint3 id : SV_DispatchThreadID) {
                 indices[oldValue + (flip ? 3 : 4)] = check[0];
                 
     
-                InterlockedAdd(cmdBuffer[0].indexCountPerInstance, 6); 
+                InterlockedAdd(cmdBuffer[0].indexCountPerInstance, 1); 
             }
         }
     }

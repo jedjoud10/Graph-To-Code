@@ -35,12 +35,8 @@ public class DensityVisualizer : MonoBehaviour {
         tempVertexTexture = Utils.Create3DRenderTexture(64, GraphicsFormat.R32_UInt, FilterMode.Point, TextureWrapMode.Repeat, false);
     }
 
-    public void Start() {
-        InitializeForSize();
-    }
+    public void Killnate() {
 
-    public void Update() {
-        //ConvertToMeshAndRender();
     }
 
     public void Exec(RenderTexture density) {
@@ -70,10 +66,13 @@ public class DensityVisualizer : MonoBehaviour {
         computeShader.SetBuffer(id, "cmdBuffer", commandBuffer);
         computeShader.SetBuffer(id, "atomicCounters", atomicCounters);
         computeShader.Dispatch(id, size / 8, size / 8, size / 8);
+
+        var arr = new GraphicsBuffer.IndirectDrawIndexedArgs[1];
+        commandBuffer.GetData(arr);
+        Debug.Log(arr[0].indexCountPerInstance);
     }
 
     public void ConvertToMeshAndRender(RenderTexture density) {
-        Exec(density);
         RenderParams renderParams = new RenderParams();
         renderParams.worldBounds = new Bounds {
             center = Vector3.zero,

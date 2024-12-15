@@ -29,7 +29,7 @@ float _4(float3 position, uint3 id) {
 	float _14 = 1.0;
 	float _15 = 1.0;
 	[unroll]
-	for(uint i = 0; i < 2; i++) {
+	for(uint i = 0; i < 3; i++) {
 		float2 _16 = _11 * _14 + hash31(float(i));
 		float _19 = (snoise((_16) * _18)) * _17;
 		_13 += abs(_19) * _15;

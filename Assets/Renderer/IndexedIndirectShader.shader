@@ -43,16 +43,18 @@ Shader "Custom/NewSurfaceShader"
            float4 vertex_normal = float4(normals[v.id].xyz, 1.0); 
            v.vertex = vertex_position;
            v.normal = vertex_normal;
-           o.normal = vertex_normal;
-           o.vertexId = float(v.id);
            #endif
+           o.vertexId = 0.0;
+           o.normal = 0.0;
 
         }
 
 
         void surf (Input IN, inout SurfaceOutput o) {
-           o.Emission = normalize(IN.normal) * 2 - 1;
+           //o.Emission = normalize(IN.normal) * 2 - 1;
            //o.Albedo *= IN.vertexId / 20000.0;
+           o.Emission = 1.0; 
+           o.Albedo = 1.0; 
         }
 
         ENDCG
