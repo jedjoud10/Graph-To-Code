@@ -10,8 +10,14 @@ public class VoxelGraphPreview : MonoBehaviour {
     public FilterMode filterMode;
     [Range(16, 64)]
     public int size = 16;
+    public DensityVisualizer visualizer;
 
     public void OnValidate() {
         size = Mathf.Max(Mathf.ClosestPowerOfTwo(size), 16);
+    }
+
+    public void Update() {
+        var exec = GetComponent<VoxelGraphExecutor>();
+        visualizer.ConvertToMeshAndRender(exec.VoxelTexture);
     }
 }

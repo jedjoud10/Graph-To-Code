@@ -27,7 +27,7 @@ public class Simplex : Noise {
         scale = 0.01f;
     }
 
-    public Simplex(float amplitude = 1.0f, float scale = 0.01f) {
+    public Simplex(Variable<float> scale, Variable<float> amplitude) {
         this.amplitude = amplitude;
         this.scale = scale;
     }

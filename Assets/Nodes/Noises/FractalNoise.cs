@@ -28,8 +28,6 @@ public class FractalNoiseNode<T> : AbstractNoiseNode<T> {
         int actualOctaves = Mathf.Max(octaves, 0);
         context.Hash(actualOctaves);
 
-
-
         Variable<float> sum = context.AssignTempVariable<float>($"{context[position]}_fbm", mode == FractalNoise.FractalMode.Mul ? "1.0" : "0.0");
         Variable<float> fbm_scale = context.AssignTempVariable<float>($"{context[position]}_fbm_scale", "1.0");
         Variable<float> fbm_amplitude = context.AssignTempVariable<float>($"{context[position]}_fbm_amplitude", "1.0");
@@ -37,9 +35,6 @@ public class FractalNoiseNode<T> : AbstractNoiseNode<T> {
         context.AddLine("[unroll]");
         context.AddLine($"for(uint i = 0; i < {actualOctaves}; i++) {{");
         context.Indent++;
-
-        context.AddLine($"{context[fbm_scale]} *= {context[lacunarity]};");
-        context.AddLine($"{context[fbm_amplitude]} *= {context[persistence]};");
 
         Variable<T> fbmed = context.AssignTempVariable<T>($"{context[position]}_fmb_pos", $"{context[position]} * {context[fbm_scale]} + hash31(float(i))");
 
@@ -62,6 +57,9 @@ public class FractalNoiseNode<T> : AbstractNoiseNode<T> {
                 context.AddLine($"{context[sum]} *= {context[new_noise]} * {context[fbm_amplitude]};");
                 break;
         }
+
+        context.AddLine($"{context[fbm_scale]} *= {context[lacunarity]};");
+        context.AddLine($"{context[fbm_amplitude]} *= {context[persistence]};");
 
         context.Indent--;
         context.AddLine("}");

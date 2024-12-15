@@ -5,6 +5,7 @@ public class DefineNode<T> : Variable<T> {
     public bool constant;
 
     public override void HandleInternal(TreeContext ctx) {
+        ctx.Hash(value);
         ctx.DefineAndBindNode(this, Utils.TypeOf<T>(), "c", value, constant);
     }
 }

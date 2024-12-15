@@ -78,16 +78,16 @@ public class VoxelGraphExecutor : MonoBehaviour {
     public void ExecuteShader(int size) {
         graph = GetComponent<VoxelGraph>();
 
-        CreateIntermediateTextures(size);
-
         if (graph.shader == null) {
             Debug.LogWarning("Shader is not set. You must compile!!");
             return;
         }
 
-        if (graph.injector == null) {
+        if (graph.injector == null || graph.gradientTextures == null || graph.tempTextures == null) {
             graph.Transpile();
         }
+
+        CreateIntermediateTextures(size);
 
         var shader = graph.shader;
         shader.SetTexture(0, "voxels", textures["voxels"]);
@@ -152,5 +152,6 @@ public class VoxelGraphExecutor : MonoBehaviour {
     public void RandomizeSeed() {
         seed = UnityEngine.Random.Range(-9999, 9999);
         ComputeSecondarySeeds();
+        ExecuteShader(64);
     }
 }

@@ -122,6 +122,8 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
             Debug.Log("Hash changed, recompiling...");
             Compile();
         }
+
+        GetComponent<VoxelGraphExecutor>().ExecuteShader(64);
     }
 
     public void Compile() {
