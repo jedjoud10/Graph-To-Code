@@ -19,7 +19,7 @@ public class TransformationNode : Variable<float3> {
             compute.SetMatrix(matrixName, matrix);
         });
 
-        ctx.DefineAndBindNode<float3>(this, "projected", $"mul({matrixName}, float4({ctx[input]}, 1.0))");
+        ctx.DefineAndBindNode<float3>(this, "projected", $"mul({matrixName}, float4({ctx[input]}, 1.0)).xyz");
     }
 }
 

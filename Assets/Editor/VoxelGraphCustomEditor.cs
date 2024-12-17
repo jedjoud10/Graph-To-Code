@@ -12,9 +12,11 @@ public class VoxelGraphCustomEditor : Editor {
             script.Compile();
         }
 
+        /*
         if (GUILayout.Button("Randomize Seed")) {
-            script.RandomizeSeed();
-            script.SoftRecompile();
+            //script.RandomizeSeed();
+            //script.SoftRecompile();
         }
+        */
     }
 }

@@ -1,17 +1,17 @@
 
-RWTexture2D<float> _5_write;
-Texture2D _5_read;
-SamplerState sampler_5_read;
-float _6;
-float _7;
-float _8;
-float4x4 _9;
-float _12;
-float _17;
-float _18;
-Texture1D _21_read;
-SamplerState sampler_21_read;
-float4x4 _27;
+RWTexture2D<float> _cached_texture_0_write;
+Texture2D _cached_texture_0_read;
+SamplerState sampler_cached_texture_0_read;
+float inj_0;
+float inj_1;
+float inj_2;
+float4x4 matrix_0;
+float inj_3;
+float inj_4;
+float inj_5;
+Texture1D _gradient_texture_0_read;
+SamplerState sampler_gradient_texture_0_read;
+float4x4 matrix_1;
 RWTexture3D<float> voxels;
 int size;
 int3 permuationSeed;
@@ -21,38 +21,38 @@ float3 offset;
 #include "Assets/Compute/Noises.cginc"
 #include "Assets/Compute/Other.cginc"
 // defined nodes: 19, depth: 1, total lines: 18 
-float _4(float3 position, uint3 id) {
-	float3 _10 = mul(_9, float4(position, 1.0));
-	float2 _11 = _10.xz;
-	float _13 = 0.0;
-	float _14 = 1.0;
-	float _15 = 1.0;
+float CachedScope_0(float3 position, uint3 id) {
+	float3 projected_0 = mul(matrix_0, float4(position, 1.0)).xyz;
+	float2 projected_0_swizzled_0 = projected_0.xz;
+	float projected_0_swizzled_0_fbm_0 = 0.0;
+	float projected_0_swizzled_0_fbm_scale_0 = 1.0;
+	float projected_0_swizzled_0_fbm_amplitude_0 = 1.0;
 	[unroll]
 	for(uint i = 0; i < 4; i++) {
-		float2 _16 = _11 * _14 + hash31(float(i)) * 1000.0;
-		float _19 = (cellular((_16) * _18).x - 0.5) * _17;
-		_13 += _19 * _15;
-		_14 *= _8;
-		_15 *= _12;
+		float2 projected_0_swizzled_0_fmb_pos_0 = projected_0_swizzled_0 * projected_0_swizzled_0_fbm_scale_0 + hash21(float(i) * 6543.26912) * 2366.5437;
+		float projected_0_swizzled_0_fmb_pos_0_noised_0 = (cellular((projected_0_swizzled_0_fmb_pos_0) * inj_5).x - 0.5) * inj_4;
+		projected_0_swizzled_0_fbm_0 += projected_0_swizzled_0_fmb_pos_0_noised_0 * projected_0_swizzled_0_fbm_amplitude_0;
+		projected_0_swizzled_0_fbm_scale_0 *= inj_2;
+		projected_0_swizzled_0_fbm_amplitude_0 *= inj_3;
 	}
-	float _20 = _13;
-	float _22 = Remap(_20, _6, _7, 0.0, 1.0);
-	float _23 = _21_read.SampleLevel(sampler_21_read, _22, 0);
-	float _24 = Remap(_23, 0.0, 1.0, _6, _7);
-	float4 _25 = _24;
-	return _25;
+	float projected_0_swizzled_0_fbm_1 = projected_0_swizzled_0_fbm_0;
+	float projected_0_swizzled_0_fbm_1_gradient_remapped_0 = Remap(projected_0_swizzled_0_fbm_1, inj_0, inj_1, 0.0, 1.0);
+	float _gradient_texture_0_gradient_0 = _gradient_texture_0_read.SampleLevel(sampler_gradient_texture_0_read, projected_0_swizzled_0_fbm_1_gradient_remapped_0, 0).x;
+	float projected_0_swizzled_0_fbm_1_gradient_second_remapped_0 = Remap(_gradient_texture_0_gradient_0, 0.0, 1.0, inj_0, inj_1);
+	float _gradient_texture_0_gradient_sampled_0 = projected_0_swizzled_0_fbm_1_gradient_second_remapped_0;
+	return _gradient_texture_0_gradient_sampled_0;
 }
 
 // defined nodes: 8, depth: 0, total lines: 7 
 float Voxel(float3 position, uint3 id) {
-	const float3 _1 = float3(1,1,1);
-	const float3 _2 = float3(0,0,0);
-	const float _3 = 0;
-	float _26 = SampleBounded(_5_read, sampler_5_read, (float2(id.xz) / size) * _1 + _2.xz, _3, (float(size) / 1)).x;
-	float3 _28 = mul(_27, float4(position, 1.0));
-	float _29 = _28.y;
-	float _30 = _26 + _29;
-	return _30;
+	const float3 c_0 = float3(1,1,1);
+	const float3 c_1 = float3(0,0,0);
+	const float c_2 = 0;
+	float _gradient_texture_0_gradient_sampled_0_cached_0 = SampleBounded(_cached_texture_0_read, sampler_cached_texture_0_read, (float2(id.xz) / size) * c_0.xz + c_1.xz, c_2, (float(size) / 1)).x;
+	float3 projected_1 = mul(matrix_1, float4(position, 1.0)).xyz;
+	float projected_1_swizzled_0 = projected_1.y;
+	float _gradient_texture_0_gradient_sampled_0_cached_0_op_projected_1_swizzled_0_0 = _gradient_texture_0_gradient_sampled_0_cached_0 + projected_1_swizzled_0;
+	return _gradient_texture_0_gradient_sampled_0_cached_0_op_projected_1_swizzled_0_0;
 }
 
 
@@ -62,10 +62,10 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
     voxels[id] = Voxel((float3(id) + offset) * scale, id);
 }
 
-#pragma kernel CS_4
-[numthreads(8, 8, 1)]
-void CS_4(uint3 id : SV_DispatchThreadID) {
+#pragma kernel CSCachedScope_0
+[numthreads(32, 32, 1)]
+void CSCachedScope_0(uint3 id : SV_DispatchThreadID) {
     uint3 remapped = uint3(id.x, 0.0, id.y);
 
-    _5_write[id.xy] = _4((float3(remapped * 1) + offset) * scale, id);
+    _cached_texture_0_write[id.xy] = CachedScope_0((float3(remapped * 1) + offset) * scale, id);
 }

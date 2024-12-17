@@ -6,28 +6,25 @@ using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
+using static VoxelGraph;
 
 // A voxel graph is the base class to inherit from to be able to write custom voxel stuff
 public abstract class VoxelGraph : MonoBehaviour {
     [Header("Compilation")]
     public bool debugName = true;
 
-    [Header("Seeding")]
-    public int seed = 1234;
-    public Vector3Int permutationSeed;
-    public Vector3Int moduloSeed;
-
-    private ComputeShader shader;
-    private PropertyInjector injector;
-    private List<KernelDispatch> computeKernelNameAndDepth;
-    private Dictionary<string, TempTexture> tempTextures;
-    private Dictionary<string, GradientTexture> gradientTextures;
+    public ComputeShader shader;
+    public PropertyInjector injector;
+    public List<KernelDispatch> sortedKernelDispatches;
+    public Dictionary<string, TempTexture> tempTextures;
+    public Dictionary<string, GradientTexture> gradientTextures;
     private int hash;
 
-    private Dictionary<string, Texture> textures;
-    private bool dirtyTexturesRecompilation;
+    public delegate void OnRecompilation();
+    public event OnRecompilation onRecompilation;
 
-    public int size;
+    public delegate void OnPropertiesChanged();
+    public event OnPropertiesChanged onPropertiesChanged;
 
 
     // Execute the voxel graph at a specific position and fetch the density and material values
@@ -67,7 +64,7 @@ public abstract class VoxelGraph : MonoBehaviour {
 
         ctx.scopes.Sort((KernelScope a, KernelScope b) => { return b.depth.CompareTo(a.depth); });
         foreach (var scope in ctx.scopes) {
-            Debug.Log(scope.depth);
+            //Debug.Log(scope.depth);
             lines.Add($"// defined nodes: {scope.namesToNodes.Count}, depth: {scope.depth}, total lines: {scope.lines.Count} ");
             lines.Add($"{scope.output.Item1.ToStringType()} {scope.name}(float3 position, uint3 id) {{");
             scope.AddLine($"return {scope.namesToNodes[scope.output.Item2]};");
@@ -103,133 +100,13 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
         injector = ctx.injector;
         ctx.computeKernelNameAndDepth.Sort((KernelDispatch a, KernelDispatch b) => { return b.depth.CompareTo(a.depth); });
         
-        computeKernelNameAndDepth = ctx.computeKernelNameAndDepth;
+        sortedKernelDispatches = ctx.computeKernelNameAndDepth;
         tempTextures = ctx.tempTextures;
         gradientTextures = ctx.gradientTextures;
-        dirtyTexturesRecompilation = true;
         return lines.Aggregate("", (a, b) => a + "\n" + b);
     }
 
-    public void CreateIntermediateTextures() {
-        GraphicsFormat ToGfxFormat(Utils.StrictType type) {
-            switch (type) {
-                case Utils.StrictType.Float:
-                    return GraphicsFormat.R32_SFloat;
-                case Utils.StrictType.Float2:
-                    return GraphicsFormat.R32G32_SFloat;
-                case Utils.StrictType.Float3:
-                    return GraphicsFormat.R32G32B32_SFloat;
-                case Utils.StrictType.Float4:
-                    return GraphicsFormat.R32G32B32A32_SFloat;
-                default:
-                    throw new System.Exception();
-            }
-        }
-
-        if (textures == null || textures.Count == 0 || (textures["voxels"] != null && textures["voxels"].width != size) || dirtyTexturesRecompilation) {
-            dirtyTexturesRecompilation = false;
-
-            if (textures != null) {
-                foreach (var (name, tex) in textures) {
-                    if (tex is RenderTexture casted) {
-                        casted.Release();
-                    }
-                }
-            }
-
-            textures = new Dictionary<string, Texture> {
-                { "voxels", Utils.Create3DRenderTexture(size, GraphicsFormat.R32_SFloat, FilterMode.Trilinear, TextureWrapMode.Repeat, false) }
-            };
-
-            foreach (var (no, temp) in tempTextures) {
-                RenderTexture rt;
-                if (temp.threeDimensions) {
-                    rt = Utils.Create3DRenderTexture(size / (1 << temp.sizeReductionPower), ToGfxFormat(temp.type), temp.filter, temp.wrap, temp.mips);
-                } else {
-                    rt = Utils.Create2DRenderTexture(size / (1 << temp.sizeReductionPower), ToGfxFormat(temp.type), temp.filter, temp.wrap, temp.mips);
-                }
-                textures.Add(temp.name, rt);
-            }
-
-            foreach (var (no, temp) in gradientTextures) {
-                Texture2D texture = new Texture2D(temp.size, 1, DefaultFormat.LDR, TextureCreationFlags.None);
-                texture.wrapMode = TextureWrapMode.Clamp;
-                textures.Add(temp.name, texture);
-            }
-        }
-    }
-
-    public void ExecuteShader() {
-        if (injector == null || gradientTextures == null || tempTextures == null) {
-            Transpile();
-        }
-        CreateIntermediateTextures();
-
-        shader.SetTexture(0, "voxels", textures["voxels"]);
-        shader.SetInt("size", size);
-        shader.SetInts("permuationSeed", new int[] { permutationSeed.x, permutationSeed.y, permutationSeed.z });
-        shader.SetInts("moduloSeed", new int[] { moduloSeed.x, moduloSeed.y, moduloSeed.z });
-        shader.SetVector("offset", Vector3.zero);
-        shader.SetVector("scale", Vector3.one);
-        injector.UpdateInjected(shader, textures);
-
-        foreach (var (no, temp) in gradientTextures) {
-            foreach (var readKernel in temp.readKernels) {
-                int readKernelId = shader.FindKernel(readKernel);
-                shader.SetTexture(readKernelId, temp.name + "_read", textures[temp.name]);
-            }
-        }
-
-        Dictionary<string, TempTexture> kernelsToWriteTexture = new Dictionary<string, TempTexture>();
-
-        foreach (var (no, temp) in tempTextures) {
-            int writeKernelId = shader.FindKernel(temp.writeKernel);
-            shader.SetTexture(writeKernelId, temp.name + "_write", textures[temp.name]);
-            kernelsToWriteTexture.Add(temp.writeKernel, temp);
-
-            foreach (var readKernel in temp.readKernels) {
-                int readKernelId = shader.FindKernel(readKernel);
-                shader.SetTexture(readKernelId, temp.name + "_read", textures[temp.name]);
-            }
-        }
-
-        foreach (var kernel in computeKernelNameAndDepth) {
-            int id = shader.FindKernel(kernel.name);
-            int tempSize = size / (1 << kernel.sizeReductionPower);
-
-            if (kernel.threeDimensions) {
-                shader.Dispatch(id, tempSize / 8, tempSize / 8, tempSize / 8);
-            } else {
-                shader.Dispatch(id, tempSize / 8, tempSize / 8, 1);
-            }
-
-            if (kernelsToWriteTexture.TryGetValue(kernel.name, out var temp)) {
-                if (temp.mips) {
-                    if (textures[temp.name] is RenderTexture texture) {
-                        texture.GenerateMips();
-                    }
-                }
-            }
-        }
-
-    }
-
-    private void ComputeSecondarySeeds() {
-        var random = new System.Random(seed);
-        permutationSeed.x = random.Next(-1000, 1000);
-        permutationSeed.y = random.Next(-1000, 1000);
-        permutationSeed.z = random.Next(-1000, 1000);
-        moduloSeed.x = random.Next(-1000, 1000);
-        moduloSeed.y = random.Next(-1000, 1000);
-        moduloSeed.z = random.Next(-1000, 1000);
-    }
-
-    public void RandomizeSeed() {
-        seed = UnityEngine.Random.Range(-9999, 9999);
-        ComputeSecondarySeeds();
-        ExecuteShader();
-    }
-
+    // Checks if we need to recompile the shader by checking the hash changes. Calls a property callback in all cases
     public void SoftRecompile() {
         TreeContext ctx = new TreeContext(false);
         Variable<float3> position = ctx.AliasExternalInput<float3>("position");
@@ -245,8 +122,8 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
             Compile();
         }
 
-        ExecuteShader();
-        GetComponent<DensityVisualizer>().Exec((RenderTexture)textures["voxels"]);
+        onPropertiesChanged?.Invoke();
+        //GetComponent<DensityVisualizer>().Exec((RenderTexture)textures["voxels"]);
     }
 
     // Every time the user updates a field, we will re-transpile (to check for hash-differences) and re-compile if needed
@@ -276,9 +153,8 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
         Debug.Log("Asset database refresh");
         AssetDatabase.Refresh();
         AssetDatabase.ImportAsset(filePath);
-
-        ComputeShader shader = AssetDatabase.LoadAssetAtPath<ComputeShader>(filePath);
-        this.shader = shader;
+        onRecompilation?.Invoke();
+        shader = AssetDatabase.LoadAssetAtPath<ComputeShader>(filePath);
 #else
             Debug.LogError("Cannot transpile code at runtime");
 #endif

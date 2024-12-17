@@ -1,6 +1,5 @@
 using System;
 
-[Serializable]
 public class KernelDispatch {
     public string name;
     public int depth;

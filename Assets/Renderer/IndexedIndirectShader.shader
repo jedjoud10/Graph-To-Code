@@ -12,15 +12,15 @@ Shader "Custom/NewSurfaceShader"
         CGPROGRAM
 
         #ifdef SHADER_API_D3D11
-            StructuredBuffer<float3> vertices;
-            StructuredBuffer<float3> normals;
-            StructuredBuffer<float3> colors;
+            StructuredBuffer<float3> _Vertices;
+            StructuredBuffer<float3> _Normals;
+            StructuredBuffer<float3> _Colors;
         #endif
 
         // Use shader model 3.0 target, to get nicer looking lighting
         #pragma target 5.0
         #pragma vertex vert
-        #pragma surface surf Standard 
+        #pragma surface surf Standard fullforwardshadows
             
 
 
@@ -45,11 +45,12 @@ Shader "Custom/NewSurfaceShader"
            UNITY_INITIALIZE_OUTPUT(Input,o);
 
            #ifdef SHADER_API_D3D11
-           v.vertex = float4(vertices[v.id],1.0);
-           v.normal = float4(normals[v.id], 1.0);
-           v.color = float4(colors[v.id], 0.0);
-           o.normal = normals[v.id];
-           o.color = colors[v.id];
+           v.vertex = float4(_Vertices[v.id],1.0);
+           v.normal = float4(_Normals[v.id], 1.0);
+           v.color = float4(_Colors[v.id], 0.0);
+           v.tangent = float4(0, 0, 0, 0);
+           o.normal = _Normals[v.id];
+           o.color = _Colors[v.id];
            #endif
 
            o.cameraRelativeWorldPos = mul(unity_ObjectToWorld, float4(v.vertex.xyz, 1.0)) - _WorldSpaceCameraPos.xyz;
@@ -71,6 +72,7 @@ Shader "Custom/NewSurfaceShader"
            half3 worldN =  WorldNormalVector(IN, half3(0,0,1));
            half3x3 tbn = half3x3(worldT, worldB, worldN);
            
+           //o.Albedo = 1.0;
            o.Albedo = flatWorldNormal; 
            o.Normal = float3(0,0,0);
         }

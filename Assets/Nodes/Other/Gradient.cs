@@ -9,12 +9,13 @@ public class GradientNode<T> : Variable<T> {
     public Variable<T> inputMax;
     public int size;
 
+    private string gradientTextureName;
+
     public override void Handle(TreeContext context) {
         if (!context.Contains(this)) {
             HandleInternal(context);
         } else {
-            string name = context[this];
-            context.gradientTextures[name].readKernels.Add($"CS{context.scopes[context.currentScope].name}");
+            context.gradientTextures[gradientTextureName].readKernels.Add($"CS{context.scopes[context.currentScope].name}");
         }
     }
 
@@ -25,6 +26,7 @@ public class GradientNode<T> : Variable<T> {
         context.Hash(size);
 
         string textureName = context.GenId($"_gradient_texture");
+        gradientTextureName = textureName;
         context.properties.Add($"Texture1D {textureName}_read;");
         context.properties.Add($"SamplerState sampler{textureName}_read;");
 
@@ -41,12 +43,11 @@ public class GradientNode<T> : Variable<T> {
         });
 
         Variable<T> firstRemap = context.AssignTempVariable<T>($"{context[mixer]}_gradient_remapped", $"Remap({context[mixer]}, {context[inputMin]}, {context[inputMax]}, 0.0, 1.0)");
-        Variable<T> sample = context.AssignTempVariable<T>($"{textureName}_gradient", $"{textureName}_read.SampleLevel(sampler{textureName}_read, {context[firstRemap]}, 0)");
+        Variable<T> sample = context.AssignTempVariable<T>($"{textureName}_gradient", $"{textureName}_read.SampleLevel(sampler{textureName}_read, {context[firstRemap]}, 0).x");
         Variable<T> secondRemap = context.AssignTempVariable<T>($"{context[mixer]}_gradient_second_remapped", $"Remap({context[sample]}, 0.0, 1.0, {context[inputMin]}, {context[inputMax]})");
-        context.DefineAndBindNode<float4>(this, $"{textureName}_gradient_sampled", context[secondRemap]);
+        context.DefineAndBindNode<T>(this, $"{textureName}_gradient_sampled", context[secondRemap]);
 
-        context.gradientTextures.Add($"{textureName}_gradient", new GradientTexture {
-            name = textureName,
+        context.gradientTextures.Add(gradientTextureName, new GradientTexture {
             size = size,
             readKernels = new List<string>() { $"CS{context.scopes[context.currentScope].name}" },
         });
