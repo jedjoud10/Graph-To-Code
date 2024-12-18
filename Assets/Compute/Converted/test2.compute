@@ -20,10 +20,16 @@ float inj_9;
 float inj_10;
 float inj_11;
 float inj_12;
-Texture1D _gradient_texture_1_read;
-SamplerState sampler_gradient_texture_1_read;
 float inj_13;
 float inj_14;
+Texture1D _gradient_texture_1_read;
+SamplerState sampler_gradient_texture_1_read;
+float2 inj_15;
+float2 inj_16;
+Texture2D _user_texture_0_read;
+SamplerState sampler_user_texture_0_read;
+float inj_17;
+float inj_18;
 Texture1D _gradient_texture_2_read;
 SamplerState sampler_gradient_texture_2_read;
 RWTexture3D<float> voxels;
@@ -58,47 +64,66 @@ void CachedScope_0(float3 position, uint3 id, out float CachedScope_0_output) {
 	CachedScope_0_output = _gradient_texture_0_gradient_sampled_0;
 }
 
-// defined nodes: 41, depth: 0, total lines: 37 
+// defined nodes: 64, depth: 0, total lines: 56 
 void Voxel(float3 position, uint3 id, out float voxel, out float3 color) {
 	const float3 c_0 = float3(1,1,1);
 	const float3 c_1 = float3(0,0,0);
 	const float c_2 = 0;
-	float _gradient_texture_0_gradient_sampled_0_cached_0 = SampleBounded(_cached_texture_0_read, sampler_cached_texture_0_read, (float2(id.xz) / size) * c_0.xz + c_1.xz, c_2, (float(size) / 1)).x;
+	float _gradient_texture_0_gradient_sampled_0_cached_0 = SampleBounded(_cached_texture_0_read, sampler_cached_texture_0_read, (float2(id.xz) / size) * c_0.xz + c_1.xz, c_2, (float(size) / 2)).x;
 	float3 projected_1 = mul(matrix_1, float4(position, 1.0)).xyz;
 	float projected_1_swizzled_0 = projected_1.y;
 	float _gradient_texture_0_gradient_sampled_0_cached_0_op_projected_1_swizzled_0_0 = _gradient_texture_0_gradient_sampled_0_cached_0 + projected_1_swizzled_0;
+	const float2 c_3 = float2(1,1);
+	const float2 c_4 = float2(1,1);
 	float3 projected_2 = mul(matrix_2, float4(projected_1, 1.0)).xyz;
 	float2 projected_2_swizzled_0 = projected_2.xz;
-	float projected_2_swizzled_0_fbm_0 = 0.0;
-	float projected_2_swizzled_0_fbm_scale_0 = 1.0;
-	float projected_2_swizzled_0_fbm_amplitude_0 = 1.0;
+	float2 projected_2_swizzled_0_x_offset_0 = ((projected_2_swizzled_0 + float2(123.8544, 32.22354)) * c_4.x);
+	float2 projected_2_swizzled_0_y_offset_0 = ((projected_2_swizzled_0 + float2(65.4238, -551.1535)) * c_4.y);
+	float projected_2_swizzled_0_x_offset_0_noised_0 = (snoise((projected_2_swizzled_0_x_offset_0) * inj_10)) * inj_9;
+	float projected_2_swizzled_0_y_offset_0_noised_0 = (snoise((projected_2_swizzled_0_y_offset_0) * inj_10)) * inj_9;
+	float projected_2_swizzled_0_warped_x_0 = (projected_2_swizzled_0.x + projected_2_swizzled_0_x_offset_0_noised_0 * c_3.x);
+	float projected_2_swizzled_0_warped_y_0 = (projected_2_swizzled_0.y + projected_2_swizzled_0_y_offset_0_noised_0 * c_3.y);
+	float2 projected_2_swizzled_0_warped_0 = float2(projected_2_swizzled_0_warped_x_0, projected_2_swizzled_0_warped_y_0);
+	float projected_2_swizzled_0_warped_0_fbm_0 = 0.0;
+	float projected_2_swizzled_0_warped_0_fbm_scale_0 = 1.0;
+	float projected_2_swizzled_0_warped_0_fbm_amplitude_0 = 1.0;
 	[unroll]
 	for(uint i = 0; i < 4; i++) {
-		float2 projected_2_swizzled_0_fmb_pos_0 = projected_2_swizzled_0 * projected_2_swizzled_0_fbm_scale_0 + hash21(float(i) * 6543.26912) * 2366.5437;
-		float projected_2_swizzled_0_fmb_pos_0_noised_0 = (snoise((projected_2_swizzled_0_fmb_pos_0) * inj_11)) * inj_10;
-		projected_2_swizzled_0_fbm_0 += projected_2_swizzled_0_fmb_pos_0_noised_0 * projected_2_swizzled_0_fbm_amplitude_0;
-		projected_2_swizzled_0_fbm_scale_0 *= inj_8;
-		projected_2_swizzled_0_fbm_amplitude_0 *= inj_9;
+		float2 projected_2_swizzled_0_warped_0_fmb_pos_0 = projected_2_swizzled_0_warped_0 * projected_2_swizzled_0_warped_0_fbm_scale_0 + hash21(float(i) * 6543.26912) * 2366.5437;
+		float projected_2_swizzled_0_warped_0_fmb_pos_0_noised_0 = (snoise((projected_2_swizzled_0_warped_0_fmb_pos_0) * inj_13)) * inj_12;
+		projected_2_swizzled_0_warped_0_fbm_0 += projected_2_swizzled_0_warped_0_fmb_pos_0_noised_0 * projected_2_swizzled_0_warped_0_fbm_amplitude_0;
+		projected_2_swizzled_0_warped_0_fbm_scale_0 *= inj_8;
+		projected_2_swizzled_0_warped_0_fbm_amplitude_0 *= inj_11;
 	}
-	float projected_2_swizzled_0_fbm_1 = projected_2_swizzled_0_fbm_0;
-	float projected_2_swizzled_0_fbm_1_op_inj_12_0 = projected_2_swizzled_0_fbm_1 - inj_12;
-	const float c_3 = 0;
-	float projected_2_swizzled_0_fbm_1_op_inj_12_0_func_c_3_0 = min(projected_2_swizzled_0_fbm_1_op_inj_12_0,c_3);
-	float projected_2_swizzled_0_fbm_1_op_inj_12_0_func_c_3_0_negated_0 = (-projected_2_swizzled_0_fbm_1_op_inj_12_0_func_c_3_0);
-	float projected_2_swizzled_0_fbm_1_op_inj_12_0_func_c_3_0_negated_0_gradient_remapped_0 = Remap(projected_2_swizzled_0_fbm_1_op_inj_12_0_func_c_3_0_negated_0, inj_6, inj_7, 0.0, 1.0);
-	float _gradient_texture_1_gradient_0 = _gradient_texture_1_read.SampleLevel(sampler_gradient_texture_1_read, projected_2_swizzled_0_fbm_1_op_inj_12_0_func_c_3_0_negated_0_gradient_remapped_0, 0).x;
-	float projected_2_swizzled_0_fbm_1_op_inj_12_0_func_c_3_0_negated_0_gradient_second_remapped_0 = Remap(_gradient_texture_1_gradient_0, 0.0, 1.0, inj_6, inj_7);
-	float _gradient_texture_1_gradient_sampled_0 = projected_2_swizzled_0_fbm_1_op_inj_12_0_func_c_3_0_negated_0_gradient_second_remapped_0;
+	float projected_2_swizzled_0_warped_0_fbm_1 = projected_2_swizzled_0_warped_0_fbm_0;
+	float projected_2_swizzled_0_warped_0_fbm_1_op_inj_14_0 = projected_2_swizzled_0_warped_0_fbm_1 - inj_14;
+	const float c_5 = 0;
+	float projected_2_swizzled_0_warped_0_fbm_1_op_inj_14_0_func_c_5_0 = min(projected_2_swizzled_0_warped_0_fbm_1_op_inj_14_0,c_5);
+	float projected_2_swizzled_0_warped_0_fbm_1_op_inj_14_0_func_c_5_0_negated_0 = (-projected_2_swizzled_0_warped_0_fbm_1_op_inj_14_0_func_c_5_0);
+	float projected_2_swizzled_0_warped_0_fbm_1_op_inj_14_0_func_c_5_0_negated_0_gradient_remapped_0 = Remap(projected_2_swizzled_0_warped_0_fbm_1_op_inj_14_0_func_c_5_0_negated_0, inj_6, inj_7, 0.0, 1.0);
+	float _gradient_texture_1_gradient_0 = _gradient_texture_1_read.SampleLevel(sampler_gradient_texture_1_read, projected_2_swizzled_0_warped_0_fbm_1_op_inj_14_0_func_c_5_0_negated_0_gradient_remapped_0, 0).x;
+	float projected_2_swizzled_0_warped_0_fbm_1_op_inj_14_0_func_c_5_0_negated_0_gradient_second_remapped_0 = Remap(_gradient_texture_1_gradient_0, 0.0, 1.0, inj_6, inj_7);
+	float _gradient_texture_1_gradient_sampled_0 = projected_2_swizzled_0_warped_0_fbm_1_op_inj_14_0_func_c_5_0_negated_0_gradient_second_remapped_0;
 	float _gradient_texture_0_gradient_sampled_0_cached_0_op_projected_1_swizzled_0_0_op__gradient_texture_1_gradient_sampled_0_0 = _gradient_texture_0_gradient_sampled_0_cached_0_op_projected_1_swizzled_0_0 - _gradient_texture_1_gradient_sampled_0;
-	float projected_1_swizzled_1 = projected_1.y;
-	float3 projected_1_swizzled_1_gradient_remapped_0 = Remap(projected_1_swizzled_1, inj_13, inj_14, 0.0, 1.0);
-	float3 _gradient_texture_2_gradient_0 = _gradient_texture_2_read.SampleLevel(sampler_gradient_texture_2_read, projected_1_swizzled_1_gradient_remapped_0, 0).xyz;
+	float2 projected_1_swizzled_1 = projected_1.xz;
+	const float c_6 = 0;
+	float4 hehehehe_0 = _user_texture_0_read.SampleLevel(sampler_user_texture_0_read, projected_1_swizzled_1 * inj_15 + inj_16, c_6);
+	float hehehehe_0_swizzled_0 = hehehehe_0.x;
+	const float c_7 = 10;
+	float hehehehe_0_swizzled_0_op_c_7_0 = hehehehe_0_swizzled_0 * c_7;
+	float _gradient_texture_0_gradient_sampled_0_cached_0_op_projected_1_swizzled_0_0_op__gradient_texture_1_gradient_sampled_0_0_op_hehehehe_0_swizzled_0_op_c_7_0_0 = _gradient_texture_0_gradient_sampled_0_cached_0_op_projected_1_swizzled_0_0_op__gradient_texture_1_gradient_sampled_0_0 - hehehehe_0_swizzled_0_op_c_7_0;
+	float projected_1_swizzled_2 = projected_1.y;
+	float3 projected_1_swizzled_2_gradient_remapped_0 = Remap(projected_1_swizzled_2, inj_17, inj_18, 0.0, 1.0);
+	float3 _gradient_texture_2_gradient_0 = _gradient_texture_2_read.SampleLevel(sampler_gradient_texture_2_read, projected_1_swizzled_2_gradient_remapped_0, 0).xyz;
 	float3 _gradient_texture_2_gradient_sampled_0 = _gradient_texture_2_gradient_0;
-	const float3 c_4 = float3(0.2,0.2,0.2);
+	const float3 c_8 = float3(0.2,0.2,0.2);
 	float3 _gradient_texture_1_gradient_sampled_0_swizzled_0 = _gradient_texture_1_gradient_sampled_0.xxx;
-	float3 _gradient_texture_2_gradient_sampled_0_lerp_c_4_0 = lerp(_gradient_texture_2_gradient_sampled_0,c_4,clamp(_gradient_texture_1_gradient_sampled_0_swizzled_0, 0.0, 1.0));
-	voxel = _gradient_texture_0_gradient_sampled_0_cached_0_op_projected_1_swizzled_0_0_op__gradient_texture_1_gradient_sampled_0_0;
-	color = _gradient_texture_2_gradient_sampled_0_lerp_c_4_0;
+	float3 _gradient_texture_2_gradient_sampled_0_lerp_c_8_0 = lerp(_gradient_texture_2_gradient_sampled_0,c_8,clamp(_gradient_texture_1_gradient_sampled_0_swizzled_0, 0.0, 1.0));
+	const float3 c_9 = float3(0,0,0);
+	float3 hehehehe_0_swizzled_0_op_c_7_0_swizzled_0 = hehehehe_0_swizzled_0_op_c_7_0.xxx;
+	float3 _gradient_texture_2_gradient_sampled_0_lerp_c_8_0_lerp_c_9_0 = lerp(_gradient_texture_2_gradient_sampled_0_lerp_c_8_0,c_9,clamp(hehehehe_0_swizzled_0_op_c_7_0_swizzled_0, 0.0, 1.0));
+	voxel = _gradient_texture_0_gradient_sampled_0_cached_0_op_projected_1_swizzled_0_0_op__gradient_texture_1_gradient_sampled_0_0_op_hehehehe_0_swizzled_0_op_c_7_0_0;
+	color = _gradient_texture_2_gradient_sampled_0_lerp_c_8_0_lerp_c_9_0;
 }
 
 
@@ -117,6 +142,6 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
 void CSCachedScope_0(uint3 id : SV_DispatchThreadID) {
     uint3 remapped = uint3(id.x, 0.0, id.y);
     float temp;
-    CachedScope_0((float3(remapped * 1) + offset) * scale, id, temp);
+    CachedScope_0((float3(remapped * 2) + offset) * scale, id, temp);
     _cached_texture_0_write[id.xy] = temp;
 }

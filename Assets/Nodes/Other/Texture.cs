@@ -6,23 +6,23 @@ using UnityEngine;
 
 public class TextureSampleNode<T> : Variable<float4> {
     public Variable<T> coordinates;
-    public TextureSampler sampler;
+    public TextureSampler<T> sampler;
 
     private string tempTextureName;
     public override void Handle(TreeContext context) {
         if (!context.Contains(this)) {
             HandleInternal(context);
         } else {
-            //context.tempTextures[tempTextureName].readKernels.Add($"CS{context.scopes[context.currentScope].name}");
+            context.textures[tempTextureName].readKernels.Add($"CS{context.scopes[context.currentScope].name}");
         }
     }
 
 
     public override void HandleInternal(TreeContext context) {
         coordinates.Handle(context);
-        context.Hash(sampler.filter);
-        context.Hash(sampler.wrap);
         sampler.level.Handle(context);
+        sampler.scale.Handle(context);
+        sampler.offset.Handle(context);
 
         int dimensionality = Utils.DimensionalitySafeTextureSample<T>();
 
@@ -31,25 +31,29 @@ public class TextureSampleNode<T> : Variable<float4> {
         tempTextureName = textureName;
         context.properties.Add($"Texture{dimensionality}D {textureName}_read;");
         context.properties.Add($"SamplerState sampler{textureName}_read;");
-        context.DefineAndBindNode<float4>(this, "hehehehe", $"{textureName}_read.SampleLevel(sampler{textureName}_read, {context[coordinates]}, {context[sampler.level]})");
-        //context.userTextures.Add(tempTextureName, sampler.texture);
+        context.DefineAndBindNode<float4>(this, "hehehehe", $"{textureName}_read.SampleLevel(sampler{textureName}_read, {context[coordinates]} * {context[sampler.scale]} + {context[sampler.offset]}, {context[sampler.level]})");
+        context.textures.Add(tempTextureName, new UserTextureDescriptor {
+            readKernels = new List<string>() { $"CS{context.scopes[context.currentScope].name}" },
+            name = tempTextureName,
+            texture = sampler.texture,
+        });
     }
 }
 
-public class TextureSampler {
+public class TextureSampler<T> {
     public Texture texture;
-    public FilterMode filter;
-    public TextureWrapMode wrap;
     public Variable<float> level;
+    public Variable<T> scale;
+    public Variable<T> offset;
 
     public TextureSampler(Texture texture) {
-        this.filter = FilterMode.Trilinear;
-        this.wrap = TextureWrapMode.Clamp;
         this.level = 0.0f;
+        this.scale = Utils.One<T>();
+        this.offset = Utils.Zero<T>();
         this.texture = texture;
     }
 
-    public Variable<float4> Sample<T>(Variable<T> input) {
+    public Variable<float4> Sample(Variable<T> input) {
         if (texture.dimension == UnityEngine.Rendering.TextureDimension.Tex2D && Utils.DimensionalitySafeTextureSample<T>() != 2) {
             throw new Exception();
         }

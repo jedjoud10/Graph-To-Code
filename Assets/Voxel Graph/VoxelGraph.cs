@@ -20,6 +20,7 @@ public abstract class VoxelGraph : MonoBehaviour {
     public Dictionary<string, TextureDescriptor> textureDescriptors;
     private int hash;
 
+    // Called when the voxel graph's properties get modified
     private void OnPropertiesChanged() {
         var executor = GetComponent<VoxelGraphExecutor>();
         var visualizer = GetComponent<DensityVisualizer>();
@@ -30,6 +31,7 @@ public abstract class VoxelGraph : MonoBehaviour {
         visualizer.ExecuteSurfaceNetsMesher(density, colors);
     }
 
+    // Called when the voxel graph gets recompiled in the editor
     private void OnRecompilation() {
         var executor = GetComponent<VoxelGraphExecutor>();
         var visualizer = GetComponent<DensityVisualizer>();
@@ -42,15 +44,8 @@ public abstract class VoxelGraph : MonoBehaviour {
     // Execute the voxel graph at a specific position and fetch the density and material values
     public abstract void Execute(Variable<float3> position, out Variable<float> density, ref Variable<float3> color);
 
-    // Hashes extra parameters that could be used for recompilation
-    public virtual void Hashinate(Hashinator hashinator) { }
-
-    // This transpile the voxel graph into HLSL code that can be executed on the GPU
-    // This can be done outside the editor, but shader compilation MUST be done in editor
-    public string Transpile() {
+    private TreeContext ParsedTranspilation() {
         TreeContext ctx = new TreeContext(debugName);
-        Hashinate(ctx.hashinator);
-        
         Variable<float3> position = ctx.AliasExternalInput<float3>("position");
         ctx.start = position;
         Variable<float3> color = float3.zero;
@@ -65,7 +60,14 @@ public abstract class VoxelGraph : MonoBehaviour {
         timer.Start();
         ctx.Parse(new TreeNode[] { density, color });
         timer.Stop();
-        Debug.Log($"{timer.Elapsed.TotalMilliseconds}ms");
+        //Debug.Log($"{timer.Elapsed.TotalMilliseconds}ms");
+        return ctx;
+    }
+
+    // This transpile the voxel graph into HLSL code that can be executed on the GPU
+    // This can be done outside the editor, but shader compilation MUST be done in editor
+    public string Transpile() {
+        TreeContext ctx = ParsedTranspilation();
 
         List<string> lines = new List<string>();
         lines.AddRange(ctx.Properties);
@@ -104,11 +106,6 @@ public abstract class VoxelGraph : MonoBehaviour {
             lines.Add("}\n");
         }
 
-        
-
-
-
-
         // function definition
         
         lines.Add(@"
@@ -134,30 +131,14 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
 
         injector = ctx.injector;
         ctx.computeKernelNameAndDepth.Sort((KernelDispatch a, KernelDispatch b) => { return b.depth.CompareTo(a.depth); });
-        
         sortedKernelDispatches = ctx.computeKernelNameAndDepth;
-
-        //var newDictionary = ctx.textures.ToDictionary(entry => entry.Key, entry => entry.Value.Clone());
-
         textureDescriptors = ctx.textures;
         return lines.Aggregate("", (a, b) => a + "\n" + b);
     }
 
     // Checks if we need to recompile the shader by checking the hash changes. Calls a property callback in all cases
     public void SoftRecompile() {
-        TreeContext ctx = new TreeContext(false);
-        Variable<float3> position = ctx.AliasExternalInput<float3>("position");
-        ctx.start = position;
-        Variable<float3> color = float3.zero;
-        Execute(position, out Variable<float> density, ref color);
-
-        ctx.scopes[0].outputs = new KernelOutput[] {
-            new KernelOutput("voxel", Utils.StrictType.Float, density),
-            new KernelOutput("color", Utils.StrictType.Float3, color),
-        };
-
-        ctx.Parse(new TreeNode[] { density, color });
-
+        TreeContext ctx = ParsedTranspilation();
         if (hash != ctx.hashinator.hash) {
             hash = ctx.hashinator.hash;
             Debug.Log("Hash changed, recompiling...");
@@ -175,7 +156,6 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
     // Transpiles the C# shader code and saves it to a compute shader file
     public void Compile() {
 #if UNITY_EDITOR
-        Debug.Log("Compiling...");
         string source = Transpile();
         string folder = "Converted";
         string root = "Assets/Compute";
@@ -190,8 +170,6 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
             sw.Write(source);
         }
 
-        Debug.Log("Asset database refresh");
-        //AssetDatabase.Refresh();
         AssetDatabase.ImportAsset(filePath);
         shader = AssetDatabase.LoadAssetAtPath<ComputeShader>(filePath);
         OnRecompilation();

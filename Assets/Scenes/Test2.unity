@@ -119,81 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!84 &36071594
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 256
-  m_Height: 256
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 52
-  m_MipMap: 0
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 2
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 3
-  m_VolumeDepth: 256
-  m_ShadowSamplingMode: 2
---- !u!84 &549417380
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 256
-  m_Height: 256
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 52
-  m_MipMap: 0
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 2
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 3
-  m_VolumeDepth: 256
-  m_ShadowSamplingMode: 2
---- !u!28 &849649004
+--- !u!28 &149366417
 Texture2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -239,6 +165,80 @@ Texture2D:
     offset: 0
     size: 0
     path: 
+--- !u!84 &366899285
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 128
+  m_Height: 128
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 49
+  m_MipMap: 0
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 2
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
+--- !u!84 &659998019
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 256
+  m_Height: 256
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 49
+  m_MipMap: 0
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 2
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_Dimension: 3
+  m_VolumeDepth: 256
+  m_ShadowSamplingMode: 2
 --- !u!1 &864127146
 GameObject:
   m_ObjectHideFlags: 0
@@ -376,43 +376,6 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
---- !u!84 &921093922
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 256
-  m_Height: 256
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 49
-  m_MipMap: 0
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 2
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 3
-  m_VolumeDepth: 256
-  m_ShadowSamplingMode: 2
 --- !u!1 &1017596085
 GameObject:
   m_ObjectHideFlags: 0
@@ -534,44 +497,7 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 0
---- !u!84 &1055889650
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 256
-  m_Height: 256
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 49
-  m_MipMap: 0
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 2
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
---- !u!28 &1705570936
+--- !u!28 &1518482184
 Texture2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -611,12 +537,95 @@ Texture2D:
   m_ColorSpace: 0
   m_PlatformBlob: 
   image data: 512
-  _typelessdata: 8e0000ff8c0808ff890f0fff871717ff851e1eff822626ff802d2dff7d3535ff7b3d3dff794444ff764c4cff745353ff725b5bff6f6262ff6d6a6aff6d6868ff6f6363ff705e5eff725858ff735353ff754d4dff764848ff784343ff793d3dff7a3838ff7c3232ff7d2d2dff7f2727ff802222ff821d1dff831717ff851212ff860c0cff880707ff890101ff890000ff890000ff890000ff890000ff890000ff890000ff890200ff8a0400ff8a0600ff8a0800ff8b0a00ff8b0d00ff8b0f00ff8c1100ff8c1300ff8c1500ff8d1800ff8d1a00ff8d1c00ff8e1e00ff8e2000ff8e2300ff8f2500ff8f2700ff8f2900ff902b00ff902e00ff902f00ff913100ff913200ff923300ff923500ff923600ff933800ff923700ff913600ff913500ff903400ff8f3300ff8e3200ff8d3100ff8d3000ff8c2f00ff8b2d00ff8a2c00ff892b00ff882a00ff852900ff822900ff7f2800ff7c2700ff792600ff762500ff742400ff712300ff6e2200ff6b2100ff682000ff652000ff621f00ff5f1e00ff5c1d00ff5a1c00ff571b00ff541a00ff511900ff4e1800ff4b1700ff481700ff451600ff421500ff401400ff3d1300ff3a1200ff371100ff341000ff310f00ff2e0e00ff2b0e00ff280d00ff260c00ff230b00ff200a00ff1d0900ff1a0800ff170700ff140600ff110500ff0e0500ff0c0400ff090300ff060200ff030100ff
+  _typelessdata: 000000ff000000ff000000ff000000ff000000ff000000ff000000ff000000ff000000ff000000ff000000ff000000ff000000ff000000ff000000ff000000ff000000ff000000ff000000ff000000ff000000ff000000ff000000ff000000ff070707ff0e0e0eff141414ff1b1b1bff222222ff282828ff2f2f2fff363636ff3c3c3cff434343ff4a4a4aff515151ff575757ff5e5e5eff656565ff6b6b6bff727272ff797979ff7f7f7fff868686ff8d8d8dff949494ff9a9a9aff9f9f9fffa2a2a2ffa4a4a4ffa6a6a6ffa8a8a8ffabababffadadadffafafafffb1b1b1ffb3b3b3ffb6b6b6ffb8b8b8ffbababaffbcbcbcffbfbfbfffc1c1c1ffc3c3c3ffc5c5c5ffc7c7c7ffc9c9c9ffcacacaffccccccffcdcdcdffcececeffd0d0d0ffd1d1d1ffd2d2d2ffd4d4d4ffd5d5d5ffd6d6d6ffd8d8d8ffd9d9d9ffdadadaffdcdcdcffddddddffdededeffe0e0e0ffe1e1e1ffe2e2e2ffe4e4e4ffe5e5e5ffe6e6e6ffe8e8e8ffe9e9e9ffeaeaeaffecececffedededffeeeeeefff0f0f0fff1f1f1fff2f2f2fff4f4f4fff5f5f5fff6f6f6fff8f8f8fff9f9f9fffafafafffcfcfcfffdfdfdfffefefeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
   m_StreamData:
     serializedVersion: 2
     offset: 0
     size: 0
     path: 
+--- !u!28 &1775352487
+Texture2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 3
+  m_Width: 128
+  m_Height: 1
+  m_CompleteImageSize: 512
+  m_MipsStripped: 0
+  m_TextureFormat: 4
+  m_MipCount: 1
+  m_IsReadable: 1
+  m_IsPreProcessed: 0
+  m_IgnoreMipmapLimit: 1
+  m_MipmapLimitGroupName: 
+  m_StreamingMipmaps: 0
+  m_StreamingMipmapsPriority: 0
+  m_VTOnly: 0
+  m_AlphaIsTransparency: 0
+  m_ImageCount: 1
+  m_TextureDimension: 2
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_LightmapFormat: 0
+  m_ColorSpace: 0
+  m_PlatformBlob: 
+  image data: 512
+  _typelessdata: 8e0000ff8c0808ff890f0fff871717ff851e1eff822626ff802d2dff7d3535ff7b3d3dff794444ff764c4cff745353ff725b5bff6f6262ff6d6a6aff6d6868ff6f6363ff705e5eff725858ff735353ff754d4dff764848ff784343ff793d3dff7a3838ff7c3232ff7d2d2dff7f2727ff802222ff821d1dff831717ff851212ff860c0cff880707ff890101ff890000ff890000ff890000ff890000ff890000ff890000ff890200ff8a0400ff8a0600ff8a0800ff8b0a00ff8b0d00ff8b0f00ff8c1100ff8c1300ff8c1500ff8d1800ff8d1a00ff8d1c00ff8e1e00ff8e2000ff8e2300ff8f2500ff8f2700ff8f2900ff902b00ff902e00ff902f00ff913100ff913200ff923300ff923500ff923600ff933800ff923700ff913600ff913500ff903400ff8f3300ff8e3200ff8d3100ff8d3000ff8c2f00ff8b2d00ff8a2c00ff892b00ff8a2d02ff8d3108ff8f360dff923a12ff943f18ff97431dff994823ff9b4c28ff9e502dffa05533ffa35938ffa55e3dffa86243ffaa6748ffad6b4effaf7053ffb27458ffb4795effb77d63ffb98268ffbc866effbe8b73ffc18f79ffc3947effc69883ffc89d89ffcba18effcda693ffd0aa99ffd2ae9effd5b3a4ffd7b7a9ffdabcaeffdcc0b4ffdfc5b9ffe1c9beffe4cec4ffe6d2c9ffe9d7cfffebdbd4ffeee0d9fff0e4dffff3e9e4fff5ede9fff8f2effffaf6f4fffdfbfaff
+  m_StreamData:
+    serializedVersion: 2
+    offset: 0
+    size: 0
+    path: 
+--- !u!84 &1820828072
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 256
+  m_Height: 256
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 52
+  m_MipMap: 0
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 2
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_Dimension: 3
+  m_VolumeDepth: 256
+  m_ShadowSamplingMode: 2
 --- !u!1 &2080444267
 GameObject:
   m_ObjectHideFlags: 0
@@ -678,12 +687,12 @@ MonoBehaviour:
   persistence2:
     x: 0.3
   transform1:
-    position: {x: 0, y: -158.61, z: 0}
-    rotation: {x: 0, y: 36108, z: 0}
+    position: {x: -660.6, y: -77.38, z: 0}
+    rotation: {x: 0, y: 0, z: 0}
     scale: {x: 1, y: 1, z: 1}
   transform2:
-    position: {x: -29.6, y: 0, z: 0}
-    rotation: {x: -141.28, y: -340, z: 14.5}
+    position: {x: 39.38, y: 0, z: -9.2}
+    rotation: {x: -131.64, y: -338.7, z: 14.5}
     scale: {x: 1, y: 1, z: 1}
   gradient:
     serializedVersion: 2
@@ -791,10 +800,23 @@ MonoBehaviour:
     x: 0.01
   amplitude2:
     x: 42.8
+  warpScale:
+    x: 0.005
+  warpAmplitude:
+    x: 50.3
   spikeOffset:
-    x: -9.13
+    x: -7.08
   mode: 2
-  reduction: 0
+  texture: {fileID: 2800000, guid: 222e3a23dbff40b4ab31b3986cdee92b, type: 3}
+  textureScale:
+    x:
+      x: 0.02
+      y: 0.02
+  textureOffset:
+    x:
+      x: 4.79
+      y: 5.6
+  reduction: 1
   octaves: 4
   octaves2: 4
 --- !u!114 &2080444272
@@ -824,16 +846,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 63a066558079a8145a0717980575810b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  seed: 1256
+  seed: 0
   permutationSeed: {x: -7, y: 0, z: 0}
   moduloSeed: {x: 26, y: 0, z: 0}
   debugTextures:
-  - {fileID: 921093922}
-  - {fileID: 549417380}
-  - {fileID: 36071594}
-  - {fileID: 1055889650}
-  - {fileID: 849649004}
-  - {fileID: 1705570936}
+  - {fileID: 659998019}
+  - {fileID: 1820828072}
+  - {fileID: 149366417}
+  - {fileID: 366899285}
+  - {fileID: 1518482184}
+  - {fileID: 2800000, guid: 222e3a23dbff40b4ab31b3986cdee92b, type: 3}
+  - {fileID: 1775352487}
   size: 256
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

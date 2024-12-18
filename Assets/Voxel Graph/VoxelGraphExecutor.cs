@@ -48,6 +48,8 @@ public class VoxelGraphExecutor : MonoBehaviour {
         foreach (var (name, descriptor) in graph.textureDescriptors) {
             Textures.Add(name, descriptor.Create(size));
         }
+
+        debugTextures = Textures.Values.AsEnumerable().Select(x => x.texture).ToList();
     }
 
     public void ExecuteShader() {

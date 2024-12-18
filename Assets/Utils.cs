@@ -134,15 +134,15 @@ public static class Utils {
                 break;
             case StrictType.Float2:
                 float2 temp = (float2)val;
-                shader.SetFloats(id, temp.x, temp.y);
+                shader.SetVector(id, new float4(temp, 0.0f));
                 break;
             case StrictType.Float3:
                 float3 temp2 = (float3)val;
-                shader.SetFloats(id, temp2.x, temp2.y, temp2.z);
+                shader.SetVector(id, new float4(temp2, 0.0f));
                 break;
             case StrictType.Float4:
                 float4 temp3 = (float4)val;
-                shader.SetFloats(id, temp3.x, temp3.y, temp3.z, temp3.w);
+                shader.SetVector(id, temp3);
                 break;
             case StrictType.Uint:
                 shader.SetInt(id, (int)(uint)val);

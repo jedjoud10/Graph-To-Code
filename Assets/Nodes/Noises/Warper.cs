@@ -38,7 +38,8 @@ public class Warper {
     public Variable<float2> warpingScale2;
     public Variable<float2> warpingScale;
 
-    public Warper() {
+    public Warper(Noise noise) {
+        this.noisinator = noise;
         this.warpingScale = new float2(1.0f);
         this.warpingScale2 = new float2(1.0f);
     }
