@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using Unity.Mathematics;
@@ -20,15 +21,27 @@ public abstract class VoxelGraph : MonoBehaviour {
     public Dictionary<string, GradientTexture> gradientTextures;
     private int hash;
 
-    public delegate void OnRecompilation();
-    public event OnRecompilation onRecompilation;
+    private void OnPropertiesChanged() {
+        var executor = GetComponent<VoxelGraphExecutor>();
+        var visualizer = GetComponent<DensityVisualizer>();
 
-    public delegate void OnPropertiesChanged();
-    public event OnPropertiesChanged onPropertiesChanged;
+        executor.ExecuteShader();
+        RenderTexture density = (RenderTexture)executor.Textures["voxels"];
+        RenderTexture colors = (RenderTexture)executor.Textures["colors"];
+        visualizer.ExecuteSurfaceNetsMesher(density, colors);
+    }
+
+    private void OnRecompilation() {
+        var executor = GetComponent<VoxelGraphExecutor>();
+        var visualizer = GetComponent<DensityVisualizer>();
+
+        visualizer.InitializeForSize(executor.size);
+        executor.CreateIntermediateTextures();
+    }
 
 
     // Execute the voxel graph at a specific position and fetch the density and material values
-    public abstract void Execute(Variable<float3> position, out Variable<float> density);
+    public abstract void Execute(Variable<float3> position, out Variable<float> density, ref Variable<float3> color);
 
     // Hashes extra parameters that could be used for recompilation
     public virtual void Hashinate(Hashinator hashinator) { }
@@ -41,21 +54,28 @@ public abstract class VoxelGraph : MonoBehaviour {
         
         Variable<float3> position = ctx.AliasExternalInput<float3>("position");
         ctx.start = position;
-        Execute(position, out Variable<float> density);
-        ctx.scopes[0].output = (Utils.StrictType.Float,  density);
+        Variable<float3> color = float3.zero;
+        Execute(position, out Variable<float> density, ref color);
+        ctx.scopes[0].outputs = new KernelOutput[] {
+            new KernelOutput("voxel", Utils.StrictType.Float, density),
+            new KernelOutput("color", Utils.StrictType.Float3, color),
+        };
         ctx.scopes[0].name = "Voxel";
-        //(var symbols, var hash) = ctx.Handlinate(density2);
 
-        ctx.Parse(density);
+        System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
+        timer.Start();
+        ctx.Parse(new TreeNode[] { density, color });
+        timer.Stop();
+        Debug.Log($"{timer.Elapsed.TotalMilliseconds}ms");
 
         List<string> lines = new List<string>();
         lines.AddRange(ctx.Properties);
         lines.Add("RWTexture3D<float> voxels;");
+        lines.Add("RWTexture3D<float3> colors;");
 
         lines.Add("int size;");
         lines.Add("int3 permuationSeed;\nint3 moduloSeed;");
         lines.Add("float3 scale;\nfloat3 offset;");
-
 
         // imports
         lines.Add("#include \"Assets/Compute/Noises.cginc\"");
@@ -66,8 +86,20 @@ public abstract class VoxelGraph : MonoBehaviour {
         foreach (var scope in ctx.scopes) {
             //Debug.Log(scope.depth);
             lines.Add($"// defined nodes: {scope.namesToNodes.Count}, depth: {scope.depth}, total lines: {scope.lines.Count} ");
-            lines.Add($"{scope.output.Item1.ToStringType()} {scope.name}(float3 position, uint3 id) {{");
-            scope.AddLine($"return {scope.namesToNodes[scope.output.Item2]};");
+
+            string outVars = "";
+
+            for (int i = 0; i < scope.outputs.Length; i++) {
+                var item = scope.outputs[i];
+                var test = i == scope.outputs.Length - 1 ? "" : ",";
+                outVars += $" out {Utils.ToStringType(item.type)} {item.name}{test}";
+            }
+            lines.Add($"void {scope.name}(float3 position, uint3 id,{outVars}) {{");
+
+            foreach (var item in scope.outputs) {
+                scope.AddLine($"{item.name} = {scope.namesToNodes[item.node]};");
+            }
+
             IEnumerable<string> parsed2 = scope.lines.SelectMany(str => str.Split(new[] { "\r\n", "\n" }, System.StringSplitOptions.None)).Select(x => $"{x}");
             lines.AddRange(parsed2);
             lines.Add("}\n");
@@ -84,7 +116,11 @@ public abstract class VoxelGraph : MonoBehaviour {
 #pragma kernel CSVoxel
 [numthreads(8, 8, 8)]
 void CSVoxel(uint3 id : SV_DispatchThreadID) {
-    voxels[id] = Voxel((float3(id) + offset) * scale, id);
+    float density;
+    float3 color;
+    Voxel((float3(id) + offset) * scale, id, density, color);
+    voxels[id] = density;
+    colors[id] = color;
 }"
 );
         // TODO: Convert all of the default voxel stuff to use the stuff we've defined (aka remove the shit stuff from above kekw)
@@ -111,25 +147,28 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
         TreeContext ctx = new TreeContext(false);
         Variable<float3> position = ctx.AliasExternalInput<float3>("position");
         ctx.start = position;
-        Execute(position, out Variable<float> density);
-        ctx.scopes[0].output = (Utils.StrictType.Float, density);
-        ctx.scopes[0].name = "Voxel";
-        ctx.Parse(density);
+        Variable<float3> color = float3.zero;
+        Execute(position, out Variable<float> density, ref color);
+
+        ctx.scopes[0].outputs = new KernelOutput[] {
+            new KernelOutput("voxel", Utils.StrictType.Float, density),
+            new KernelOutput("color", Utils.StrictType.Float3, color),
+        };
+
+        ctx.Parse(new TreeNode[] { density, color });
 
         if (hash != ctx.hashinator.hash) {
             hash = ctx.hashinator.hash;
             Debug.Log("Hash changed, recompiling...");
             Compile();
         }
-
-        onPropertiesChanged?.Invoke();
-        //GetComponent<DensityVisualizer>().Exec((RenderTexture)textures["voxels"]);
     }
 
     // Every time the user updates a field, we will re-transpile (to check for hash-differences) and re-compile if needed
     // Also executing the shader at the specified size as well
     private void OnValidate() {
         SoftRecompile();
+        OnPropertiesChanged();
     }
 
     // Transpiles the C# shader code and saves it to a compute shader file
@@ -151,10 +190,11 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
         }
 
         Debug.Log("Asset database refresh");
-        AssetDatabase.Refresh();
+        //AssetDatabase.Refresh();
         AssetDatabase.ImportAsset(filePath);
-        onRecompilation?.Invoke();
         shader = AssetDatabase.LoadAssetAtPath<ComputeShader>(filePath);
+        OnRecompilation();
+        OnPropertiesChanged();
 #else
             Debug.LogError("Cannot transpile code at runtime");
 #endif

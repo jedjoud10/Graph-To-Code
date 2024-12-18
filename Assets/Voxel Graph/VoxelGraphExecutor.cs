@@ -1,15 +1,16 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 
 [ExecuteInEditMode]
 public class VoxelGraphExecutor : MonoBehaviour {
-
     [Header("Seeding")]
     public int seed = 1234;
     public Vector3Int permutationSeed;
     public Vector3Int moduloSeed;
 
+    public List<Texture> debugTextures;
     public Dictionary<string, Texture> Textures { get; private set; }
     public RenderTexture temp;
 
@@ -19,9 +20,10 @@ public class VoxelGraphExecutor : MonoBehaviour {
 
     private void OnEnable() {
         graph = GetComponent<VoxelGraph>();
+    }
 
-        graph.onPropertiesChanged += () => { ExecuteShader(); };
-        graph.onRecompilation += () => { CreateIntermediateTextures(); };
+    private void OnValidate() {
+        size = Mathf.ClosestPowerOfTwo(size);
     }
 
     // Convert a strict type to a graphics format to be used for texture format
@@ -43,46 +45,53 @@ public class VoxelGraphExecutor : MonoBehaviour {
     // Create intermediate textures (cached, gradient) to be used for voxel graph shader execution
     // Texture size will correspond to execution size property
     public void CreateIntermediateTextures() {
-        if (Textures == null || Textures.Count == 0 || (Textures["voxels"] != null && Textures["voxels"].width != size)) {
-            // Dispose of previous render textures if needed
-            if (Textures != null) {
-                foreach (var (name, tex) in Textures) {
-                    if (tex is RenderTexture casted) {
-                        casted.Release();
-                    }
+        // Dispose of previous render textures if needed
+        if (Textures != null) {
+            foreach (var (name, tex) in Textures) {
+                if (tex is RenderTexture casted) {
+                    casted.Release();
                 }
             }
+        }
 
-            // Creates dictionary with the default voxel graph textures (density + custom data)
-            Textures = new Dictionary<string, Texture> {
-                { "voxels", Utils.Create3DRenderTexture(size, GraphicsFormat.R32_SFloat, FilterMode.Trilinear, TextureWrapMode.Repeat, false) }
+        // Creates dictionary with the default voxel graph textures (density + custom data)
+        Textures = new Dictionary<string, Texture> {
+                { "voxels", Utils.Create3DRenderTexture(size, GraphicsFormat.R32_SFloat, FilterMode.Trilinear, TextureWrapMode.Repeat, false) },
+                { "colors", Utils.Create3DRenderTexture(size, GraphicsFormat.R32G32B32A32_SFloat, FilterMode.Trilinear, TextureWrapMode.Repeat, false) },
+                { "customUvs", Utils.Create3DRenderTexture(size, GraphicsFormat.R32G32B32A32_SFloat, FilterMode.Trilinear, TextureWrapMode.Repeat, false) }
             };
 
-            foreach (var (name, temp) in graph.tempTextures) {
-                RenderTexture rt;
-                if (temp.threeDimensions) {
-                    rt = Utils.Create3DRenderTexture(size / (1 << temp.sizeReductionPower), ToGfxFormat(temp.type), temp.filter, temp.wrap, temp.mips);
-                } else {
-                    rt = Utils.Create2DRenderTexture(size / (1 << temp.sizeReductionPower), ToGfxFormat(temp.type), temp.filter, temp.wrap, temp.mips);
-                }
-                Textures.Add(name, rt);
+        foreach (var (name, temp) in graph.tempTextures) {
+            RenderTexture rt;
+            int textureSize = size / (1 << temp.sizeReductionPower);
+            textureSize = Mathf.Max(textureSize, 1);
+            if (temp.threeDimensions) {
+                rt = Utils.Create3DRenderTexture(textureSize, ToGfxFormat(temp.type), temp.filter, temp.wrap, temp.mips);
+            } else {
+                rt = Utils.Create2DRenderTexture(textureSize, ToGfxFormat(temp.type), temp.filter, temp.wrap, temp.mips);
             }
+            Textures.Add(name, rt);
+        }
 
-            foreach (var (name, temp) in graph.gradientTextures) {
-                Texture2D texture = new Texture2D(temp.size, 1, DefaultFormat.LDR, TextureCreationFlags.None);
-                texture.wrapMode = TextureWrapMode.Clamp;
-                Textures.Add(name, texture);
-            }
+        foreach (var (name, temp) in graph.gradientTextures) {
+            Texture2D texture = new Texture2D(temp.size, 1, DefaultFormat.LDR, TextureCreationFlags.None);
+            texture.wrapMode = TextureWrapMode.Clamp;
+            Textures.Add(name, texture);
+        }
+
+        debugTextures = Textures.Values.ToList();
+
+        if (Textures == null || Textures.Count == 0 || (Textures["voxels"] != null && Textures["voxels"].width != size)) {
+
         }
 
         temp = (RenderTexture)Textures["voxels"];
     }
 
     public void ExecuteShader() {
-        CreateIntermediateTextures();
-
         ComputeShader shader = graph.shader;
         shader.SetTexture(0, "voxels", Textures["voxels"]);
+        shader.SetTexture(0, "colors", Textures["colors"]);
         shader.SetInt("size", size);
         shader.SetInts("permuationSeed", new int[] { permutationSeed.x, permutationSeed.y, permutationSeed.z });
         shader.SetInts("moduloSeed", new int[] { moduloSeed.x, moduloSeed.y, moduloSeed.z });
@@ -118,11 +127,15 @@ public class VoxelGraphExecutor : MonoBehaviour {
         foreach (var kernel in graph.sortedKernelDispatches) {
             int id = shader.FindKernel(kernel.name);
             int tempSize = size / (1 << kernel.sizeReductionPower);
+            tempSize = Mathf.Max(tempSize, 1);
+
+            int minScaleBase3D = Mathf.CeilToInt((float)tempSize / 8.0f);
+            int minScaleBase2D = Mathf.CeilToInt((float)tempSize / 32.0f);
 
             if (kernel.threeDimensions) {
-                shader.Dispatch(id, tempSize / 8, tempSize / 8, tempSize / 8);
+                shader.Dispatch(id, minScaleBase3D, minScaleBase3D, minScaleBase3D);
             } else {
-                shader.Dispatch(id, tempSize / 32, tempSize / 32, 1);
+                shader.Dispatch(id, minScaleBase2D, minScaleBase2D, 1);
             }
 
             if (kernelsToWriteTexture.TryGetValue(kernel.name, out var name)) {

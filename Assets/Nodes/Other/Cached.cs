@@ -52,6 +52,7 @@ public class CachedNode<T> : Variable<T> {
         bool _3d = dimensions == 3;
 
         string scopeName = context.GenId($"CachedScope");
+        string outputName = $"{scopeName}_output";
         string textureName = context.GenId($"_cached_texture");
         tempTextureName = textureName;
         context.properties.Add($"RWTexture{dimensions}D<{Utils.TypeOf<T>().ToStringType()}> {textureName}_write;");
@@ -62,7 +63,9 @@ public class CachedNode<T> : Variable<T> {
         int oldScopeIndex = context.currentScope;
         context.scopes.Add(new KernelScope(context.scopeDepth + 1) {
             name = scopeName,
-            output = (Utils.TypeOf<T>(), inner),
+            outputs = new KernelOutput[] {
+                new KernelOutput(outputName, Utils.TypeOf<T>(), inner)
+            }
         });
 
         var startNode = context[context.start];
@@ -140,8 +143,9 @@ public class CachedNode<T> : Variable<T> {
 {numThreads}
 void CS{scopeName}(uint3 id : SV_DispatchThreadID) {{
     uint3 remapped = uint3({remappedCoords});
-
-    {textureName}_write[{writeCoords}] = {scopeName}((float3(remapped * {frac}) + offset) * scale, id);
+    {Utils.ToStringType<T>()} temp;
+    {scopeName}((float3(remapped * {frac}) + offset) * scale, id, temp);
+    {textureName}_write[{writeCoords}] = temp;
 }}";
 
         context.computeKernels.Add(compute);

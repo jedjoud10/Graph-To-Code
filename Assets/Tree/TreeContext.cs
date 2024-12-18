@@ -145,7 +145,9 @@ public class TreeContext {
         DefineAndBindNode(node, Utils.TypeOf<T>(), name, value, constant, rngName, assignOnly);
     }
 
-    public void Parse(TreeNode head) {
-        head.Handle(this);
+    public void Parse(TreeNode[] head) {
+        foreach (TreeNode node in head) {
+            node.Handle(this);
+        }
     }
 }

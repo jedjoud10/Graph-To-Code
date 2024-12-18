@@ -20,6 +20,10 @@ public static class Utils {
         return data.ToString().ToLower();
     }
 
+    public static string ToStringType<T>() {
+        return TypeOf<T>().ToString().ToLower();
+    }
+
     public static string ToDefinableString<T>(T value) {
         string a = value.ToString();
         object temp = (object)value;
@@ -170,6 +174,8 @@ public static class Utils {
                 return "xy";
             case StrictType.Float3:
                 return "xyz";
+            case StrictType.Float4:
+                return "xyzw";
             default:
                 throw new System.Exception();
         }

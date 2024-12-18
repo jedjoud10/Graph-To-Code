@@ -17,9 +17,17 @@ public class DensityVisualizer : MonoBehaviour {
     public Material customRenderingMaterial;
     private GraphicsBuffer.IndirectDrawIndexedArgs aaa;
     public bool blocky;
+    private int size;
 
-    public void InitializeForSize() {
-        int size = GetComponent<VoxelGraphExecutor>().size;
+    public void InitializeForSize(int newSize) {
+        if (indexBuffer != null && newSize == size && indexBuffer.IsValid())
+            return;
+
+        if (indexBuffer != null && indexBuffer.IsValid()) {
+            DisposeBuffers();
+        }
+
+        size = newSize;
         indexBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, size * size * size * 6, sizeof(int));
         vertexBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, size * size * size, sizeof(float) * 3);
         normalsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, size * size * size, sizeof(float) * 3);
@@ -41,21 +49,11 @@ public class DensityVisualizer : MonoBehaviour {
     }
 
     private void OnDisable() {
-        Killnate();
+        DisposeBuffers();
     }
 
-    private void OnEnable() {
-        GetComponent<VoxelGraph>().onRecompilation += () => {
-            InitializeForSize();
-        };
 
-        GetComponent<VoxelGraph>().onPropertiesChanged += () => {
-            RenderTexture rt = (RenderTexture)GetComponent<VoxelGraphExecutor>().Textures["voxels"];
-            Exec(rt);
-        };
-    }
-
-    public void Killnate() {
+    public void DisposeBuffers() {
         indexBuffer.Dispose();
         vertexBuffer.Dispose();
         normalsBuffer.Dispose();
@@ -65,8 +63,11 @@ public class DensityVisualizer : MonoBehaviour {
         tempVertexTexture.Release();
     }
 
-    public void Exec(RenderTexture density) {
-        int size = GetComponent<VoxelGraphExecutor>().size;
+    public void ExecuteSurfaceNetsMesher(RenderTexture voxels, RenderTexture colors) {
+        if (atomicCounters == null || !atomicCounters.IsValid())
+            return;
+
+        int size = voxels.width;
         atomicCounters.SetData(new uint[2] { 0, 0 });
         commandBuffer.SetData(new GraphicsBuffer.IndirectDrawIndexedArgs[1] { aaa });
 
@@ -74,7 +75,8 @@ public class DensityVisualizer : MonoBehaviour {
         computeShader.SetInt("size", size);
 
         int id = computeShader.FindKernel("CSVertex");
-        computeShader.SetTexture(id, "densities", density);
+        computeShader.SetTexture(id, "densities", voxels);
+        computeShader.SetTexture(id, "colorsIn", colors);
         computeShader.SetBuffer(id, "atomicCounters", atomicCounters);
         computeShader.SetBuffer(id, "vertices", vertexBuffer);
         computeShader.SetBuffer(id, "normals", normalsBuffer);
@@ -84,7 +86,7 @@ public class DensityVisualizer : MonoBehaviour {
         computeShader.Dispatch(id, size / 8, size / 8, size / 8);
         
         id = computeShader.FindKernel("CSQuad");
-        computeShader.SetTexture(id, "densities", density);
+        computeShader.SetTexture(id, "densities", voxels);
         computeShader.SetBuffer(id, "indices", indexBuffer);
         computeShader.SetTexture(id, "vertexIds", tempVertexTexture);
         computeShader.SetBuffer(id, "cmdBuffer", commandBuffer);
@@ -93,11 +95,11 @@ public class DensityVisualizer : MonoBehaviour {
     }
 
     public void Update() {
-        ConvertToMeshAndRender();
+        RenderIndexedIndirectMesh();
     }
 
-    public void ConvertToMeshAndRender() {
-        if (indexBuffer == null || commandBuffer == null)
+    public void RenderIndexedIndirectMesh() {
+        if (indexBuffer == null || commandBuffer == null || !indexBuffer.IsValid() || !commandBuffer.IsValid())
             return;
 
         RenderParams renderParams = new RenderParams();
@@ -105,7 +107,7 @@ public class DensityVisualizer : MonoBehaviour {
             center = Vector3.zero,
             extents = Vector3.one * 1000.0f,
         };
-        //renderParams.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.TwoSided;
+        renderParams.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.TwoSided;
 
         renderParams.material = customRenderingMaterial;
 

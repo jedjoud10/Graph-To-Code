@@ -12,7 +12,15 @@ float inj_5;
 Texture1D _gradient_texture_0_read;
 SamplerState sampler_gradient_texture_0_read;
 float4x4 matrix_1;
+float inj_6;
+float inj_7;
+float4x4 matrix_2;
+float inj_8;
+float inj_9;
+Texture1D _gradient_texture_1_read;
+SamplerState sampler_gradient_texture_1_read;
 RWTexture3D<float> voxels;
+RWTexture3D<float3> colors;
 int size;
 int3 permuationSeed;
 int3 moduloSeed;
@@ -21,7 +29,7 @@ float3 offset;
 #include "Assets/Compute/Noises.cginc"
 #include "Assets/Compute/Other.cginc"
 // defined nodes: 19, depth: 1, total lines: 18 
-float CachedScope_0(float3 position, uint3 id) {
+void CachedScope_0(float3 position, uint3 id, out float CachedScope_0_output) {
 	float3 projected_0 = mul(matrix_0, float4(position, 1.0)).xyz;
 	float2 projected_0_swizzled_0 = projected_0.xz;
 	float projected_0_swizzled_0_fbm_0 = 0.0;
@@ -40,32 +48,46 @@ float CachedScope_0(float3 position, uint3 id) {
 	float _gradient_texture_0_gradient_0 = _gradient_texture_0_read.SampleLevel(sampler_gradient_texture_0_read, projected_0_swizzled_0_fbm_1_gradient_remapped_0, 0).x;
 	float projected_0_swizzled_0_fbm_1_gradient_second_remapped_0 = Remap(_gradient_texture_0_gradient_0, 0.0, 1.0, inj_0, inj_1);
 	float _gradient_texture_0_gradient_sampled_0 = projected_0_swizzled_0_fbm_1_gradient_second_remapped_0;
-	return _gradient_texture_0_gradient_sampled_0;
+	CachedScope_0_output = _gradient_texture_0_gradient_sampled_0;
 }
 
-// defined nodes: 8, depth: 0, total lines: 7 
-float Voxel(float3 position, uint3 id) {
+// defined nodes: 20, depth: 0, total lines: 15 
+void Voxel(float3 position, uint3 id, out float voxel, out float3 color) {
 	const float3 c_0 = float3(1,1,1);
 	const float3 c_1 = float3(0,0,0);
 	const float c_2 = 0;
-	float _gradient_texture_0_gradient_sampled_0_cached_0 = SampleBounded(_cached_texture_0_read, sampler_cached_texture_0_read, (float2(id.xz) / size) * c_0.xz + c_1.xz, c_2, (float(size) / 1)).x;
+	float _gradient_texture_0_gradient_sampled_0_cached_0 = SampleBounded(_cached_texture_0_read, sampler_cached_texture_0_read, (float2(id.xz) / size) * c_0.xz + c_1.xz, c_2, (float(size) / 8)).x;
 	float3 projected_1 = mul(matrix_1, float4(position, 1.0)).xyz;
 	float projected_1_swizzled_0 = projected_1.y;
 	float _gradient_texture_0_gradient_sampled_0_cached_0_op_projected_1_swizzled_0_0 = _gradient_texture_0_gradient_sampled_0_cached_0 + projected_1_swizzled_0;
-	return _gradient_texture_0_gradient_sampled_0_cached_0_op_projected_1_swizzled_0_0;
+	float3 projected_2 = mul(matrix_2, float4(projected_1, 1.0)).xyz;
+	float2 projected_2_swizzled_0 = projected_2.xz;
+	float projected_2_swizzled_0_noised_0 = (snoise((projected_2_swizzled_0) * inj_7)) * inj_6;
+	float _gradient_texture_0_gradient_sampled_0_cached_0_op_projected_1_swizzled_0_0_op_projected_2_swizzled_0_noised_0_0 = _gradient_texture_0_gradient_sampled_0_cached_0_op_projected_1_swizzled_0_0 + projected_2_swizzled_0_noised_0;
+	float projected_1_swizzled_1 = projected_1.y;
+	float3 projected_1_swizzled_1_gradient_remapped_0 = Remap(projected_1_swizzled_1, inj_8, inj_9, 0.0, 1.0);
+	float3 _gradient_texture_1_gradient_0 = _gradient_texture_1_read.SampleLevel(sampler_gradient_texture_1_read, projected_1_swizzled_1_gradient_remapped_0, 0).xyz;
+	float3 _gradient_texture_1_gradient_sampled_0 = _gradient_texture_1_gradient_0;
+	voxel = _gradient_texture_0_gradient_sampled_0_cached_0_op_projected_1_swizzled_0_0_op_projected_2_swizzled_0_noised_0_0;
+	color = _gradient_texture_1_gradient_sampled_0;
 }
 
 
 #pragma kernel CSVoxel
 [numthreads(8, 8, 8)]
 void CSVoxel(uint3 id : SV_DispatchThreadID) {
-    voxels[id] = Voxel((float3(id) + offset) * scale, id);
+    float density;
+    float3 color;
+    Voxel((float3(id) + offset) * scale, id, density, color);
+    voxels[id] = density;
+    colors[id] = color;
 }
 
 #pragma kernel CSCachedScope_0
 [numthreads(32, 32, 1)]
 void CSCachedScope_0(uint3 id : SV_DispatchThreadID) {
     uint3 remapped = uint3(id.x, 0.0, id.y);
-
-    _cached_texture_0_write[id.xy] = CachedScope_0((float3(remapped * 1) + offset) * scale, id);
+    float temp;
+    CachedScope_0((float3(remapped * 8) + offset) * scale, id, temp);
+    _cached_texture_0_write[id.xy] = temp;
 }
