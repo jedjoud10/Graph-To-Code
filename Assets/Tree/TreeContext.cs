@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class TreeContext {
-    public Dictionary<string, TempTexture> tempTextures;
-    public Dictionary<string, GradientTexture> gradientTextures;
-    public Dictionary<string, Texture> userTextures;
+    public Dictionary<string, TextureDescriptor> textures;
     public List<string> computeKernels;
     public List<KernelDispatch> computeKernelNameAndDepth;
     public Dictionary<string, int> varNamesToId;
@@ -47,9 +45,7 @@ public class TreeContext {
         this.counter = 0;
         this.computeKernels = new List<string>();
         this.computeKernelNameAndDepth = new List<KernelDispatch>();
-        this.tempTextures = new Dictionary<string, TempTexture>();
-        this.gradientTextures = new Dictionary<string, GradientTexture>();
-        this.userTextures = new Dictionary<string, Texture>();
+        this.textures = new Dictionary<string, TextureDescriptor>();
     }
 
     public void Inject<T>(InjectedNode<T> node, string name, Func<object> func) {
@@ -63,7 +59,7 @@ public class TreeContext {
         }
     }
 
-    public void Inject2(Action<ComputeShader, Dictionary<string, Texture>> func) {
+    public void Inject2(Action<ComputeShader, Dictionary<string, ExecutorTexture>> func) {
         injector.injected.Add(func);
     }
 

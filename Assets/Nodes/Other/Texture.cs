@@ -13,7 +13,7 @@ public class TextureSampleNode<T> : Variable<float4> {
         if (!context.Contains(this)) {
             HandleInternal(context);
         } else {
-            context.tempTextures[tempTextureName].readKernels.Add($"CS{context.scopes[context.currentScope].name}");
+            //context.tempTextures[tempTextureName].readKernels.Add($"CS{context.scopes[context.currentScope].name}");
         }
     }
 
@@ -32,7 +32,7 @@ public class TextureSampleNode<T> : Variable<float4> {
         context.properties.Add($"Texture{dimensionality}D {textureName}_read;");
         context.properties.Add($"SamplerState sampler{textureName}_read;");
         context.DefineAndBindNode<float4>(this, "hehehehe", $"{textureName}_read.SampleLevel(sampler{textureName}_read, {context[coordinates]}, {context[sampler.level]})");
-        context.userTextures.Add(tempTextureName, sampler.texture);
+        //context.userTextures.Add(tempTextureName, sampler.texture);
     }
 }
 
@@ -49,7 +49,7 @@ public class TextureSampler {
         this.texture = texture;
     }
 
-    public Variable<float4> Cache<T>(Variable<T> input) {
+    public Variable<float4> Sample<T>(Variable<T> input) {
         if (texture.dimension == UnityEngine.Rendering.TextureDimension.Tex2D && Utils.DimensionalitySafeTextureSample<T>() != 2) {
             throw new Exception();
         }

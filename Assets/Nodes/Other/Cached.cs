@@ -29,7 +29,7 @@ public class CachedNode<T> : Variable<T> {
         if (!context.Contains(this)) {
             HandleInternal(context);
         } else {
-            context.tempTextures[tempTextureName].readKernels.Add($"CS{context.scopes[context.currentScope].name}");
+            context.textures[tempTextureName].readKernels.Add($"CS{context.scopes[context.currentScope].name}");
         }
     }
 
@@ -155,7 +155,8 @@ void CS{scopeName}(uint3 id : SV_DispatchThreadID) {{
             sizeReductionPower = sizeReductionPower,
             threeDimensions = _3d,
         });
-        context.tempTextures.Add(tempTextureName, new TempTexture {
+
+        context.textures.Add(tempTextureName, new TempTextureDescriptor {
             sizeReductionPower = sizeReductionPower,
             type = Utils.TypeOf<T>(),
             writeKernel = $"CS{scopeName}",
@@ -164,6 +165,7 @@ void CS{scopeName}(uint3 id : SV_DispatchThreadID) {{
             mips = sampler.generateMips,
             threeDimensions = _3d,
             readKernels = new List<string>() { $"CS{context.scopes[oldScopeIndex].name}" },
+            name = tempTextureName,
         });
     }
 }

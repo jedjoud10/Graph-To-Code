@@ -29,18 +29,34 @@ public static class Utils {
         string a = value.ToString();
         object temp = (object)value;
 
-        switch (Utils.TypeOf<T>()) {
-            case Utils.StrictType.Float2:
+        switch (TypeOf<T>()) {
+            case StrictType.Float2:
                 float2 f2 = (float2)temp;
                 return $"float2({f2.x},{f2.y})";
-            case Utils.StrictType.Float3:
+            case StrictType.Float3:
                 float3 f3 = (float3)temp;
                 return $"float3({f3.x},{f3.y},{f3.z})";
-            case Utils.StrictType.Float4:
+            case StrictType.Float4:
                 float4 f4 = (float4)temp;
                 return $"float4({f4.x},{f4.y},{f4.z},{f4.w})";
             default:
                 return value.ToString();
+        }
+    }
+
+    // Convert a strict type to a graphics format to be used for texture format
+    public static GraphicsFormat ToGfxFormat(StrictType type) {
+        switch (type) {
+            case StrictType.Float:
+                return GraphicsFormat.R32_SFloat;
+            case StrictType.Float2:
+                return GraphicsFormat.R32G32_SFloat;
+            case StrictType.Float3:
+                return GraphicsFormat.R32G32B32_SFloat;
+            case StrictType.Float4:
+                return GraphicsFormat.R32G32B32A32_SFloat;
+            default:
+                throw new System.Exception();
         }
     }
 
@@ -145,7 +161,7 @@ public static class Utils {
         }
     }
 
-    public static RenderTexture Create3DRenderTexture(int size, GraphicsFormat format, FilterMode filter, TextureWrapMode wrap, bool mips) {
+    public static RenderTexture Create3DRenderTexture(int size, GraphicsFormat format, FilterMode filter = FilterMode.Trilinear, TextureWrapMode wrap = TextureWrapMode.Clamp, bool mips = false) {
         RenderTexture texture = new RenderTexture(size, size, 0, format);
         texture.width = size;
         texture.height = size;
@@ -161,7 +177,7 @@ public static class Utils {
         return texture;
     }
 
-    public static RenderTexture Create2DRenderTexture(int size, GraphicsFormat format, FilterMode filter, TextureWrapMode wrap, bool mips) {
+    public static RenderTexture Create2DRenderTexture(int size, GraphicsFormat format, FilterMode filter = FilterMode.Trilinear, TextureWrapMode wrap = TextureWrapMode.Clamp, bool mips = false) {
         RenderTexture texture = new RenderTexture(size, size, 0, format);
         texture.width = size;
         texture.height = size;

@@ -17,9 +17,7 @@ public abstract class VoxelGraph : MonoBehaviour {
     public ComputeShader shader;
     public PropertyInjector injector;
     public List<KernelDispatch> sortedKernelDispatches;
-    public Dictionary<string, TempTexture> tempTextures;
-    public Dictionary<string, GradientTexture> gradientTextures;
-    public Dictionary<string, Texture> userTextures;
+    public Dictionary<string, TextureDescriptor> textureDescriptors;
     private int hash;
 
     private void OnPropertiesChanged() {
@@ -138,9 +136,10 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
         ctx.computeKernelNameAndDepth.Sort((KernelDispatch a, KernelDispatch b) => { return b.depth.CompareTo(a.depth); });
         
         sortedKernelDispatches = ctx.computeKernelNameAndDepth;
-        tempTextures = ctx.tempTextures;
-        gradientTextures = ctx.gradientTextures;
-        userTextures = ctx.userTextures;
+
+        //var newDictionary = ctx.textures.ToDictionary(entry => entry.Key, entry => entry.Value.Clone());
+
+        textureDescriptors = ctx.textures;
         return lines.Aggregate("", (a, b) => a + "\n" + b);
     }
 

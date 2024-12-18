@@ -15,6 +15,10 @@ public abstract class Variable<T> : TreeNode {
         return new SimpleBinOpNode<T> { a = a, b = b, op = "-" };
     }
 
+    public static Variable<T> operator -(Variable<T> a) {
+        return new NegateNode<T> { a = a };
+    }
+
     public static Variable<T> operator *(Variable<T> a, Variable<T> b) {
         return new SimpleBinOpNode<T> { a = a, b = b, op = "*" };
     }
@@ -48,5 +52,9 @@ public abstract class Variable<T> : TreeNode {
 
     public Variable<T> Max(Variable<T> other) {
         return new SimpleBinFuncNode<T> { a = this, b = other, func = "max" };
+    }
+
+    public static Variable<T> Lerp(Variable<T> a, Variable<T> b, Variable<T> t, bool clamp = false) {
+        return new LerpNode<T> { a = a, b = b, t = t, clamp = clamp };
     }
 }

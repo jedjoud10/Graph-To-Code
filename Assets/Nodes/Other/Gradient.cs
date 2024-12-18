@@ -16,7 +16,7 @@ public class GradientNode<T> : Variable<T> {
         if (!context.Contains(this)) {
             HandleInternal(context);
         } else {
-            context.gradientTextures[gradientTextureName].readKernels.Add($"CS{context.scopes[context.currentScope].name}");
+            context.textures[gradientTextureName].readKernels.Add($"CS{context.scopes[context.currentScope].name}");
         }
     }
 
@@ -32,7 +32,7 @@ public class GradientNode<T> : Variable<T> {
         context.properties.Add($"SamplerState sampler{textureName}_read;");
 
         context.Inject2((compute, textures) => {
-            Texture2D tex = (Texture2D)textures[textureName];
+            Texture2D tex = (Texture2D)textures[textureName].texture;
 
             Color32[] colors = new Color32[size];
             for (int i = 0; i < size; i++) {
@@ -55,8 +55,11 @@ public class GradientNode<T> : Variable<T> {
         }
 
 
-        context.gradientTextures.Add(gradientTextureName, new GradientTexture {
+        context.textures.Add(gradientTextureName, new GradientTextureDescriptor {
             size = size,
+            name = gradientTextureName,
+            filter = FilterMode.Bilinear,
+            wrap = TextureWrapMode.Clamp,
             readKernels = new List<string>() { $"CS{context.scopes[context.currentScope].name}" },
         });
     }
