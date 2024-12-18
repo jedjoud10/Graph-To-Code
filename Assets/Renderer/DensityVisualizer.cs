@@ -6,7 +6,8 @@ using UnityEngine.Experimental.Rendering;
 
 [ExecuteInEditMode]
 public class DensityVisualizer : MonoBehaviour {
-    public ComputeShader computeShader;
+    public ComputeShader surfaceNetsCompute;
+    public ComputeShader heightMapCompute;
     private GraphicsBuffer indexBuffer;
     private GraphicsBuffer vertexBuffer;
     private GraphicsBuffer normalsBuffer;
@@ -14,9 +15,11 @@ public class DensityVisualizer : MonoBehaviour {
     private GraphicsBuffer commandBuffer;
     private GraphicsBuffer atomicCounters;
     private RenderTexture tempVertexTexture;
+    private RenderTexture maxHeightAtomic;
     public Material customRenderingMaterial;
     private GraphicsBuffer.IndirectDrawIndexedArgs aaa;
     public bool blocky;
+    public bool useHeightSimplification;
     private int size;
 
     public void InitializeForSize(int newSize) {
@@ -46,6 +49,7 @@ public class DensityVisualizer : MonoBehaviour {
         commandBuffer.SetData(new GraphicsBuffer.IndirectDrawIndexedArgs[1] { aaa });
 
         tempVertexTexture = Utils.Create3DRenderTexture(size, GraphicsFormat.R32_UInt, FilterMode.Point, TextureWrapMode.Repeat, false);
+        maxHeightAtomic = Utils.Create2DRenderTexture(size, GraphicsFormat.R32_UInt, FilterMode.Point, TextureWrapMode.Repeat, false);
     }
 
     private void OnDisable() {
@@ -61,6 +65,15 @@ public class DensityVisualizer : MonoBehaviour {
         atomicCounters.Dispose();
         colorsBuffer.Dispose();
         tempVertexTexture.Release();
+        maxHeightAtomic.Release();
+    }
+
+    public void Meshify(RenderTexture voxels, RenderTexture colors) {
+        if (useHeightSimplification) {
+            ExecuteHeightMapMesher(voxels, colors);
+        } else {
+            ExecuteSurfaceNetsMesher(voxels, colors);
+        }
     }
 
     public void ExecuteSurfaceNetsMesher(RenderTexture voxels, RenderTexture colors) {
@@ -71,27 +84,61 @@ public class DensityVisualizer : MonoBehaviour {
         atomicCounters.SetData(new uint[2] { 0, 0 });
         commandBuffer.SetData(new GraphicsBuffer.IndirectDrawIndexedArgs[1] { aaa });
 
-        computeShader.SetBool("blocky", blocky);
-        computeShader.SetInt("size", size);
+        var shader = surfaceNetsCompute;
+        shader.SetBool("blocky", blocky);
+        shader.SetInt("size", size);
 
-        int id = computeShader.FindKernel("CSVertex");
-        computeShader.SetTexture(id, "densities", voxels);
-        computeShader.SetTexture(id, "colorsIn", colors);
-        computeShader.SetBuffer(id, "atomicCounters", atomicCounters);
-        computeShader.SetBuffer(id, "vertices", vertexBuffer);
-        computeShader.SetBuffer(id, "normals", normalsBuffer);
-        computeShader.SetBuffer(id, "colors", colorsBuffer);
-        computeShader.SetBuffer(id, "cmdBuffer", commandBuffer);
-        computeShader.SetTexture(id, "vertexIds", tempVertexTexture);
-        computeShader.Dispatch(id, size / 8, size / 8, size / 8);
+        int id = shader.FindKernel("CSVertex");
+        shader.SetTexture(id, "densities", voxels);
+        shader.SetTexture(id, "colorsIn", colors);
+        shader.SetBuffer(id, "atomicCounters", atomicCounters);
+        shader.SetBuffer(id, "vertices", vertexBuffer);
+        shader.SetBuffer(id, "normals", normalsBuffer);
+        shader.SetBuffer(id, "colors", colorsBuffer);
+        shader.SetBuffer(id, "cmdBuffer", commandBuffer);
+        shader.SetTexture(id, "vertexIds", tempVertexTexture);
+        shader.Dispatch(id, size / 8, size / 8, size / 8);
         
-        id = computeShader.FindKernel("CSQuad");
-        computeShader.SetTexture(id, "densities", voxels);
-        computeShader.SetBuffer(id, "indices", indexBuffer);
-        computeShader.SetTexture(id, "vertexIds", tempVertexTexture);
-        computeShader.SetBuffer(id, "cmdBuffer", commandBuffer);
-        computeShader.SetBuffer(id, "atomicCounters", atomicCounters);
-        computeShader.Dispatch(id, size / 8, size / 8, size / 8);
+        id = shader.FindKernel("CSQuad");
+        shader.SetTexture(id, "densities", voxels);
+        shader.SetBuffer(id, "indices", indexBuffer);
+        shader.SetTexture(id, "vertexIds", tempVertexTexture);
+        shader.SetBuffer(id, "cmdBuffer", commandBuffer);
+        shader.SetBuffer(id, "atomicCounters", atomicCounters);
+        shader.Dispatch(id, size / 8, size / 8, size / 8);
+    }
+
+    public void ExecuteHeightMapMesher(RenderTexture voxels, RenderTexture colors) {
+        if (atomicCounters == null || !atomicCounters.IsValid())
+            return;
+
+        int size = voxels.width;
+        atomicCounters.SetData(new uint[2] { 0, 0 });
+        commandBuffer.SetData(new GraphicsBuffer.IndirectDrawIndexedArgs[1] { aaa });
+
+        var shader = heightMapCompute;
+        shader.SetInt("size", size);
+
+        Graphics.SetRenderTarget(maxHeightAtomic);
+        GL.Clear(false, true, Color.clear);
+        Graphics.SetRenderTarget(null);
+
+        int id = shader.FindKernel("CSFlatten");
+        shader.SetTexture(id, "densities", voxels);
+        shader.SetTexture(id, "maxHeight", maxHeightAtomic);
+        shader.Dispatch(id, size / 8, size / 8, size / 8);
+
+        id = shader.FindKernel("CSVertex");
+        shader.SetTexture(id, "densities", voxels);
+        shader.SetTexture(id, "colorsIn", colors);
+        shader.SetTexture(id, "maxHeight", maxHeightAtomic);
+        shader.SetBuffer(id, "indices", indexBuffer);
+        shader.SetBuffer(id, "atomicCounters", atomicCounters);
+        shader.SetBuffer(id, "vertices", vertexBuffer);
+        shader.SetBuffer(id, "normals", normalsBuffer);
+        shader.SetBuffer(id, "colors", colorsBuffer);
+        shader.SetBuffer(id, "cmdBuffer", commandBuffer);
+        shader.Dispatch(id, size / 32, size / 32, 1);
     }
 
     public void Update() {

@@ -28,7 +28,7 @@ public abstract class VoxelGraph : MonoBehaviour {
         executor.ExecuteShader();
         RenderTexture density = (RenderTexture)executor.Textures["voxels"];
         RenderTexture colors = (RenderTexture)executor.Textures["colors"];
-        visualizer.ExecuteSurfaceNetsMesher(density, colors);
+        visualizer.Meshify(density, colors);
     }
 
     // Called when the voxel graph gets recompiled in the editor
