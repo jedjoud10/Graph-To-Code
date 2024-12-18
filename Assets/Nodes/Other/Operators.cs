@@ -39,12 +39,25 @@ public class SimpleBinFuncNode<T> : Variable<T> {
     }
 }
 
-public class NegateNode<T> : Variable<T> {
+public class SimpleUnaFuncNode<T> : Variable<T> {
     public Variable<T> a;
-    
+    public string func;
+
     public override void HandleInternal(TreeContext ctx) {
         a.Handle(ctx);
-        ctx.DefineAndBindNode<T>(this, $"{ctx[a]}_negated", $"(-{ctx[a]})");
+        ctx.DefineAndBindNode<T>(this, $"{ctx[a]}_func", $"({func}({ctx[a]}))");
+    }
+}
+
+public class SmoothAbs<T> : Variable<T> {
+    public Variable<T> a;
+    public Variable<T> smoothing;
+
+    public override void HandleInternal(TreeContext ctx) {
+        a.Handle(ctx);
+        smoothing.Handle(ctx);
+
+        ctx.DefineAndBindNode<T>(this, $"{ctx[a]}_smooth_abs", $"sqrt(pow({ctx[a]},2.0) + {ctx[smoothing]})");
     }
 }
 
@@ -63,6 +76,20 @@ public class LerpNode<T> : Variable<T> {
         string mixer = clamp ? $"clamp({ctx[t]}, 0.0, 1.0)" : ctx[t];
 
         ctx.DefineAndBindNode<T>(this, $"{ctx[a]}_lerp_{ctx[b]}", $"lerp({ctx[a]},{ctx[b]},{mixer})");
+    }
+}
+
+public class ClampNode<T> : Variable<T> {
+    public Variable<T> a;
+    public Variable<T> b;
+    public Variable<T> t;
+
+    public override void HandleInternal(TreeContext ctx) {
+        a.Handle(ctx);
+        b.Handle(ctx);
+        t.Handle(ctx);
+
+        ctx.DefineAndBindNode<T>(this, $"{ctx[a]}_clamp_{ctx[b]}", $"clamp({ctx[t]},{ctx[a]},{ctx[b]})");
     }
 }
 

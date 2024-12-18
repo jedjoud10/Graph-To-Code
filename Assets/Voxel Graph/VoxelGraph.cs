@@ -50,9 +50,9 @@ public abstract class VoxelGraph : MonoBehaviour {
         ctx.start = position;
         Variable<float3> color = float3.zero;
         Execute(position, out Variable<float> density, ref color);
-        ctx.scopes[0].outputs = new KernelOutput[] {
-            new KernelOutput("voxel", Utils.StrictType.Float, density),
-            new KernelOutput("color", Utils.StrictType.Float3, color),
+        ctx.scopes[0].outputs = new ScopeOutput[] {
+            new ScopeOutput("voxel", Utils.StrictType.Float, density),
+            new ScopeOutput("color", Utils.StrictType.Float3, color),
         };
         ctx.scopes[0].name = "Voxel";
 
@@ -81,9 +81,9 @@ public abstract class VoxelGraph : MonoBehaviour {
         // imports
         lines.Add("#include \"Assets/Compute/Noises.cginc\"");
         lines.Add("#include \"Assets/Compute/Other.cginc\"");
-        //lines.Add("#include \"Assets/SDF.cginc\"");
+        lines.Add("#include \"Assets/Compute/SDF.cginc\"");
 
-        ctx.scopes.Sort((KernelScope a, KernelScope b) => { return b.depth.CompareTo(a.depth); });
+        ctx.scopes.Sort((TreeScope a, TreeScope b) => { return b.depth.CompareTo(a.depth); });
         foreach (var scope in ctx.scopes) {
             //Debug.Log(scope.depth);
             lines.Add($"// defined nodes: {scope.namesToNodes.Count}, depth: {scope.depth}, total lines: {scope.lines.Count} ");

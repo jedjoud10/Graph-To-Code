@@ -120,7 +120,7 @@ void Voxel(float3 position, uint3 id, out float voxel, out float3 color) {
 	float projected2_3_asdf_0_op_projected2_3_noised_0_0 = projected2_3_asdf_0 + projected2_3_noised_0;
 	float _gradient_texture_0_gradient_sampled_0_cached_0_op_projected2_1_swizzled_0_0_op__gradient_texture_1_gradient_sampled_0_0_Union_projected2_3_asdf_0_op_projected2_3_noised_0_0_0 = opUnion(_gradient_texture_0_gradient_sampled_0_cached_0_op_projected2_1_swizzled_0_0_op__gradient_texture_1_gradient_sampled_0_0, projected2_3_asdf_0_op_projected2_3_noised_0_0);
 	float projected2_1_swizzled_1 = projected2_1.y;
-	float3 projected2_1_swizzled_1_gradient_remapped_0 = Remap(projected2_1_swizzled_1, inj_15, inj_16, 0.0, 1.0);
+	float projected2_1_swizzled_1_gradient_remapped_0 = Remap(projected2_1_swizzled_1, inj_15, inj_16, 0.0, 1.0);
 	float3 _gradient_texture_2_gradient_0 = _gradient_texture_2_read.SampleLevel(sampler_gradient_texture_2_read, projected2_1_swizzled_1_gradient_remapped_0, 0).xyz;
 	float3 _gradient_texture_2_gradient_sampled_0 = _gradient_texture_2_gradient_0;
 	const float3 c_9 = float3(0.2,0.2,0.2);

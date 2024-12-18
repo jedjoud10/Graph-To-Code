@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
@@ -44,7 +45,7 @@ public class GradientNode<T> : Variable<T> {
         });
 
         string swizzle = Utils.SwizzleFromFloat4<T>();
-        Variable<T> firstRemap = context.AssignTempVariable<T>($"{context[mixer]}_gradient_remapped", $"Remap({context[mixer]}, {context[inputMin]}, {context[inputMax]}, 0.0, 1.0)");
+        Variable<float> firstRemap = context.AssignTempVariable<float>($"{context[mixer]}_gradient_remapped", $"Remap({context[mixer]}, {context[inputMin]}, {context[inputMax]}, 0.0, 1.0)");
         Variable<T> sample = context.AssignTempVariable<T>($"{textureName}_gradient", $"{textureName}_read.SampleLevel(sampler{textureName}_read, {context[firstRemap]}, 0).{swizzle}");
 
         if (remapOutput) {
@@ -87,6 +88,10 @@ public class Ramp<T> {
     }
 
     public Variable<T> Evaluate(Variable<float> mixer) {
+        if (gradient == null) {
+            throw new NullReferenceException("Ramp gradient is not set");
+        }
+
         return new GradientNode<T> {
             gradient = gradient,
             mixer = mixer,

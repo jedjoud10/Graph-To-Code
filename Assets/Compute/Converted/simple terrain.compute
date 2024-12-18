@@ -1,0 +1,41 @@
+
+float4x4 matrix_0;
+float inj_0;
+float inj_1;
+float inj_2;
+float inj_3;
+RWTexture3D<float> voxels;
+RWTexture3D<float3> colors;
+int size;
+int3 permuationSeed;
+int3 moduloSeed;
+float3 scale;
+float3 offset;
+#include "Assets/Compute/Noises.cginc"
+#include "Assets/Compute/Other.cginc"
+#include "Assets/Compute/SDF.cginc"
+// defined nodes: 14, depth: 0, total lines: 9 
+void Voxel(float3 position, uint3 id, out float voxel, out float3 color) {
+	float3 projected_0 = mul(matrix_0, float4(position, 1.0)).xyz;
+	float3 projected2_0 = projected_0;
+	float projected2_0_swizzled_0 = projected2_0.y;
+	float2 projected2_0_swizzled_1 = projected2_0.xz;
+	float projected2_0_swizzled_1_noised_0 = (snoise((projected2_0_swizzled_1) * inj_1)) * inj_0;
+	float projected2_0_swizzled_1_noised_0_smooth_abs_0 = sqrt(pow(projected2_0_swizzled_1_noised_0,2.0) + inj_2);
+	float projected2_0_swizzled_0_op_projected2_0_swizzled_1_noised_0_smooth_abs_0_0 = projected2_0_swizzled_0 + projected2_0_swizzled_1_noised_0_smooth_abs_0;
+	float projected2_0_swizzled_1_noised_0_smooth_abs_0_op_inj_3_0 = projected2_0_swizzled_1_noised_0_smooth_abs_0 / inj_3;
+	float3 projected2_0_swizzled_1_noised_0_smooth_abs_0_op_inj_3_0_swizzled_0 = projected2_0_swizzled_1_noised_0_smooth_abs_0_op_inj_3_0.xxx;
+	voxel = projected2_0_swizzled_0_op_projected2_0_swizzled_1_noised_0_smooth_abs_0_0;
+	color = projected2_0_swizzled_1_noised_0_smooth_abs_0_op_inj_3_0_swizzled_0;
+}
+
+
+#pragma kernel CSVoxel
+[numthreads(8, 8, 8)]
+void CSVoxel(uint3 id : SV_DispatchThreadID) {
+    float density;
+    float3 color;
+    Voxel((float3(id) + offset) * scale, id, density, color);
+    voxels[id] = density;
+    colors[id] = color;
+}

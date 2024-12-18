@@ -16,7 +16,7 @@ public abstract class Variable<T> : TreeNode {
     }
 
     public static Variable<T> operator -(Variable<T> a) {
-        return new NegateNode<T> { a = a };
+        return new SimpleUnaFuncNode<T> { a = a, func = "-" };
     }
 
     public static Variable<T> operator *(Variable<T> a, Variable<T> b) {
@@ -54,7 +54,23 @@ public abstract class Variable<T> : TreeNode {
         return new SimpleBinFuncNode<T> { a = this, b = other, func = "max" };
     }
 
+    public Variable<T> Abs() {
+        return new SimpleUnaFuncNode<T> { a = this, func = "abs" };
+    }
+
+    public Variable<T> SmoothAbs(Variable<T> smoothing) {
+        return new SmoothAbs<T> { a = this, smoothing = smoothing };
+    }
+
     public static Variable<T> Lerp(Variable<T> a, Variable<T> b, Variable<T> t, bool clamp = false) {
         return new LerpNode<T> { a = a, b = b, t = t, clamp = clamp };
+    }
+
+    public static Variable<T> Clamp(Variable<T> t, Variable<T> a, Variable<T> b) {
+        return new ClampNode<T> { a = a, b = b, t = t };
+    }
+
+    public static Variable<T> ClampZeroOne(Variable<T> t) {
+        return new ClampNode<T> { a = Utils.Zero<T>(), b = Utils.One<T>(), t = t };
     }
 }

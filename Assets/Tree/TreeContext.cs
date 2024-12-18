@@ -12,7 +12,7 @@ public class TreeContext {
     public Hashinator hashinator;
     public int counter;
     public bool debugNames;
-    public List<KernelScope> scopes;
+    public List<TreeScope> scopes;
     public int currentScope = 0;
     public int scopeDepth = 0;
 
@@ -34,8 +34,8 @@ public class TreeContext {
         this.injector = new PropertyInjector();
         this.varNamesToId = new Dictionary<string, int>();
         this.debugNames = debugNames;
-        this.scopes = new List<KernelScope> {
-            new KernelScope(0) 
+        this.scopes = new List<TreeScope> {
+            new TreeScope(0) 
         };
 
         this.hashinator = new Hashinator();

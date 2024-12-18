@@ -1,6 +1,7 @@
 using System;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Windows;
 
 
 public class TransformationNode : Variable<float3> {
@@ -10,16 +11,8 @@ public class TransformationNode : Variable<float3> {
     public override void HandleInternal(TreeContext ctx) {
         input.Handle(ctx);
 
-        string matrixName = ctx.GenId("matrix");
-        ctx.properties.Add($"float4x4 {matrixName};");
-
-        ctx.Inject2((compute, textures) => {
-            float4x4 matrix = transform == null ? float4x4.identity : math.AffineTransform(transform.position, Quaternion.Euler(transform.rotation), transform.scale);
-            
-            compute.SetMatrix(matrixName, matrix);
-        });
-
-        ctx.DefineAndBindNode<float3>(this, "projected", $"mul({matrixName}, float4({ctx[input]}, 1.0)).xyz");
+        Variable<float3> temp = transform.ProjectAndBindContext(input, ctx);
+        ctx.DefineAndBindNode<float3>(this, "projected2", ctx[temp]);
     }
 }
 
@@ -28,6 +21,19 @@ public class InlineTransform {
     public Vector3 position = Vector3.zero;
     public Vector3 rotation = Vector3.zero;
     public Vector3 scale = Vector3.one;
+
+    public Variable<float3> ProjectAndBindContext(Variable<float3> input, TreeContext ctx) {
+        string matrixName = ctx.GenId("matrix");
+        ctx.properties.Add($"float4x4 {matrixName};");
+
+        ctx.Inject2((compute, textures) => {
+            float4x4 matrix = math.AffineTransform(position, Quaternion.Euler(rotation), scale);
+
+            compute.SetMatrix(matrixName, matrix);
+        });
+
+        return ctx.AssignTempVariable<float3>("projected", $"mul({matrixName}, float4({ctx[input]}, 1.0)).xyz");
+    }
 }
 
 public class ApplyTransformation {

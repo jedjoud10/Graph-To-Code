@@ -23,6 +23,7 @@ public class TextureSampleNode<T> : Variable<float4> {
         sampler.level.Handle(context);
         sampler.scale.Handle(context);
         sampler.offset.Handle(context);
+        context.Hash(sampler.texture.GetInstanceID());
 
         int dimensionality = Utils.DimensionalitySafeTextureSample<T>();
 
@@ -54,12 +55,16 @@ public class TextureSampler<T> {
     }
 
     public Variable<float4> Sample(Variable<T> input) {
+        if (texture == null) {
+            throw new NullReferenceException("TextureSampler texture is not set");
+        }
+
         if (texture.dimension == UnityEngine.Rendering.TextureDimension.Tex2D && Utils.DimensionalitySafeTextureSample<T>() != 2) {
-            throw new Exception();
+            throw new Exception("TextureSampler input coordinate dimension is 2D, but texture dimension isn't 2D");
         }
 
         if (texture.dimension == UnityEngine.Rendering.TextureDimension.Tex3D && Utils.DimensionalitySafeTextureSample<T>() != 3) {
-            throw new Exception();
+            throw new Exception("TextureSampler input coordinate dimension is 3D, but texture dimension isn't 3D");
         }
 
         return new TextureSampleNode<T> {

@@ -61,10 +61,10 @@ public class CachedNode<T> : Variable<T> {
 
         int index = context.scopes.Count;
         int oldScopeIndex = context.currentScope;
-        context.scopes.Add(new KernelScope(context.scopeDepth + 1) {
+        context.scopes.Add(new TreeScope(context.scopeDepth + 1) {
             name = scopeName,
-            outputs = new KernelOutput[] {
-                new KernelOutput(outputName, Utils.TypeOf<T>(), inner)
+            outputs = new ScopeOutput[] {
+                new ScopeOutput(outputName, Utils.TypeOf<T>(), inner)
             }
         });
 

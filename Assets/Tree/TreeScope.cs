@@ -1,12 +1,12 @@
 using System.Collections.Generic;
 
 
-public class KernelOutput {
+public class ScopeOutput {
     public Utils.StrictType type;
     public TreeNode node;
     public string name;
 
-    public KernelOutput(string name, Utils.StrictType type, TreeNode node) {
+    public ScopeOutput(string name, Utils.StrictType type, TreeNode node) {
         this.type = type;
         this.name = name;
         this.node = node;
@@ -15,15 +15,15 @@ public class KernelOutput {
 
 // One scope per compute shader kernel.
 // Multiple scopes are used when we want to execute multiple kernels sequentially
-public class KernelScope {
+public class TreeScope {
     public List<string> lines;
     public Dictionary<TreeNode, string> namesToNodes;
     public int depth;
-    public KernelOutput[] outputs;
+    public ScopeOutput[] outputs;
     public string name;
     public int indent;
 
-    public KernelScope(int depth) {
+    public TreeScope(int depth) {
         this.lines = new List<string>();
         this.namesToNodes = new Dictionary<TreeNode, string>();
         this.indent = 1;

@@ -11,6 +11,7 @@ public class Test : VoxelGraph {
     public Inject<float> persistence2;
     public InlineTransform transform1;
     public InlineTransform transform2;
+    public InlineTransform transform3;
     public Gradient gradient;
     public Gradient heightGradient;
     public Gradient spikeGradient2;
@@ -29,6 +30,7 @@ public class Test : VoxelGraph {
     public Texture texture;
     public Inject<float2> textureScale;
     public Inject<float2> textureOffset;
+    public Inject<float> smoother;
     public int reduction;
     [Range(1, 10)]
     public int octaves;
@@ -56,15 +58,19 @@ public class Test : VoxelGraph {
         var warped = new Warper(warperSimplex).Warpinate(pos3.Swizzle<float2>("xz"));
 
         var fractal2 = new FractalNoise(simplex, FractalNoise.FractalMode.Sum, lacunarity2, persistence2, octaves2).Evaluate(warped);
-        var diagonals = new Ramp<float>(spikeGradient2, minRange3, maxRange3).Evaluate(-(fractal2 - spikeOffset).Min(0.0f));
+        var diagonals = new Ramp<float>(spikeGradient2, minRange3, maxRange3).Evaluate(-((fractal2 - spikeOffset).Min(0.0f)));
+        //var diagonals = new Ramp<float>(spikeGradient2, minRange3, maxRange3).Evaluate((-(fractal2 - spikeOffset).Min(0.0f)));
 
-        var temp2 = cached + output;
-        //var temp3 = temp2.Min(-diagonals);
         density = cached + output - diagonals;
+
+        var aaaa = new ApplyTransformation(transform3).Transform(pos2);
+
+        var boxed = new SdfBox(new float3(10.0f)).Evaluate(aaaa) + Noise.Simplex(aaaa, 0.4f, 0.2f);
+        density = SdfOps.Union(density, boxed);
 
         var colonThreeFace = new TextureSampler<float2>(texture) { scale = textureScale, offset = textureOffset }.Sample(temp).Swizzle<float>("x") * 10.0f;
 
-        density -= colonThreeFace; 
+        //density -= colonThreeFace; 
 
         var baseColor = new Ramp<float3>(heightGradient, minRange2, maxRange2, remapOutput: false).Evaluate(pos2.Swizzle<float>("y"));
         var otherColor = new float3(0.2);
