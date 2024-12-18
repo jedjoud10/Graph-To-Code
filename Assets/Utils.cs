@@ -2,6 +2,7 @@
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
+using static UnityEditor.Rendering.CameraUI;
 
 // Common utils and shorthand forms
 public static class Utils {
@@ -98,6 +99,16 @@ public static class Utils {
         }
 
         return output;
+    }
+
+    // Checks the dimensionality of the type and makes sure it's either a float2 or float3 (used for texture sampling)
+    public static int DimensionalitySafeTextureSample<T>() {
+        switch (TypeOf<T>()) {
+            case StrictType.Float2: return 2;
+            case StrictType.Float3: return 3;
+            default:
+                throw new System.Exception("Type not supported");
+        }
     }
 
     public static void SetComputeShaderObj(ComputeShader shader, string id, object val, StrictType type) {

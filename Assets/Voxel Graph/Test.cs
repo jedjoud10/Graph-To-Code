@@ -37,9 +37,10 @@ public class Test : VoxelGraph {
         // 3D secondary transformed layer
         var transformer2 = new ApplyTransformation(transform2);
         var pos3 = transformer2.Transform(pos2);
-        var simplex = new Simplex(scale2, amplitude2).Evaluate(pos3.Swizzle<float2>("xz"));
+        var simplex = new Simplex(scale2, amplitude2);
+        var diagonals = simplex.Evaluate(pos3.Swizzle<float2>("xz")).Max(0.0f);
 
-        density = cached + output + simplex;
+        density = cached + output + diagonals;
         color = new Ramp<float3>(heightGradient, minRange2, maxRange2, remapOutput: false).Evaluate(pos2.Swizzle<float>("y"));
     }
 }

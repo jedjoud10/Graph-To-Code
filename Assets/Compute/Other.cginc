@@ -120,6 +120,6 @@ float4 SampleBounded(Texture2D tex, SamplerState test, float2 uv, float lod, flo
 	}
 	
 	//return tex[uint3(uv * texSize + 1.0/texSize)];
-	//return tex.SampleLevel(test, uv + (0.5 / texSize), lod
-	return tex.SampleLevel(test, uv, lod);
+	return tex.SampleLevel(test, uv + (0.5 / texSize), lod);
+	//return tex.SampleLevel(test, uv, lod);
 }

@@ -73,9 +73,13 @@ public class VoxelGraphExecutor : MonoBehaviour {
             Textures.Add(name, rt);
         }
 
-        foreach (var (name, temp) in graph.gradientTextures) {
-            Texture2D texture = new Texture2D(temp.size, 1, DefaultFormat.LDR, TextureCreationFlags.None);
+        foreach (var (name, gradient) in graph.gradientTextures) {
+            Texture2D texture = new Texture2D(gradient.size, 1, DefaultFormat.LDR, TextureCreationFlags.None);
             texture.wrapMode = TextureWrapMode.Clamp;
+            Textures.Add(name, texture);
+        }
+
+        foreach (var (name, texture) in graph.userTextures) {
             Textures.Add(name, texture);
         }
 
@@ -107,6 +111,13 @@ public class VoxelGraphExecutor : MonoBehaviour {
             }
         }
 
+        // Bind the user textures to their respective read kernels
+        foreach (var (name, temp) in graph.gradientTextures) {
+            foreach (var readKernel in temp.readKernels) {
+                int readKernelId = shader.FindKernel(readKernel);
+                shader.SetTexture(readKernelId, name + "_read", Textures[name]);
+            }
+        }
 
         // Bind the required temp textures to their respective read/write kernels
         Dictionary<string, string> kernelsToWriteTexture = new Dictionary<string, string>();

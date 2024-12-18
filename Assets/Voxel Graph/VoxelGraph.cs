@@ -19,6 +19,7 @@ public abstract class VoxelGraph : MonoBehaviour {
     public List<KernelDispatch> sortedKernelDispatches;
     public Dictionary<string, TempTexture> tempTextures;
     public Dictionary<string, GradientTexture> gradientTextures;
+    public Dictionary<string, Texture> userTextures;
     private int hash;
 
     private void OnPropertiesChanged() {
@@ -139,6 +140,7 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
         sortedKernelDispatches = ctx.computeKernelNameAndDepth;
         tempTextures = ctx.tempTextures;
         gradientTextures = ctx.gradientTextures;
+        userTextures = ctx.userTextures;
         return lines.Aggregate("", (a, b) => a + "\n" + b);
     }
 

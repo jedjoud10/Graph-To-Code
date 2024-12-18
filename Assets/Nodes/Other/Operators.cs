@@ -15,26 +15,6 @@ public class NoOp<T> : Variable<T> {
     }
 }
 
-public class AssignOnly<T> : Variable<T> {
-    public string name;
-    public Variable<T> inner;
-
-    public override void HandleInternal(TreeContext ctx) {
-        inner.Handle(ctx);
-        ctx.DefineAndBindNode<T>(this, name, ctx[inner], false, false, true);
-    }
-}
-
-public class AssignOnly2<T> : Variable<T> {
-    public string value;
-    public Variable<T> inner;
-
-    public override void HandleInternal(TreeContext ctx) {
-        inner.Handle(ctx);
-        ctx.DefineAndBindNode<T>(this, ctx[inner], value, false, false, true);
-    }
-}
-
 public class SimpleBinOpNode<T> : Variable<T> {
     public Variable<T> a;
     public Variable<T> b;
@@ -44,6 +24,18 @@ public class SimpleBinOpNode<T> : Variable<T> {
         a.Handle(ctx);
         b.Handle(ctx);
         ctx.DefineAndBindNode<T>(this, $"{ctx[a]}_op_{ctx[b]}", $"{ctx[a]} {op} {ctx[b]}");
+    }
+}
+
+public class SimpleBinFuncNode<T> : Variable<T> {
+    public Variable<T> a;
+    public Variable<T> b;
+    public string func;
+
+    public override void HandleInternal(TreeContext ctx) {
+        a.Handle(ctx);
+        b.Handle(ctx);
+        ctx.DefineAndBindNode<T>(this, $"{ctx[a]}_func_{ctx[b]}", $"{func}({ctx[a]},{ctx[b]})");
     }
 }
 
@@ -72,8 +64,6 @@ public class ConstructNode<I, O> : Variable<O> {
     public Variable<I> y;
     public Variable<I> z;
     public Variable<I> w;
-
-
 
     public override void HandleInternal(TreeContext ctx) {
         string C(Variable<I> variable) {
