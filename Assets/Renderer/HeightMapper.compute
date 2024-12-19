@@ -7,6 +7,8 @@
 RWTexture3D<float> densities;
 RWTexture3D<float3> colorsIn;
 RWTexture2D<uint> maxHeight;
+int indexOffset;
+float3 vertexOffset;
 
 int size;
 
@@ -32,23 +34,25 @@ float invLerp(float from, float to, float value){
 [numthreads(8, 8, 8)]
 void CSFlatten(uint3 id : SV_DispatchThreadID) {
     float base = densities[id];
-    float secondary = densities[id + uint3(0, 1, 0)];
-    float floatHeight = invLerp(base, secondary, 0.0) + id.y;
-    uint height = (floatHeight / float(size)) * 0xFFFFFFFF;
-
-    if (base < 0.0 && secondary > 0.0) {
-        InterlockedMax(maxHeight[id.xz], height);
+    float offset = densities[id + uint3(0, 1, 0)];
+    
+    if (base < 0.0 && offset >= 0.0) {
+        InterlockedMax(maxHeight[id.xz], id.y);
     }
 }
 
 [numthreads(32, 32, 1)]
 void CSVertex(uint3 id : SV_DispatchThreadID) {
-    int index = id.x + id.y * size;
-    float height = (float(maxHeight[id.xy]) / float(0xFFFFFFFF)) * size;
-    vertices[index] = float3(id.x, height, id.y);
-    uint3 testing = uint3(id.x, height, id.y);
-    colors[index] = colorsIn[testing];
-    normals[index] = -normalMaxx(testing);
+    int index = id.x + id.y * size + indexOffset * size * size;
+    uint3 idTemp = float3(id.x, maxHeight[id.xy], id.y);
+    float base = densities[idTemp];
+    float offset = densities[idTemp + uint3(0, 1, 0)];
+    float factor = invLerp(base, offset, 0.0);
+    float floatHeight = factor + idTemp.y;
+
+    vertices[index] = float3(id.x, floatHeight, id.y) + vertexOffset;
+    colors[index] = lerp(colorsIn[idTemp], colorsIn[idTemp + uint3(0, 1, 0)], factor);
+    normals[index] = -normalize(lerp(normalMaxx(idTemp), normalMaxx(idTemp + uint3(0, 1, 0)), factor));
 
     if (any(id >= size-1)) {
         return;

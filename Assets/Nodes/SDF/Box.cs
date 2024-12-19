@@ -1,6 +1,4 @@
-using System;
 using Unity.Mathematics;
-using UnityEngine;
 
 public class SdfBoxNode : SdfShapeNode {
     public Variable<float3> extent;

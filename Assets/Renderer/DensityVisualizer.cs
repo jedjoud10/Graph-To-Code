@@ -1,6 +1,3 @@
-using Unity.Mathematics;
-using UnityEditor;
-using UnityEditor.TerrainTools;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 
@@ -16,11 +13,14 @@ public class DensityVisualizer : MonoBehaviour {
     private GraphicsBuffer atomicCounters;
     private RenderTexture tempVertexTexture;
     private RenderTexture maxHeightAtomic;
+    private RenderTexture diffuseColorForHeightMap;
+    private RenderTexture normalsForHeightMap;
     public Material customRenderingMaterial;
     private GraphicsBuffer.IndirectDrawIndexedArgs aaa;
     public bool blocky;
     public bool useHeightSimplification;
     private int size;
+    public int heightMapReductionFactor;
 
     public void InitializeForSize(int newSize) {
         if (indexBuffer != null && newSize == size && indexBuffer.IsValid())
@@ -50,10 +50,16 @@ public class DensityVisualizer : MonoBehaviour {
 
         tempVertexTexture = Utils.Create3DRenderTexture(size, GraphicsFormat.R32_UInt, FilterMode.Point, TextureWrapMode.Repeat, false);
         maxHeightAtomic = Utils.Create2DRenderTexture(size, GraphicsFormat.R32_UInt, FilterMode.Point, TextureWrapMode.Repeat, false);
+        diffuseColorForHeightMap = Utils.Create2DRenderTexture(size, GraphicsFormat.R32G32B32A32_SFloat, FilterMode.Point, TextureWrapMode.Repeat, true);
+        normalsForHeightMap = Utils.Create2DRenderTexture(size, GraphicsFormat.R32G32B32A32_SFloat, FilterMode.Point, TextureWrapMode.Repeat, true);
     }
 
     private void OnDisable() {
         DisposeBuffers();
+    }
+
+    private void OnValidate() {
+        GetComponent<VoxelGraph>().OnPropertiesChanged();
     }
 
 
@@ -70,7 +76,7 @@ public class DensityVisualizer : MonoBehaviour {
 
     public void Meshify(RenderTexture voxels, RenderTexture colors) {
         if (useHeightSimplification) {
-            ExecuteHeightMapMesher(voxels, colors);
+            ExecuteHeightMapMesher(voxels, colors, -1, Vector3Int.zero);
         } else {
             ExecuteSurfaceNetsMesher(voxels, colors);
         }
@@ -108,16 +114,18 @@ public class DensityVisualizer : MonoBehaviour {
         shader.Dispatch(id, size / 8, size / 8, size / 8);
     }
 
-    public void ExecuteHeightMapMesher(RenderTexture voxels, RenderTexture colors) {
+    public void ExecuteHeightMapMesher(RenderTexture voxels, RenderTexture colors, int indexed, Vector3Int chunkOffset) {
         if (atomicCounters == null || !atomicCounters.IsValid())
             return;
 
         int size = voxels.width;
-        atomicCounters.SetData(new uint[2] { 0, 0 });
-        commandBuffer.SetData(new GraphicsBuffer.IndirectDrawIndexedArgs[1] { aaa });
+
+        if (indexed == -1)
+            commandBuffer.SetData(new GraphicsBuffer.IndirectDrawIndexedArgs[1] { aaa });
 
         var shader = heightMapCompute;
         shader.SetInt("size", size);
+        shader.SetVector("vertexOffset", (Vector3)chunkOffset * size);
 
         Graphics.SetRenderTarget(maxHeightAtomic);
         GL.Clear(false, true, Color.clear);
@@ -129,16 +137,33 @@ public class DensityVisualizer : MonoBehaviour {
         shader.Dispatch(id, size / 8, size / 8, size / 8);
 
         id = shader.FindKernel("CSVertex");
+        shader.SetInt("indexOffset", indexed == -1 ? 0 : indexed);
         shader.SetTexture(id, "densities", voxels);
         shader.SetTexture(id, "colorsIn", colors);
         shader.SetTexture(id, "maxHeight", maxHeightAtomic);
         shader.SetBuffer(id, "indices", indexBuffer);
-        shader.SetBuffer(id, "atomicCounters", atomicCounters);
         shader.SetBuffer(id, "vertices", vertexBuffer);
         shader.SetBuffer(id, "normals", normalsBuffer);
         shader.SetBuffer(id, "colors", colorsBuffer);
         shader.SetBuffer(id, "cmdBuffer", commandBuffer);
         shader.Dispatch(id, size / 32, size / 32, 1);
+    }
+
+    public void Start() {
+        var executor = GetComponent<VoxelGraphExecutor>();
+        InitializeForSize(executor.size);
+        int index = 0;
+        for (int j = 0; j < 3; j++) {
+            for (int i = 0; i < 3; i++) {
+                var offset = new Vector3Int(i, 0, j);
+                executor.ExecuteShader(offset);
+                RenderTexture density = (RenderTexture)executor.Textures["voxels"];
+                RenderTexture colors = (RenderTexture)executor.Textures["colors"];
+                ExecuteHeightMapMesher(density, colors, index, offset);
+                //Meshify(density, colors, i);
+                index++;
+            }
+        }
     }
 
     public void Update() {
@@ -155,6 +180,7 @@ public class DensityVisualizer : MonoBehaviour {
             extents = Vector3.one * 1000.0f,
         };
         renderParams.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.TwoSided;
+        renderParams.receiveShadows = true;
 
         renderParams.material = customRenderingMaterial;
 

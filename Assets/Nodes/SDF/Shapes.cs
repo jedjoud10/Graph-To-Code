@@ -1,6 +1,4 @@
-using System;
 using Unity.Mathematics;
-using UnityEngine;
 
 public abstract class SdfShapeNode : Variable<float> {
     public Variable<float3> input;

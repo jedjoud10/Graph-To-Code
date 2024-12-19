@@ -1,5 +1,3 @@
-using System;
-
 public static class SdfOps {
     public static Variable<float> Union(Variable<float> a, Variable<float> b, Variable<float> smoothing = null) {
         return new OpSdfOp { a = a, b = b, smooth = smoothing, op = "Union" };

@@ -1,7 +1,3 @@
-using NUnit.Framework;
-using System;
-
-
 public class CustomCodeNode<T> : Variable<T> {
     public delegate string Callback(TreeContext ctx);
 

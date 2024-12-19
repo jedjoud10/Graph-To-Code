@@ -1,15 +1,17 @@
 using System.Collections.Generic;
 
 
-public class ScopeOutput {
+public class ScopeArgument {
     public Utils.StrictType type;
     public TreeNode node;
     public string name;
+    public bool output;
 
-    public ScopeOutput(string name, Utils.StrictType type, TreeNode node) {
+    public ScopeArgument(string name, Utils.StrictType type, TreeNode node, bool output) {
         this.type = type;
         this.name = name;
         this.node = node;
+        this.output = output;
     }
 }
 
@@ -19,7 +21,7 @@ public class TreeScope {
     public List<string> lines;
     public Dictionary<TreeNode, string> namesToNodes;
     public int depth;
-    public ScopeOutput[] outputs;
+    public ScopeArgument[] arguments;
     public string name;
     public int indent;
 
@@ -28,7 +30,7 @@ public class TreeScope {
         this.namesToNodes = new Dictionary<TreeNode, string>();
         this.indent = 1;
         this.depth = depth;
-        this.outputs = null;
+        this.arguments = null;
         this.name = "asdfdas";
     }
     public void AddLine(string line) {

@@ -23,6 +23,8 @@ public class VoxelGraphExecutor : MonoBehaviour {
 
     private void OnValidate() {
         size = Mathf.ClosestPowerOfTwo(size);
+        graph.OnPropertiesChanged();
+        ComputeSecondarySeeds();
     }
 
 
@@ -30,6 +32,7 @@ public class VoxelGraphExecutor : MonoBehaviour {
     // Create intermediate textures (cached, gradient) to be used for voxel graph shader execution
     // Texture size will correspond to execution size property
     public void CreateIntermediateTextures() {
+        graph = GetComponent<VoxelGraph>();
         // Dispose of previous render textures if needed
         if (Textures != null) {
             foreach (var (name, tex) in Textures) {
@@ -52,13 +55,19 @@ public class VoxelGraphExecutor : MonoBehaviour {
         debugTextures = Textures.Values.AsEnumerable().Select(x => x.texture).ToList();
     }
 
-    public void ExecuteShader() {
+    public void ExecuteShader(Vector3Int chunkOffset) {
+        graph = GetComponent<VoxelGraph>();
+        graph.PrepareForExecution();
+
         ComputeShader shader = graph.shader;
         shader.SetInt("size", size);
         shader.SetInts("permuationSeed", new int[] { permutationSeed.x, permutationSeed.y, permutationSeed.z });
         shader.SetInts("moduloSeed", new int[] { moduloSeed.x, moduloSeed.y, moduloSeed.z });
-        shader.SetVector("offset", Vector3.zero);
+        shader.SetVector("offset", (Vector3)chunkOffset * size);
         shader.SetVector("scale", Vector3.one);
+
+
+
         graph.injector.UpdateInjected(shader, Textures);
 
         foreach (var (name, texture) in Textures) {
@@ -87,8 +96,6 @@ public class VoxelGraphExecutor : MonoBehaviour {
         }
     }
 
-
-
     private void ComputeSecondarySeeds() {
         var random = new System.Random(seed);
         permutationSeed.x = random.Next(-1000, 1000);
@@ -102,6 +109,6 @@ public class VoxelGraphExecutor : MonoBehaviour {
     public void RandomizeSeed() {
         seed = UnityEngine.Random.Range(-9999, 9999);
         ComputeSecondarySeeds();
-        ExecuteShader();
+        graph.OnPropertiesChanged();
     }
 }

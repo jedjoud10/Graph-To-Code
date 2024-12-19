@@ -1,12 +1,6 @@
-using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Reflection;
-using Unity.Mathematics;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
-using UnityEngine.Rendering;
 
 public abstract class TextureDescriptor {
     public FilterMode filter;

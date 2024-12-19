@@ -1,6 +1,4 @@
-using System;
 using Unity.Mathematics;
-using UnityEngine;
 
 public class Test2 : VoxelGraph {
     public InlineTransform transform1;
@@ -10,7 +8,7 @@ public class Test2 : VoxelGraph {
     public Inject<float> amplitude2;
     public Inject<float> smoothing;
 
-    public override void Execute(Variable<float3> position, out Variable<float> density, ref Variable<float3> color) {
+    public override void Execute(Variable<float3> position, Variable<uint3> id, out Variable<float> density, ref Variable<float3> color) {
         var transformer = new ApplyTransformation(transform1);
         var projected = transformer.Transform(position);
         var y = projected.Swizzle<float>("y");

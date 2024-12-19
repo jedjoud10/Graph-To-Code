@@ -2,7 +2,6 @@
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
-using static UnityEditor.Rendering.CameraUI;
 
 // Common utils and shorthand forms
 public static class Utils {

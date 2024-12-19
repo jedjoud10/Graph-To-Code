@@ -19,8 +19,7 @@ Shader "Custom/NewSurfaceShader"
 
         // Use shader model 3.0 target, to get nicer looking lighting
         #pragma target 5.0
-        #pragma vertex vert
-        #pragma surface surf Standard fullforwardshadows
+        #pragma surface surf Standard vertex:vert fullforwardshadows addshadow
             
 
 
@@ -74,11 +73,12 @@ Shader "Custom/NewSurfaceShader"
            
            //o.Albedo = flatWorldNormal;
            o.Albedo = IN.color; 
-           //o.Smoothness = 0.5;
+           //o.Smoothness = 1.0;
            //o.Metallic = 1.0;
            //o.Normal = float3(0,0,0);
         }
 
         ENDCG
+
     }
 }
