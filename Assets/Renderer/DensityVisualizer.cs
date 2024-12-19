@@ -149,6 +149,7 @@ public class DensityVisualizer : MonoBehaviour {
         shader.Dispatch(id, size / 32, size / 32, 1);
     }
 
+    /*
     public void Start() {
         var executor = GetComponent<VoxelGraphExecutor>();
         InitializeForSize(executor.size);
@@ -165,6 +166,7 @@ public class DensityVisualizer : MonoBehaviour {
             }
         }
     }
+    */
 
     public void Update() {
         RenderIndexedIndirectMesh();

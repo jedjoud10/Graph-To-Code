@@ -47,13 +47,13 @@ public static class Utils {
     public static GraphicsFormat ToGfxFormat(StrictType type) {
         switch (type) {
             case StrictType.Float:
-                return GraphicsFormat.R32_SFloat;
+                return GraphicsFormat.R16_SFloat;
             case StrictType.Float2:
-                return GraphicsFormat.R32G32_SFloat;
+                return GraphicsFormat.R16G16_SFloat;
             case StrictType.Float3:
-                return GraphicsFormat.R32G32B32_SFloat;
+                return GraphicsFormat.R16G16B16A16_SFloat;
             case StrictType.Float4:
-                return GraphicsFormat.R32G32B32A32_SFloat;
+                return GraphicsFormat.R16G16B16A16_SFloat;
             default:
                 throw new System.Exception();
         }

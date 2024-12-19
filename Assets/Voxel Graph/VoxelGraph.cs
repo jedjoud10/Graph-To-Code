@@ -2,8 +2,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Unity.Mathematics;
-using UnityEditor;
 using UnityEngine;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 // A voxel graph is the base class to inherit from to be able to write custom voxel stuff
 public abstract class VoxelGraph : MonoBehaviour {
@@ -49,43 +52,59 @@ public abstract class VoxelGraph : MonoBehaviour {
     }
 
     // Execute the voxel graph at a specific position and fetch the density and material values
-    public abstract void Execute(Variable<float3> position, Variable<uint3> id, out Variable<float> density, ref Variable<float3> color);
+    public abstract void Execute(Variable<float3> position, Variable<uint3> id, out Variable<float> density, out Variable<float3> color);
 
     // Parses the voxel graph into a tree context with all required nodes and everything!!!
     private TreeContext ParsedTranspilation() {
         TreeContext ctx = new TreeContext(debugName);
+
+        // Create the external inputs that we use inside the function scope
         Variable<float3> position = ctx.AliasExternalInput<float3>("position");
         Variable<uint3> id = ctx.AliasExternalInput<uint3>("id");
-        ctx.startPosition = position;
-        ctx.startId = id;
+
+        // Input scope arguments
+        ctx.position = new ScopeArgument("position", Utils.StrictType.Float3, position, false);
+        ctx.id = new ScopeArgument("id", Utils.StrictType.Uint3, id, false);
         
-        Variable<float3> color = float3.zero;
-        Execute(position, id, out Variable<float> density, ref color);
+        // Execute the voxel graph to get density and color
+        Execute(position, id, out Variable<float> density, out Variable<float3> color);
 
-        ctx.scopes[0].arguments = new ScopeArgument[] {
-            new ScopeArgument("position", Utils.StrictType.Float3, position, false),
-            new ScopeArgument("id", Utils.StrictType.Uint3, id, false),
-            new ScopeArgument("voxel", Utils.StrictType.Float, density, true),
-            new ScopeArgument("color", Utils.StrictType.Float3, color, true),
-        };
+        // Voxel function output arguments 
+        ScopeArgument voxelArgument = new ScopeArgument("voxel", Utils.StrictType.Float, density, true);
+        ScopeArgument colorArgument = new ScopeArgument("color", Utils.StrictType.Float3, color, true);
+
+        // Voxel function scope
+        // We can't initialize the scope again because it contains the shader graph nodes
         ctx.scopes[0].name = "Voxel";
-        //ctx.scopes[0].namesToNodes.Add(position, "position");
-        //ctx.scopes[0].namesToNodes.Add(id, "id");
+        ctx.scopes[0].arguments = new ScopeArgument[] {
+            ctx.position, ctx.id, voxelArgument, colorArgument
+        };
 
-        System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
-        timer.Start();
-        ctx.Parse(new TreeNode[] { density, color });
-        timer.Stop();
-        //Debug.Log($"{timer.Elapsed.TotalMilliseconds}ms");
-
-        // TODO: Convert all of the default voxel stuff to use the stuff we've defined (aka remove the shit stuff from above kekw)
+        // Voxel kernel dispatcher
         ctx.computeKernelNameAndDepth.Add(new KernelDispatch {
             name = $"CSVoxel",
             depth = 0,
             sizeReductionPower = 0,
             threeDimensions = true,
+            scopeName = "Voxel",
+            frac = 1.0f,
+            scopeIndex = 0,
+            numThreads = "[numthreads(8, 8, 8)]",
+            remappedCoords = "id.xyz",
+            writeCoords = "xyz",
+            outputs = new KernelOutput[] {
+                new KernelOutput { output = voxelArgument, outputTextureName = "voxels" },
+                new KernelOutput { output = colorArgument, outputTextureName = "colors" },
+            }
         });
 
+        // Prase the voxel graph going from density and color
+        System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
+        timer.Start();
+        ctx.Parse(new TreeNode[] { density, color });
+        timer.Stop();
+        //Debug.Log($"{timer.Elapsed.TotalMilliseconds}ms");
+        
         injector = ctx.injector;
         ctx.computeKernelNameAndDepth.Sort((KernelDispatch a, KernelDispatch b) => { return b.depth.CompareTo(a.depth); });
         sortedKernelDispatches = ctx.computeKernelNameAndDepth;
@@ -101,8 +120,8 @@ public abstract class VoxelGraph : MonoBehaviour {
 
         List<string> lines = new List<string>();
         lines.AddRange(ctx.Properties);
-        lines.Add("RWTexture3D<float> voxels;");
-        lines.Add("RWTexture3D<float3> colors;");
+        lines.Add("RWTexture3D<float> voxels_write;");
+        lines.Add("RWTexture3D<float3> colors_write;");
 
         lines.Add("int size;");
         lines.Add("int3 permuationSeed;\nint3 moduloSeed;");
@@ -113,16 +132,19 @@ public abstract class VoxelGraph : MonoBehaviour {
         lines.Add("#include \"Assets/Compute/Other.cginc\"");
         lines.Add("#include \"Assets/Compute/SDF.cginc\"");
 
+        var temp = ctx.computeKernelNameAndDepth.AsEnumerable().Select(x => x.ConvertToKernelString(ctx)).ToList();
+
         // Sort the scopes based on their depth
         // We want the scopes that don't require other scopes to be defined at the top, and scopes that require scopes to be defined at the bottom
         ctx.scopes.Sort((TreeScope a, TreeScope b) => { return b.depth.CompareTo(a.depth); });
 
         // Define each scope as a separate function with its arguments (input / output)
+        int index = 0;
         foreach (var scope in ctx.scopes) {
-            lines.Add($"// defined nodes: {scope.namesToNodes.Count}, depth: {scope.depth}, total lines: {scope.lines.Count}, argument count: {scope.arguments.Length} ");
+            lines.Add($"// defined nodes: {scope.namesToNodes.Count}, depth: {scope.depth}, index: {index}, total lines: {scope.lines.Count}, argument count: {scope.arguments.Length} ");
 
+            // Create a string containing all the required arguments and stuff
             string arguments = "";
-
             for (int i = 0; i < scope.arguments.Length; i++) {
                 var item = scope.arguments[i];
                 var comma = i == scope.arguments.Length - 1 ? "" : ",";
@@ -147,23 +169,16 @@ public abstract class VoxelGraph : MonoBehaviour {
 
             // Close scope
             lines.Add("}\n");
+            index++;
         }
 
         // function definition
         
-        lines.Add(@"
-#pragma kernel CSVoxel
-[numthreads(8, 8, 8)]
-void CSVoxel(uint3 id : SV_DispatchThreadID) {
-    float density;
-    float3 color;
-    Voxel((float3(id) + offset) * scale, id, density, color);
-    voxels[id] = density;
-    colors[id] = color;
-}"
-);
+        /*
 
-        lines.AddRange(ctx.computeKernels);
+        */
+
+        lines.AddRange(temp);
 
         return lines.Aggregate("", (a, b) => a + "\n" + b);
     }
@@ -211,6 +226,7 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
 #endif
     }
 
+#if UNITY_EDITOR
     // Recompiles the graph every time we reload the domain
     [InitializeOnLoadMethod]
     static void RecompileOnDomainReload() {
@@ -220,4 +236,5 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
             item.Compile();
         }
     }
+#endif
 }

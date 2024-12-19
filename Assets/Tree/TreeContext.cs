@@ -27,8 +27,8 @@ public class TreeContext {
 
     public List<string> Properties { get { return properties; } }
 
-    public TreeNode startPosition;
-    public TreeNode startId;
+    public ScopeArgument position;
+    public ScopeArgument id;
 
     public TreeContext(bool debugNames) {
         this.properties = new List<string>();
@@ -63,11 +63,6 @@ public class TreeContext {
     public void Inject2(Action<ComputeShader, Dictionary<string, ExecutorTexture>> func) {
         injector.injected.Add(func);
     }
-
-    // TODO: Create a function header with the specific variables as either input variables or output variables
-    // Input variables must be initialized first with AliasExternalInput
-    // For now, just create a simple function (with a random name) that takes in a variable of a specific type and returns a specific another variable of another type    
-    // asdgfasdsdf
 
     public void Hash(object val) {
         hashinator.Hash(val);

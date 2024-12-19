@@ -32,12 +32,13 @@ public class Test : VoxelGraph {
     public Inject<float2> textureOffset;
     public Inject<float> smoother;
     public int reduction;
+    public int gradientSize = 128;
     [Range(1, 10)]
     public int octaves;
     [Range(1, 10)]
     public int octaves2;
 
-    public override void Execute(Variable<float3> position, Variable<uint3> id, out Variable<float> density, ref Variable<float3> color) {
+    public override void Execute(Variable<float3> position, Variable<uint3> id, out Variable<float> density, out Variable<float3> color) {
         var transformer = new ApplyTransformation(transform1);
         var pos2 = transformer.Transform(position);
         var output = pos2.Swizzle<float>("y");
@@ -46,7 +47,7 @@ public class Test : VoxelGraph {
         // Simple cached 2D base layer
         var voronoi = new Voronoi(scale, amplitude);
         var fractal = new FractalNoise(voronoi, mode, lacunarity, persistence, octaves).Evaluate(temp);
-        var ramp = new Ramp<float>(gradient, minRange, maxRange);
+        var ramp = new Ramp<float>(gradient, minRange, maxRange, gradientSize);
         var cached = ramp.Evaluate(fractal).Cached(reduction, "xz");
 
         // 3D secondary transformed layer
@@ -58,7 +59,7 @@ public class Test : VoxelGraph {
         var warped = new Warper(warperSimplex).Warpinate(pos3.Swizzle<float2>("xz"));
 
         var fractal2 = new FractalNoise(simplex, FractalNoise.FractalMode.Sum, lacunarity2, persistence2, octaves2).Evaluate(warped);
-        var diagonals = new Ramp<float>(spikeGradient2, minRange3, maxRange3).Evaluate(-((fractal2 - spikeOffset).Min(0.0f)));
+        var diagonals = new Ramp<float>(spikeGradient2, minRange3, maxRange3, gradientSize).Evaluate(-((fractal2 - spikeOffset).Min(0.0f)));
         //var diagonals = new Ramp<float>(spikeGradient2, minRange3, maxRange3).Evaluate((-(fractal2 - spikeOffset).Min(0.0f)));
 
         density = cached + output - diagonals;

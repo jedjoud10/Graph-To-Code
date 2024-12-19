@@ -33,8 +33,8 @@ float2 _94;
 float2 _95;
 Texture2D _96_read;
 SamplerState sampler_96_read;
-RWTexture3D<float> voxels;
-RWTexture3D<float3> colors;
+RWTexture3D<float> voxels_write;
+RWTexture3D<float3> colors_write;
 int size;
 int3 permuationSeed;
 int3 moduloSeed;
@@ -43,7 +43,7 @@ float3 offset;
 #include "Assets/Compute/Noises.cginc"
 #include "Assets/Compute/Other.cginc"
 #include "Assets/Compute/SDF.cginc"
-// defined nodes: 21, depth: 1, total lines: 19, argument count: 3 
+// defined nodes: 21, depth: 1, index: 0, total lines: 19, argument count: 3 
 void _4( float3 position, uint3 id, out float _4_output) {
 	float3 _10 = mul(_9, float4(position, 1.0)).xyz;
 	float3 _11 = _10;
@@ -67,7 +67,7 @@ void _4( float3 position, uint3 id, out float _4_output) {
 	_4_output = _26;
 }
 
-// defined nodes: 75, depth: 0, total lines: 66, argument count: 4 
+// defined nodes: 75, depth: 0, index: 1, total lines: 66, argument count: 4 
 void Voxel( float3 position, uint3 id, out float voxel, out float3 color) {
 	const float3 _1 = float3(1,1,1);
 	const float3 _2 = float3(0,0,0);
@@ -140,21 +140,30 @@ void Voxel( float3 position, uint3 id, out float voxel, out float3 color) {
 }
 
 
-#pragma kernel CSVoxel
-[numthreads(8, 8, 8)]
-void CSVoxel(uint3 id : SV_DispatchThreadID) {
-    float density;
-    float3 color;
-    Voxel((float3(id) + offset) * scale, id, density, color);
-    voxels[id] = density;
-    colors[id] = color;
-}
-
 #pragma kernel CS_4
 [numthreads(32, 32, 1)]
+// Name: CS_4, Scope name: _4, Scope index: 1, Outputs: 1, Arguments: 3
 void CS_4(uint3 id : SV_DispatchThreadID) {
     uint3 remapped = uint3(id.x, 0.0, id.y);
-    float temp;
-    _4((float3(remapped * 1) + offset) * scale, id, temp);
-    _5_write[id.xy] = temp;
+    float3 position = (float3(remapped * 1) + offset) * scale;
+    float _4_output;
+
+    _4(position,id,_4_output);
+    _5_write[id.xy] = _4_output;
+
+}
+
+#pragma kernel CSVoxel
+[numthreads(8, 8, 8)]
+// Name: CSVoxel, Scope name: Voxel, Scope index: 0, Outputs: 2, Arguments: 4
+void CSVoxel(uint3 id : SV_DispatchThreadID) {
+    uint3 remapped = uint3(id.xyz);
+    float3 position = (float3(remapped * 1) + offset) * scale;
+    float voxel;
+    float3 color;
+
+    Voxel(position,id,voxel,color);
+    voxels_write[id.xyz] = voxel;
+    colors_write[id.xyz] = color;
+
 }

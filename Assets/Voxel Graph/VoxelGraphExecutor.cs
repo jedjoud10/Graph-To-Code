@@ -44,8 +44,8 @@ public class VoxelGraphExecutor : MonoBehaviour {
 
         // Creates dictionary with the default voxel graph textures (density + custom data)
         Textures = new Dictionary<string, ExecutorTexture> {
-            { "voxels", new OutputExecutorTexture("voxels", new List<string>() { "CSVoxel" }, Utils.Create3DRenderTexture(size, GraphicsFormat.R32_SFloat)) },
-            { "colors", new OutputExecutorTexture("colors", new List < string >() { "CSVoxel" }, Utils.Create3DRenderTexture(size, GraphicsFormat.R32G32B32A32_SFloat)) },
+            { "voxels", new OutputExecutorTexture("voxels", new List<string>() { "CSVoxel" }, Utils.Create3DRenderTexture(size, GraphicsFormat.R16_SFloat)) },
+            { "colors", new OutputExecutorTexture("colors", new List < string >() { "CSVoxel" }, Utils.Create3DRenderTexture(size, GraphicsFormat.R8G8B8A8_SNorm)) },
         };
 
         foreach (var (name, descriptor) in graph.textureDescriptors) {

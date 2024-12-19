@@ -62,7 +62,7 @@ public class OutputExecutorTexture : ExecutorTexture {
     public override void BindToComputeShader(ComputeShader shader) {
         foreach (var readKernel in readKernels) {
             int readKernelId = shader.FindKernel(readKernel);
-            shader.SetTexture(readKernelId, name, texture);
+            shader.SetTexture(readKernelId, name + "_write", texture);
         }
     }
 }

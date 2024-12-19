@@ -59,16 +59,20 @@ public class CachedNode<T> : Variable<T> {
         context.properties.Add($"Texture{dimensions}D {textureName}_read;");
         context.properties.Add($"SamplerState sampler{textureName}_read;");
 
+        ScopeArgument output = new ScopeArgument(outputName, Utils.TypeOf<T>(), inner, true);
+
         int index = context.scopes.Count;
         int oldScopeIndex = context.currentScope;
+
+        TreeNode positionNode = context.position.node;
+        TreeNode idNode = context.id.node;
+        string positionName = context[context.position.node];
+        string idName = context[context.id.node];
+
         context.scopes.Add(new TreeScope(context.scopeDepth + 1) {
             name = scopeName,
-            arguments = new ScopeArgument[] {
-                new ScopeArgument("position", Utils.StrictType.Float3, context.startPosition, false),
-                new ScopeArgument("id", Utils.StrictType.Uint3, context.startId, false),
-                new ScopeArgument(outputName, Utils.TypeOf<T>(), inner, true),
-            },
-            namesToNodes = new Dictionary<TreeNode, string> { { context.startPosition, context[context.startPosition] }, { context.startId, context[context.startId] } },
+            arguments = new ScopeArgument[] { context.position, context.id, output, },
+            namesToNodes = new Dictionary<TreeNode, string> { { positionNode, positionName }, { idNode, idName } },
         });
 
         // ENTER NEW SCOPE!!!
@@ -76,8 +80,8 @@ public class CachedNode<T> : Variable<T> {
         context.scopeDepth++;
 
         // Add the start node (position node) to the new scope
-        context.scopes[index].namesToNodes.TryAdd(context.startPosition, context[context.startPosition]);
-        context.scopes[index].namesToNodes.TryAdd(context.startId, context[context.startId]);
+        context.scopes[index].namesToNodes.TryAdd(positionNode, positionName);
+        context.scopes[index].namesToNodes.TryAdd(idNode, idName);
 
         // Call the recursive handle function within the indented scope
         inner.Handle(context);
@@ -100,7 +104,7 @@ public class CachedNode<T> : Variable<T> {
         }
 
         string numThreads = dimensions == 2 ? "[numthreads(32, 32, 1)]" : "[numthreads(8, 8, 8)]";
-        string writeCoords = _3d ? "id" : "id.xy";
+        string writeCoords = _3d ? "xyz" : "xy";
         string remappedCoords;
 
         if (_3d) {
@@ -140,22 +144,25 @@ public class CachedNode<T> : Variable<T> {
             remappedCoords = $"{Clean(temp6[0])}, {Clean(temp6[1])}, {Clean(temp6[2])}";
         }
 
-        string compute = $@"
-#pragma kernel CS{scopeName}
-{numThreads}
-void CS{scopeName}(uint3 id : SV_DispatchThreadID) {{
-    uint3 remapped = uint3({remappedCoords});
-    {Utils.ToStringType<T>()} temp;
-    {scopeName}((float3(remapped * {frac}) + offset) * scale, id, temp);
-    {textureName}_write[{writeCoords}] = temp;
-}}";
-
-        context.computeKernels.Add(compute);
         context.computeKernelNameAndDepth.Add(new KernelDispatch {
             name = $"CS{scopeName}",
             depth = context.scopeDepth + 1,
             sizeReductionPower = sizeReductionPower,
             threeDimensions = _3d,
+            numThreads = numThreads,
+            scopeName = scopeName,
+            scopeIndex = index,
+            //outputTextureName = textureName,
+            writeCoords = writeCoords,
+            remappedCoords = remappedCoords,
+            frac = frac,
+            //type = Utils.TypeOf<T>()
+            outputs = new KernelOutput[] {
+                new KernelOutput() {
+                    output = output,
+                    outputTextureName = textureName,
+                }
+            }
         });
 
         context.textures.Add(tempTextureName, new TempTextureDescriptor {
