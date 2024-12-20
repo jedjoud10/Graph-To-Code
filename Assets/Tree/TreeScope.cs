@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Security.Cryptography.X509Certificates;
+using static UnityEditor.Rendering.CameraUI;
 
 
 public class ScopeArgument {
@@ -35,5 +37,30 @@ public class TreeScope {
     }
     public void AddLine(string line) {
         lines.Add(new string('\t', indent) + line);
+    }
+
+    public string InitializeTempnation() {
+        string kernelOutputTemp = "";
+
+        for (int i = 0; i < arguments.Length; i++) {
+            var item = arguments[i];
+            var newLine = i == arguments.Length - 1 ? "" : "\n";
+            if (item.output) {
+                kernelOutputTemp += $"    {Utils.ToStringType(item.type)} {item.name};{newLine}";
+            }
+        }
+
+        return kernelOutputTemp;
+    }
+
+    public string Callenate() {
+        string output = "";
+        for (int i = 0; i < arguments.Length; i++) {
+            var item = arguments[i];
+            var comma = i == arguments.Length - 1 ? "" : ",";
+            output += $"{item.name}{comma}";
+        }
+
+        return $"    {name}({output});";
     }
 }

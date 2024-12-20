@@ -13,8 +13,6 @@ public class DensityVisualizer : MonoBehaviour {
     private GraphicsBuffer atomicCounters;
     private RenderTexture tempVertexTexture;
     private RenderTexture maxHeightAtomic;
-    private RenderTexture diffuseColorForHeightMap;
-    private RenderTexture normalsForHeightMap;
     public Material customRenderingMaterial;
     private GraphicsBuffer.IndirectDrawIndexedArgs aaa;
     public bool blocky;
@@ -23,12 +21,15 @@ public class DensityVisualizer : MonoBehaviour {
     public int heightMapReductionFactor;
 
     public void InitializeForSize(int newSize) {
-        if (indexBuffer != null && newSize == size && indexBuffer.IsValid())
+        if (!isActiveAndEnabled)
             return;
 
         if (indexBuffer != null && indexBuffer.IsValid()) {
             DisposeBuffers();
         }
+
+        if (indexBuffer != null && newSize == size && indexBuffer.IsValid())
+            return;
 
         size = newSize;
         indexBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, size * size * size * 6, sizeof(int));
@@ -50,8 +51,6 @@ public class DensityVisualizer : MonoBehaviour {
 
         tempVertexTexture = Utils.Create3DRenderTexture(size, GraphicsFormat.R32_UInt, FilterMode.Point, TextureWrapMode.Repeat, false);
         maxHeightAtomic = Utils.Create2DRenderTexture(size, GraphicsFormat.R32_UInt, FilterMode.Point, TextureWrapMode.Repeat, false);
-        diffuseColorForHeightMap = Utils.Create2DRenderTexture(size, GraphicsFormat.R32G32B32A32_SFloat, FilterMode.Point, TextureWrapMode.Repeat, true);
-        normalsForHeightMap = Utils.Create2DRenderTexture(size, GraphicsFormat.R32G32B32A32_SFloat, FilterMode.Point, TextureWrapMode.Repeat, true);
     }
 
     private void OnDisable() {

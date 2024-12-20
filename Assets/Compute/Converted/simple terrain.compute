@@ -3,9 +3,10 @@ float4x4 _1;
 float _5;
 float _6;
 float _9;
-float _12;
+float _10;
 float _13;
 float _16;
+float _29;
 RWTexture3D<float> voxels_write;
 RWTexture3D<float3> colors_write;
 int size;
@@ -14,23 +15,41 @@ int3 moduloSeed;
 float3 scale;
 float3 offset;
 #include "Assets/Compute/Noises.cginc"
-#include "Assets/Compute/Other.cginc"
 #include "Assets/Compute/SDF.cginc"
-// defined nodes: 19, depth: 0, index: 0, total lines: 11, argument count: 4 
-void Voxel( float3 position, uint3 id, out float voxel, out float3 color) {
+#include "Assets/Compute/Other.cginc"
+// defined nodes: 2, depth: 1, index: 0, total lines: 1, argument count: 2 
+void _24(float2 _11, out float _24_sdf_output) {
+	const float _25 = 0;
+	_24_sdf_output = _25;
+}
+
+// defined nodes: 30, depth: 0, index: 1, total lines: 23, argument count: 4 
+void Voxel(float3 position,uint3 id, out float voxel, out float3 color) {
 	float3 _2 = mul(_1, float4(position, 1.0)).xyz;
 	float3 _3 = _2;
 	float _4 = _3.y;
-	float2 _7 = _3.xz;
-	float _8 = (snoise((_7) * _6)) * _5;
-	float _10 = sqrt(pow(_8,2.0) + _9);
-	float _11 = _4 + _10;
-	float _14 = (snoise((_3) * _13)) * _12;
-	float _15 = _11 + _14;
-	float _17 = _10 / _16;
-	float3 _18 = _17.xxx;
-	voxel = _15;
-	color = _18;
+	float _7 = (snoise((_3) * _6)) * _5;
+	float _8 = _7 + _4;
+	float2 _11 = _3.xz;
+	float _12 = (snoise((_11) * _10)) * _9;
+	float _14 = sqrt(pow(_12,2.0) + _13);
+	float _15 = _8 + _14;
+	const float _17 = 2;
+	float _18 = _16 / _17;
+	float _19 = _15 - _18;
+	const float _20 = 0;
+	float _21 = opUnion(_19, _20);
+	float _22 = _21;
+	float _23 = _4 + _22;
+    float _24_sdf_output;
+    _24(_11,_24_sdf_output);
+	float _26 = _24_sdf_output;
+	float _27 = opUnion(_23, _26);
+	float _28 = _27;
+	float _30 = _14 / _29;
+	float3 _31 = _30.xxx;
+	voxel = _28;
+	color = _31;
 }
 
 
@@ -42,7 +61,6 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
     float3 position = (float3(remapped * 1) + offset) * scale;
     float voxel;
     float3 color;
-
     Voxel(position,id,voxel,color);
     voxels_write[id.xyz] = voxel;
     colors_write[id.xyz] = color;

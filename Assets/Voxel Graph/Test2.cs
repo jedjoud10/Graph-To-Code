@@ -28,8 +28,12 @@ public class Test2 : VoxelGraph {
         var evaluated = Noise.Simplex(xz, scale, amplitude).SmoothAbs(smoothing);
         var overlay = Noise.Simplex(projected, scale2, amplitude2);
 
+        // Test
+        var distances = new CellularTiler<float2>().Tile(xz);
+
         // Sum!!!
-        density = y + evaluated + overlay;
+        density = y + SdfOps.Union(overlay + y + evaluated - (Variable<float>)amplitude / 2.0f, 0.0f);
+        density = SdfOps.Union(density, distances);
         color = (evaluated / amplitude).Swizzle<float3>("xxx");
     }
 }

@@ -25,14 +25,14 @@ float _60;
 Texture1D _65_read;
 SamplerState sampler_65_read;
 float4x4 _71;
-float _81;
 float _82;
-Texture1D _84_read;
-SamplerState sampler_84_read;
-float2 _94;
+float _83;
+Texture1D _85_read;
+SamplerState sampler_85_read;
 float2 _95;
-Texture2D _96_read;
-SamplerState sampler_96_read;
+float2 _96;
+Texture2D _97_read;
+SamplerState sampler_97_read;
 RWTexture3D<float> voxels_write;
 RWTexture3D<float3> colors_write;
 int size;
@@ -41,10 +41,10 @@ int3 moduloSeed;
 float3 scale;
 float3 offset;
 #include "Assets/Compute/Noises.cginc"
-#include "Assets/Compute/Other.cginc"
 #include "Assets/Compute/SDF.cginc"
+#include "Assets/Compute/Other.cginc"
 // defined nodes: 21, depth: 1, index: 0, total lines: 19, argument count: 3 
-void _4( float3 position, uint3 id, out float _4_output) {
+void _4(float3 position,uint3 id, out float _4_output) {
 	float3 _10 = mul(_9, float4(position, 1.0)).xyz;
 	float3 _11 = _10;
 	float2 _12 = _11.xz;
@@ -67,8 +67,8 @@ void _4( float3 position, uint3 id, out float _4_output) {
 	_4_output = _26;
 }
 
-// defined nodes: 75, depth: 0, index: 1, total lines: 66, argument count: 4 
-void Voxel( float3 position, uint3 id, out float voxel, out float3 color) {
+// defined nodes: 76, depth: 0, index: 1, total lines: 67, argument count: 4 
+void Voxel(float3 position,uint3 id, out float voxel, out float3 color) {
 	const float3 _1 = float3(1,1,1);
 	const float3 _2 = float3(0,0,0);
 	const float _3 = 0;
@@ -119,24 +119,25 @@ void Voxel( float3 position, uint3 id, out float voxel, out float3 color) {
 	float _78 = (snoise((_73) * _77)) * _76;
 	float _79 = _75 + _78;
 	float _80 = opUnion(_70, _79);
-	float _83 = _30.y;
-	float _85 = Remap(_83, _81, _82, 0.0, 1.0);
-	float3 _86 = _84_read.SampleLevel(sampler_84_read, _85, 0).xyz;
-	float3 _87 = _86;
-	const float3 _88 = float3(0.2,0.2,0.2);
-	float3 _89 = _69.xxx;
-	float3 _90 = lerp(_87,_88,clamp(_89, 0.0, 1.0));
-	const float3 _91 = float3(0,0,0);
-	float2 _92 = _30.xz;
-	const float _93 = 0;
-	float4 _97 = _96_read.SampleLevel(sampler_96_read, _92 * _94 + _95, _93);
-	float _98 = _97.x;
-	const float _99 = 10;
-	float _100 = _98 * _99;
-	float3 _101 = _100.xxx;
-	float3 _102 = lerp(_90,_91,clamp(_101, 0.0, 1.0));
-	voxel = _80;
-	color = _102;
+	float _81 = _80;
+	float _84 = _30.y;
+	float _86 = Remap(_84, _82, _83, 0.0, 1.0);
+	float3 _87 = _85_read.SampleLevel(sampler_85_read, _86, 0).xyz;
+	float3 _88 = _87;
+	const float3 _89 = float3(0.2,0.2,0.2);
+	float3 _90 = _69.xxx;
+	float3 _91 = lerp(_88,_89,clamp(_90, 0.0, 1.0));
+	const float3 _92 = float3(0,0,0);
+	float2 _93 = _30.xz;
+	const float _94 = 0;
+	float4 _98 = _97_read.SampleLevel(sampler_97_read, _93 * _95 + _96, _94);
+	float _99 = _98.x;
+	const float _100 = 10;
+	float _101 = _99 * _100;
+	float3 _102 = _101.xxx;
+	float3 _103 = lerp(_91,_92,clamp(_102, 0.0, 1.0));
+	voxel = _81;
+	color = _103;
 }
 
 
@@ -147,7 +148,6 @@ void CS_4(uint3 id : SV_DispatchThreadID) {
     uint3 remapped = uint3(id.x, 0.0, id.y);
     float3 position = (float3(remapped * 1) + offset) * scale;
     float _4_output;
-
     _4(position,id,_4_output);
     _5_write[id.xy] = _4_output;
 
@@ -161,7 +161,6 @@ void CSVoxel(uint3 id : SV_DispatchThreadID) {
     float3 position = (float3(remapped * 1) + offset) * scale;
     float voxel;
     float3 color;
-
     Voxel(position,id,voxel,color);
     voxels_write[id.xyz] = voxel;
     colors_write[id.xyz] = color;

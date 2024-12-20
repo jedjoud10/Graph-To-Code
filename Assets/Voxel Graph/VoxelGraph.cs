@@ -129,8 +129,8 @@ public abstract class VoxelGraph : MonoBehaviour {
 
         // imports
         lines.Add("#include \"Assets/Compute/Noises.cginc\"");
-        lines.Add("#include \"Assets/Compute/Other.cginc\"");
         lines.Add("#include \"Assets/Compute/SDF.cginc\"");
+        lines.Add("#include \"Assets/Compute/Other.cginc\"");
 
         var temp = ctx.computeKernelNameAndDepth.AsEnumerable().Select(x => x.ConvertToKernelString(ctx)).ToList();
 
@@ -148,9 +148,9 @@ public abstract class VoxelGraph : MonoBehaviour {
             for (int i = 0; i < scope.arguments.Length; i++) {
                 var item = scope.arguments[i];
                 var comma = i == scope.arguments.Length - 1 ? "" : ",";
-                var output = item.output ? " out" : "";
+                var output = item.output ? " out " : "";
 
-                arguments += $"{output} {Utils.ToStringType(item.type)} {item.name}{comma}";
+                arguments += $"{output}{Utils.ToStringType(item.type)} {item.name}{comma}";
             }
 
             // Open scope
@@ -233,7 +233,7 @@ public abstract class VoxelGraph : MonoBehaviour {
         VoxelGraph[] graph = Object.FindObjectsByType<VoxelGraph>(FindObjectsSortMode.None);
 
         foreach (var item in graph) {
-            item.Compile();
+            //item.Compile();
         }
     }
 #endif
