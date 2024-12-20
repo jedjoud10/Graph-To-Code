@@ -13,14 +13,11 @@ public static class SdfOps {
         return new OpSdfBuilder { variables = vars, op = "Subtraction" };
     }
 
-    public static Variable<float> Distance<T>(Variable<T> a, Variable<T> b, DistanceFunction mode = DistanceFunction.Euclidean) {
-        //return abs(a.x - b.x) + abs(a.y - b.y);
-        //return max(abs(a.x - b.x), abs(a.y - b.y));
-        //return distance(a, b);
+    public static Variable<float> Distance<T>(Variable<T> a, Variable<T> b, DistanceMetric mode = DistanceMetric.Euclidean) {
         return new DistanceOp<T>() { a = a, b = b, mode = mode };
     }
 
-    public enum DistanceFunction {
+    public enum DistanceMetric {
         Euclidean,
         Manhattan,
         ManhattanMaxxed,
@@ -49,25 +46,35 @@ public class OpSdfBuilder {
 public class DistanceOp<T> : Variable<float> {
     public Variable<T> a;
     public Variable<T> b;
-    public DistanceFunction mode;
+    public DistanceMetric mode;
 
     public override void HandleInternal(TreeContext ctx) {
         a.Handle(ctx);
         b.Handle(ctx);
+        ctx.Hash(mode);
 
         string func = "";
 
         switch (mode) {
-            case DistanceFunction.Euclidean:
+            case DistanceMetric.Euclidean:
                 func = $"distance({ctx[a]}, {ctx[b]})";
                 break;
-            case DistanceFunction.Manhattan:
-                func = $"dot(abs({ctx[a]} - {ctx[b]}), 1.0)";
+            case DistanceMetric.Manhattan:
+                func = $"dot(abs({ctx[a]} - {ctx[b]}), 1.0) / 1.414";
                 break;
-            case DistanceFunction.ManhattanMaxxed:
-                //Variable<T> temp = ctx.AssignTempVariable<T>("distance_maxx_bruh", "abs({ctx[a]} - {ctx[b]})");
-                //func = $"max({ctx[temp]}.x, {ctx[temp]}.y, {ctx[temp]}.z)";
-                throw new System.Exception();
+            case DistanceMetric.ManhattanMaxxed:
+                Variable<T> temp = ctx.AssignTempVariable<T>("distance_maxx_bruh", $"abs({ctx[a]} - {ctx[b]})");
+                
+                string[] swizzler = new string[] { "x", "y", "z" };
+
+                Variable<float> temp2 = temp.Swizzle<float>("x");
+                for (var i = 1; i < Utils.Dimensionality<T>(); i++) {
+                    temp2.Handle(ctx);
+                    temp2 = ctx.AssignTempVariable<float>("folded_vec", $"max({ctx[temp2]}, {ctx[temp]}.{swizzler[i]})");
+                }
+
+
+                func = ctx[temp2]; 
                 break;
             default:
                 throw new System.Exception();
@@ -92,6 +99,7 @@ public class OpSdfOp : Variable<float> {
 
             Variable<float> temp =  variables[0];
             for (var i = 1; i < variables.Length; i++) {
+                temp.Handle(ctx);
                 temp = ctx.AssignTempVariable<float>("sdf_smooth_temp", $"opSmooth{op}({ctx[temp]}, {ctx[variables[i]]}, {ctx[smooth]})");
             }
 
@@ -99,6 +107,7 @@ public class OpSdfOp : Variable<float> {
         } else {
             Variable<float> temp = variables[0];
             for (var i = 1; i < variables.Length; i++) {
+                temp.Handle(ctx);
                 temp = ctx.AssignTempVariable<float>("sdf_temp", $"op{op}({ctx[temp]}, {ctx[variables[i]]})");
             }
 

@@ -117,11 +117,16 @@ public static class Utils {
         return output;
     }
 
-    // Checks the dimensionality of the type and makes sure it's either a float2 or float3 (used for texture sampling)
-    public static int DimensionalitySafeTextureSample<T>() {
+    public static int Dimensionality<T>() {
         switch (TypeOf<T>()) {
+            case StrictType.Float: return 1;
             case StrictType.Float2: return 2;
             case StrictType.Float3: return 3;
+            case StrictType.Float4: return 3;
+            case StrictType.Uint: return 1;
+            case StrictType.Uint2: return 2;
+            case StrictType.Uint3: return 3;
+            case StrictType.Int: return 1;
             default:
                 throw new System.Exception("Type not supported");
         }

@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Unity.Mathematics;
-using UnityEngine.Profiling;
-using static UnityEditor.ShaderGraph.Internal.KeywordDependentCollection;
 
 public class CellularTilerNode<T> : Variable<float> {
 	public Variable<T> inner;
@@ -10,8 +7,6 @@ public class CellularTilerNode<T> : Variable<float> {
 	public CellularTiler<T>.Distance distance;
     public CellularTiler<T>.ShouldSpawn shouldSpawn;
 
-	public Variable<T> min;
-    public Variable<T> max;
     public Variable<float> offset;
     public Variable<float> factor;
 
@@ -23,14 +18,18 @@ public class CellularTilerNode<T> : Variable<float> {
         string scopeName = context.GenId($"PeriodicityScope");
         string outputName = $"{scopeName}_sdf_output";
 
+        int dimensions = Utils.Dimensionality<T>();
+
+        if (dimensions != 2 && dimensions != 3) {
+            throw new Exception("uhhhh");
+        }
+
         Variable<float> tahini = new CustomCode<float>((TreeNode self, TreeContext ctx) => {
             offset.Handle(ctx);
             factor.Handle(ctx);
             string typeString = Utils.ToStringType<T>();
 
-            int maxLoopSize = 1;
-            int dimensions = Utils.DimensionalitySafeTextureSample<T>();
-            
+            int maxLoopSize = 1;            
             string loopInit = dimensions == 2 ? $@"
 for (int y = -{maxLoopSize}; y <= {maxLoopSize}; y++)
 for (int x = -{maxLoopSize}; x <= {maxLoopSize}; x++) {{
@@ -53,21 +52,34 @@ float output = 100.0;
     {tiler}
     {typeString} randomOffset = hash{dimensions}{dimensions}(tiled);
 ";
-            //hash1{dimensions}(tiled)
+            ctx.AddLine(outputFirst);
+
+            ctx.Indent++;
             Variable<T> tiled = ctx.AssignTempVariable<T>("test__", "tiled");
             Variable<float> shouldSpawnVar = shouldSpawn(tiled);
             shouldSpawnVar.Handle(ctx);
+            ctx.Indent--;
 
             string outputSecond = $@"
-    if ({ctx[shouldSpawnVar]} > 0.0) {{
+    if ({ctx[shouldSpawnVar]} < 0.0) {{
         {typeString} checkingPos = cell + randomOffset;
-        output = min(output, distance(checkingPos, {ctx[inner]}));
+";
+            ctx.AddLine(outputSecond);
+
+            ctx.Indent += 2;
+            Variable<T> checkingPos = ctx.AssignTempVariable<T>("test__2", "checkingPos");
+            Variable<float> distanceVar = distance(checkingPos, inner);
+            distanceVar.Handle(ctx);
+            ctx.Indent -= 2;
+
+            string outputThird = $@"
+        output = min(output, {ctx[distanceVar]});
     }}
 }}
 ";
-            ctx.AddLine(outputFirst);
-            ctx.AddLine(outputSecond);
-            ctx.DefineAndBindNode<float>(self, "__", $"min(output, 1) * {ctx[factor]} + {ctx[offset]}");
+            ctx.AddLine(outputThird);
+
+            ctx.DefineAndBindNode<float>(self, "__", $"min(output, 1.0) * {ctx[factor]} + {ctx[offset]}");
         });
 
         ScopeArgument input = new ScopeArgument(context[inner], Utils.TypeOf<T>(), inner, false);
@@ -107,14 +119,12 @@ float output = 100.0;
 public class CellularTiler<T> {
 	public float tilingModSize;
 
-	public delegate Variable<float> Distance(Variable<T> a, Variable<T> b);
+    public delegate Variable<float> Distance(Variable<T> a, Variable<T> b);
     public delegate Variable<float> ShouldSpawn(Variable<T> point);
 
 	public Distance distance;
     public ShouldSpawn shouldSpawn;
 
-	public Variable<T> min;
-    public Variable<T> max;
 
     public Variable<float> offset;
     public Variable<float> factor;
@@ -123,8 +133,6 @@ public class CellularTiler<T> {
         this.distance = distance;
         this.tilingModSize = ilingModSize;
         this.shouldSpawn = shouldSpawn;
-        this.min = null;
-        this.max = null;
         this.offset = 0.0f;
         this.factor = 1.0f;
     }
@@ -133,10 +141,8 @@ public class CellularTiler<T> {
         return new CellularTilerNode<T>() {
 			tilingModSize = tilingModSize,
 			distance = distance != null ? distance : (a, b) => SdfOps.Distance(a, b),
-			shouldSpawn = shouldSpawn != null ? shouldSpawn : (pos) => 1.0f,
+			shouldSpawn = shouldSpawn != null ? shouldSpawn : (pos) => -1.0f,
 			inner = position,
-			min = min,
-			max = max,
             offset = offset,
             factor = factor,
 		};

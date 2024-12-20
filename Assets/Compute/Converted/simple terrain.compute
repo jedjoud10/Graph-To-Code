@@ -1,17 +1,8 @@
 
-float _1;
-float _2;
-float4x4 _3;
-float _9;
-float _10;
-float _13;
-float _16;
-float3 _22;
-float3 _24;
-float _27;
-float _28;
-float _29;
-float _34;
+float4x4 matrix_0;
+float inj_0;
+float inj_1;
+float inj_2;
 RWTexture3D<float> voxels_write;
 RWTexture3D<float3> colors_write;
 int size;
@@ -22,61 +13,22 @@ float3 offset;
 #include "Assets/Compute/Noises.cginc"
 #include "Assets/Compute/SDF.cginc"
 #include "Assets/Compute/Other.cginc"
-// defined nodes: 5, depth: 1, index: 0, total lines: 23, argument count: 2 
-void _26(float3 _25, out float _26_sdf_output) {
-	
-	float3 posCell = floor(_25);
-	float3 posFrac = frac(_25);
-	
-	float output = 100.0;
-	
-	
-	for(int z = -1; z <= 1; z++)
-	for(int y = -1; y <= 1; y++)
-	for(int x = -1; x <= 1; x++) {
-	
-	    float3 cell = float3(x, y, z) + posCell;
-	    float3 tiled = fmod(cell, 16);
-	    float3 randomOffset = hash33(tiled);
-	
-	
-	    if (_29 > 0.0) {
-	        float3 checkingPos = cell + randomOffset;
-	        output = min(output, distance(checkingPos, _25));
-	    }
-	}
-	
-	float _30 = min(output, 1) * _28 + _27;
-	_26_sdf_output = _30;
-}
-
-// defined nodes: 32, depth: 0, index: 1, total lines: 23, argument count: 4 
+// defined nodes: 17, depth: 0, index: 0, total lines: 12, argument count: 4 
 void Voxel(float3 position,uint3 id, out float voxel, out float3 color) {
-	float3 _4 = mul(_3, float4(position, 1.0)).xyz;
-	float3 _5 = _4;
-	float _6 = (snoise((_5) * _2)) * _1;
-	float _7 = _5.y;
-	float _8 = _6 + _7;
-	float2 _11 = _5.xz;
-	float _12 = (snoise((_11) * _10)) * _9;
-	float _14 = sqrt(pow(_12,2.0) + _13);
-	float _15 = _8 + _14;
-	const float _17 = 2;
-	float _18 = _16 / _17;
-	float _19 = _15 - _18;
-	float _20 = opUnion(_19, _7);
-	float _21 = _20;
-	float3 _23 = _5 * _22;
-	float3 _25 = _23 + _24;
-    float _26_sdf_output;
-    _26(_25,_26_sdf_output);
-	float _31 = _26_sdf_output;
-	float _32 = opIntersection(_21, _31);
-	float _33 = _32;
-	float _35 = _14 / _34;
-	float3 _36 = _35.xxx;
-	voxel = _33;
-	color = _36;
+	float3 projected_0 = mul(matrix_0, float4(position, 1.0)).xyz;
+	float3 projected2_0 = projected_0;
+	float projected2_0_swizzled_0 = projected2_0.y;
+	float2 projected2_0_swizzled_1 = projected2_0.xz;
+	float projected2_0_swizzled_1_noised_0 = (snoise((projected2_0_swizzled_1) * inj_1)) * inj_0;
+	float projected2_0_swizzled_0_op_projected2_0_swizzled_1_noised_0_0 = projected2_0_swizzled_0 + projected2_0_swizzled_1_noised_0;
+	float projected2_0_swizzled_0_op_inj_2_0 = projected2_0_swizzled_0 / inj_2;
+	const float c_0 = 0.5;
+	float projected2_0_swizzled_0_op_inj_2_0_op_c_0_0 = projected2_0_swizzled_0_op_inj_2_0 * c_0;
+	const float c_1 = 0.5;
+	float projected2_0_swizzled_0_op_inj_2_0_op_c_0_0_op_c_1_0 = projected2_0_swizzled_0_op_inj_2_0_op_c_0_0 + c_1;
+	float3 projected2_0_swizzled_0_op_inj_2_0_op_c_0_0_op_c_1_0_swizzled_0 = projected2_0_swizzled_0_op_inj_2_0_op_c_0_0_op_c_1_0.xxx;
+	voxel = projected2_0_swizzled_0_op_projected2_0_swizzled_1_noised_0_0;
+	color = projected2_0_swizzled_0_op_inj_2_0_op_c_0_0_op_c_1_0_swizzled_0;
 }
 
 
