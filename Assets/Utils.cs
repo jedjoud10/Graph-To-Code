@@ -1,4 +1,5 @@
 //using System.Diagnostics;
+using System;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -202,6 +203,19 @@ public static class Utils {
                 return "xyz";
             case StrictType.Float4:
                 return "xyzw";
+            default:
+                throw new System.Exception();
+        }
+    }
+
+    public static string VectorConstructor<T>() {
+        switch (TypeOf<T>()) {
+            case StrictType.Float2:
+                return "x, y";
+            case StrictType.Float3:
+                return "x, y, z";
+            case StrictType.Float4:
+                return "x, y, z, w";
             default:
                 throw new System.Exception();
         }

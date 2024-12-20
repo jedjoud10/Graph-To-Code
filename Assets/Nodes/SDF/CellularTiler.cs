@@ -7,12 +7,13 @@ using static UnityEditor.ShaderGraph.Internal.KeywordDependentCollection;
 public class CellularTilerNode<T> : Variable<float> {
 	public Variable<T> inner;
 	public float tilingModSize;
-	public bool tiling;
 	public CellularTiler<T>.Distance distance;
     public CellularTiler<T>.ShouldSpawn shouldSpawn;
 
 	public Variable<T> min;
     public Variable<T> max;
+    public Variable<float> offset;
+    public Variable<float> factor;
 
     public override void HandleInternal(TreeContext context) {
         inner.Handle(context);
@@ -22,10 +23,55 @@ public class CellularTilerNode<T> : Variable<float> {
         string scopeName = context.GenId($"PeriodicityScope");
         string outputName = $"{scopeName}_sdf_output";
 
-        Variable<float> test = 0.0f;
+        Variable<float> tahini = new CustomCode<float>((TreeNode self, TreeContext ctx) => {
+            offset.Handle(ctx);
+            factor.Handle(ctx);
+            string typeString = Utils.ToStringType<T>();
+
+            int maxLoopSize = 1;
+            int dimensions = Utils.DimensionalitySafeTextureSample<T>();
+            
+            string loopInit = dimensions == 2 ? $@"
+for (int y = -{maxLoopSize}; y <= {maxLoopSize}; y++)
+for (int x = -{maxLoopSize}; x <= {maxLoopSize}; x++) {{
+" : $@"
+for(int z = -{maxLoopSize}; z <= {maxLoopSize}; z++)
+for(int y = -{maxLoopSize}; y <= {maxLoopSize}; y++)
+for(int x = -{maxLoopSize}; x <= {maxLoopSize}; x++) {{
+";
+
+            string tiler = tiling ? $"{typeString} tiled = fmod(cell, {tilingModSize});" : $"{typeString} tiled = cell;";
+
+            string outputFirst = $@"
+{typeString} posCell = floor({ctx[inner]});
+{typeString} posFrac = frac({ctx[inner]});
+
+float output = 100.0;
+
+{loopInit}
+    {typeString} cell = {typeString}({Utils.VectorConstructor<T>()}) + posCell;
+    {tiler}
+    {typeString} randomOffset = hash{dimensions}{dimensions}(tiled);
+";
+            //hash1{dimensions}(tiled)
+            Variable<T> tiled = ctx.AssignTempVariable<T>("test__", "tiled");
+            Variable<float> shouldSpawnVar = shouldSpawn(tiled);
+            shouldSpawnVar.Handle(ctx);
+
+            string outputSecond = $@"
+    if ({ctx[shouldSpawnVar]} > 0.0) {{
+        {typeString} checkingPos = cell + randomOffset;
+        output = min(output, distance(checkingPos, {ctx[inner]}));
+    }}
+}}
+";
+            ctx.AddLine(outputFirst);
+            ctx.AddLine(outputSecond);
+            ctx.DefineAndBindNode<float>(self, "__", $"min(output, 1) * {ctx[factor]} + {ctx[offset]}");
+        });
 
         ScopeArgument input = new ScopeArgument(context[inner], Utils.TypeOf<T>(), inner, false);
-        ScopeArgument output = new ScopeArgument(outputName, Utils.TypeOf<float>(), test, true);
+        ScopeArgument output = new ScopeArgument(outputName, Utils.TypeOf<float>(), tahini, true);
 
         int index = context.scopes.Count;
         int oldScopeIndex = context.currentScope;
@@ -33,7 +79,7 @@ public class CellularTilerNode<T> : Variable<float> {
         TreeScope scopium = new TreeScope(context.scopeDepth + 1) {
             name = scopeName,
             arguments = new ScopeArgument[] { input, output, },
-            namesToNodes = new Dictionary<TreeNode, string> { { input.node, "position" } },
+            namesToNodes = new Dictionary<TreeNode, string> { { input.node, context[input.node] } },
         };
 
         context.scopes.Add(scopium);
@@ -46,7 +92,7 @@ public class CellularTilerNode<T> : Variable<float> {
         //context.scopes[index].namesToNodes.TryAdd(input.node, "position");
 
         // Call the recursive handle function within the indented scope
-        test.Handle(context);
+        tahini.Handle(context);
 
         // EXIT SCOPE!!!
         context.scopeDepth--;
@@ -70,12 +116,17 @@ public class CellularTiler<T> {
 	public Variable<T> min;
     public Variable<T> max;
 
-    public CellularTiler(Distance distance = null, ShouldSpawn shouldSpawn = null, float ilingModSize = -1, Variable<T> min = null, Variable<T> max = null) {
+    public Variable<float> offset;
+    public Variable<float> factor;
+
+    public CellularTiler(Distance distance = null, ShouldSpawn shouldSpawn = null, float ilingModSize = -1) {
         this.distance = distance;
         this.tilingModSize = ilingModSize;
         this.shouldSpawn = shouldSpawn;
-        this.min = min;
-        this.max = max;
+        this.min = null;
+        this.max = null;
+        this.offset = 0.0f;
+        this.factor = 1.0f;
     }
 
     public Variable<float> Tile(Variable<T> position) {
@@ -86,6 +137,8 @@ public class CellularTiler<T> {
 			inner = position,
 			min = min,
 			max = max,
+            offset = offset,
+            factor = factor,
 		};
 	}
 }

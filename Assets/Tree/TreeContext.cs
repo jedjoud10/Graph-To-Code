@@ -77,7 +77,11 @@ public class TreeContext {
     }
 
     public void AddLine(string line) {
-        scopes[currentScope].AddLine(line);
+        string[] aaa = line.Split(new[] { "\r\n", "\n" }, System.StringSplitOptions.None);
+
+        foreach (var item in aaa) {
+            scopes[currentScope].AddLine(item);
+        }
     }
 
     public string GenId(string name) {
