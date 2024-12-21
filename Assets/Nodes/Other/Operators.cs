@@ -1,4 +1,15 @@
 using System;
+using Unity.Burst.Intrinsics;
+
+public static class MathOps {
+    public static Variable<float> Length<T>(Variable<T> position) {
+        return new LengthNode<T>() { a = position };
+    }
+
+    public static Variable<T> Normalize<T>(Variable<T> position) {
+        return new NormalizeNode<T>() { a = position };
+    }
+}
 
 public class DefineNode<T> : Variable<T> {
     public string value;
@@ -102,46 +113,85 @@ public class CastNode<I, O> : Variable<O> {
     }
 }
 
+public class NormalizeNode<T> : Variable<T> {
+    public Variable<T> a;
+
+    public override void HandleInternal(TreeContext ctx) {
+        a.Handle(ctx);
+        ctx.DefineAndBindNode<T>(this, $"{ctx[a]}_normalized", $"normalize({ctx[a]})");
+    }
+}
+
+public class LengthNode<T> : Variable<float> {
+    public Variable<T> a;
+
+    public override void HandleInternal(TreeContext ctx) {
+        a.Handle(ctx);
+        ctx.DefineAndBindNode<float>(this, $"{ctx[a]}_length", $"length({ctx[a]})");
+    }
+}
 
 public class SwizzleNode<I, O> : Variable<O> {
     public Variable<I> a;
     public string swizzle;
 
     public override void HandleInternal(TreeContext ctx) {
+        int input = Utils.Dimensionality<O>();
+        int output = swizzle.Length;
         a.Handle(ctx);
-        ctx.DefineAndBindNode<O>(this, $"{ctx[a]}_swizzled", $"{ctx[a]}.{swizzle}");
+
+        if (input <= output) {
+            ctx.DefineAndBindNode<O>(this, $"{ctx[a]}_swizzled", $"{ctx[a]}.{swizzle}");
+        } else {
+            string swizzled = $"{ctx[a]}.{swizzle}";
+            string other = "";
+            for (int i = 0; i < input - output; i++) {
+                other += ", 0.0";
+            }
+
+            switch (Utils.TypeOf<O>()) {
+                case Utils.StrictType.Float2:
+                    ctx.DefineAndBindNode<O>(this, $"f2_ctor_swizzle", $"float2({swizzled}{other})");
+                    break;
+                case Utils.StrictType.Float3:
+                    ctx.DefineAndBindNode<O>(this, $"f3_ctor_swizzle", $"float3({swizzled}{other})");
+                    break;
+                case Utils.StrictType.Float4:
+                    ctx.DefineAndBindNode<O>(this, $"f4_ctor_swizzle", $"float4({swizzled}{other})");
+                    break;
+                default:
+                    throw new Exception();
+                    break;
+            }
+        }
     }
 }
 
-public class ConstructNode<I, O> : Variable<O> {
-    public Variable<I> x;
-    public Variable<I> y;
-    public Variable<I> z;
-    public Variable<I> w;
+public class ConstructNode<O> : Variable<O> {
+    public Variable<float>[] inputs;
 
     public override void HandleInternal(TreeContext ctx) {
-        string C(Variable<I> variable) {
-            if (variable == null) {
-                return "0.0";
+        string C(int index) {
+            if (index < inputs.Length) {
+                return ctx[inputs[index]];
             } else {
-                return ctx[variable];
+                return "0.0";
             }
         }
 
-        x?.Handle(ctx);
-        y?.Handle(ctx);
-        z?.Handle(ctx);
-        w?.Handle(ctx);
+        foreach (var input in inputs) {
+            input.Handle(ctx);
+        }
 
         switch (Utils.TypeOf<O>()) {
             case Utils.StrictType.Float2:
-                ctx.DefineAndBindNode<O>(this, $"f2_ctor", $"float2({C(x)},{C(y)})");
+                ctx.DefineAndBindNode<O>(this, $"f2_ctor", $"float2({C(0)},{C(1)})");
                 break;
             case Utils.StrictType.Float3:
-                ctx.DefineAndBindNode<O>(this, $"f3_ctor", $"float3({C(x)},{C(y)},{C(z)})");
+                ctx.DefineAndBindNode<O>(this, $"f3_ctor", $"float3({C(0)},{C(1)},{C(2)})");
                 break;
             case Utils.StrictType.Float4:
-                ctx.DefineAndBindNode<O>(this, $"f4_ctor", $"float4({C(x)},{C(y)},{C(z)},{C(w)})");
+                ctx.DefineAndBindNode<O>(this, $"f4_ctor", $"float4({C(0)},{C(1)},{C(2)},{C(3)})");
                 break;
             default:
                 throw new Exception();

@@ -1,0 +1,70 @@
+
+float4x4 matrix_0;
+float inj_0;
+float inj_1;
+float3 inj_2;
+float3 inj_3;
+float inj_4;
+float inj_5;
+float inj_6;
+float inj_7;
+RWTexture3D<float> voxels_write;
+RWTexture3D<float3> colors_write;
+int size;
+int3 permuationSeed;
+int3 moduloSeed;
+float3 scale;
+float3 offset;
+#include "Assets/Compute/Noises.cginc"
+#include "Assets/Compute/SDF.cginc"
+#include "Assets/Compute/Other.cginc"
+// defined nodes: 40, depth: 0, index: 0, total lines: 30, argument count: 4 
+void Voxel(float3 position,uint3 id, out float voxel, out float3 color) {
+	float3 projected_0 = mul(matrix_0, float4(position, 1.0)).xyz;
+	float3 projected2_0 = projected_0;
+	float projected2_0_swizzled_0 = projected2_0.y;
+	float3 projected2_0_x_offset_0 = ((projected2_0 + float3(123.8544f, 32.22354f, -359.4854f).xyz) * inj_2.x);
+	float projected2_0_x_offset_0_noised_0 = (snoise((projected2_0_x_offset_0) * inj_5)) * inj_4;
+	float projected2_0_x_offset_0_noised_0_func_0 = (abs(projected2_0_x_offset_0_noised_0));
+	float projected2_0_warped_x_0 = (projected2_0.x + projected2_0_x_offset_0_noised_0_func_0 * inj_3.x);
+	float3 projected2_0_y_offset_0 = ((projected2_0 + float3(65.4238f, -551.1535f, 159.5435f).xyz) * inj_2.y);
+	float projected2_0_y_offset_0_noised_0 = (snoise((projected2_0_y_offset_0) * inj_5)) * inj_4;
+	float projected2_0_y_offset_0_noised_0_func_0 = (abs(projected2_0_y_offset_0_noised_0));
+	float projected2_0_warped_y_0 = (projected2_0.y + projected2_0_y_offset_0_noised_0_func_0 * inj_3.y);
+	float3 projected2_0_z_offset_0 = ((projected2_0 + float3(-43.85454f, -3346.234f, 54.7653f).xyz) * inj_2.z);
+	float projected2_0_z_offset_0_noised_0 = (snoise((projected2_0_z_offset_0) * inj_5)) * inj_4;
+	float projected2_0_z_offset_0_noised_0_func_0 = (abs(projected2_0_z_offset_0_noised_0));
+	float projected2_0_warped_z_0 = (projected2_0.z + projected2_0_z_offset_0_noised_0_func_0 * inj_3.z);
+	float3 f3_ctor_0 = float3(projected2_0_warped_x_0,projected2_0_warped_y_0,projected2_0_warped_z_0);
+	float3 projected2_0_warped_0 = f3_ctor_0;
+	float projected2_0_warped_0_noised_0 = (snoise((projected2_0_warped_0) * inj_1)) * inj_0;
+	float projected2_0_swizzled_0_op_projected2_0_warped_0_noised_0_0 = projected2_0_swizzled_0 + projected2_0_warped_0_noised_0;
+	float projected2_0_swizzled_0_op_inj_6_0 = projected2_0_swizzled_0 / inj_6;
+	const float c_0 = 0.5;
+	float projected2_0_swizzled_0_op_inj_6_0_op_c_0_0 = projected2_0_swizzled_0_op_inj_6_0 * c_0;
+	const float c_1 = 0.5;
+	float projected2_0_swizzled_0_op_inj_6_0_op_c_0_0_op_c_1_0 = projected2_0_swizzled_0_op_inj_6_0_op_c_0_0 + c_1;
+	float3 projected2_0_warped_0_op_projected2_0_0 = projected2_0_warped_0 - projected2_0;
+	float3 inj_7_swizzled_0 = inj_7.xxx;
+	float3 projected2_0_warped_0_op_projected2_0_0_op_inj_7_swizzled_0_0 = projected2_0_warped_0_op_projected2_0_0 / inj_7_swizzled_0;
+	float projected2_0_warped_0_op_projected2_0_0_op_inj_7_swizzled_0_0_length_0 = length(projected2_0_warped_0_op_projected2_0_0_op_inj_7_swizzled_0_0);
+	float projected2_0_swizzled_0_op_inj_6_0_op_c_0_0_op_c_1_0_op_projected2_0_warped_0_op_projected2_0_0_op_inj_7_swizzled_0_0_length_0_0 = projected2_0_swizzled_0_op_inj_6_0_op_c_0_0_op_c_1_0 * projected2_0_warped_0_op_projected2_0_0_op_inj_7_swizzled_0_0_length_0;
+	float3 projected2_0_swizzled_0_op_inj_6_0_op_c_0_0_op_c_1_0_op_projected2_0_warped_0_op_projected2_0_0_op_inj_7_swizzled_0_0_length_0_0_swizzled_0 = projected2_0_swizzled_0_op_inj_6_0_op_c_0_0_op_c_1_0_op_projected2_0_warped_0_op_projected2_0_0_op_inj_7_swizzled_0_0_length_0_0.xxx;
+	voxel = projected2_0_swizzled_0_op_projected2_0_warped_0_noised_0_0;
+	color = projected2_0_swizzled_0_op_inj_6_0_op_c_0_0_op_c_1_0_op_projected2_0_warped_0_op_projected2_0_0_op_inj_7_swizzled_0_0_length_0_0_swizzled_0;
+}
+
+
+#pragma kernel CSVoxel
+[numthreads(8, 8, 8)]
+// Name: CSVoxel, Scope name: Voxel, Scope index: 0, Outputs: 2, Arguments: 4
+void CSVoxel(uint3 id : SV_DispatchThreadID) {
+    uint3 remapped = uint3(id.xyz);
+    float3 position = (float3(remapped * 1) + offset) * scale;
+    float voxel;
+    float3 color;
+    Voxel(position,id,voxel,color);
+    voxels_write[id.xyz] = voxel;
+    colors_write[id.xyz] = color;
+
+}

@@ -56,7 +56,7 @@ public class Test : VoxelGraph {
         var simplex = new Simplex(scale2, amplitude2);
 
         var warperSimplex = new Simplex(warpScale, warpAmplitude);
-        var warped = new Warper(warperSimplex).Warpinate(pos3.Swizzle<float2>("xz"));
+        var warped = new Warper<float2>(warperSimplex).Warpinate(pos3.Swizzle<float2>("xz"));
 
         var fractal2 = new FractalNoise(simplex, FractalNoise.FractalMode.Sum, lacunarity2, persistence2, octaves2).Evaluate(warped);
         var diagonals = new Ramp<float>(spikeGradient2, minRange3, maxRange3, gradientSize).Evaluate(-((fractal2 - spikeOffset).Min(0.0f)));
