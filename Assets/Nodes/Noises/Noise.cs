@@ -2,11 +2,8 @@ using System;
 using UnityEngine;
 
 public abstract class AbstractNoiseNode<I> : Variable<float>, ICloneable {
-    [SerializeReference]
     public Variable<float> amplitude;
-    [SerializeReference]
     public Variable<float> scale;
-    [SerializeReference]
     public Variable<I> position;
 
     public abstract object Clone();

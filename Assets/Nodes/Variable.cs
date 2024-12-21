@@ -1,4 +1,5 @@
 using System;
+using static UnityEngine.Rendering.VolumeComponent;
 
 [Serializable]
 public abstract class Variable<T> : TreeNode {
@@ -72,5 +73,13 @@ public abstract class Variable<T> : TreeNode {
 
     public static Variable<T> ClampZeroOne(Variable<T> t) {
         return new ClampNode<T> { a = Utils.Zero<T>(), b = Utils.One<T>(), t = t };
+    }
+
+    internal Variable<O> Broadcast<O>() {
+        if (Utils.Dimensionality<T>() != 1) {
+            throw new Exception("breh");
+        }
+
+        return new SwizzleNode<T, O> { a = this, swizzle = new string('x', Utils.Dimensionality<O>()) };
     }
 }

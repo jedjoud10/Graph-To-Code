@@ -172,12 +172,6 @@ public abstract class VoxelGraph : MonoBehaviour {
             index++;
         }
 
-        // function definition
-        
-        /*
-
-        */
-
         lines.AddRange(temp);
 
         return lines.Aggregate("", (a, b) => a + "\n" + b);

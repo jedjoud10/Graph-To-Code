@@ -26,7 +26,7 @@ public class Test : VoxelGraph {
     public Inject<float> warpScale;
     public Inject<float> warpAmplitude;
     public Inject<float> spikeOffset;
-    public FractalNoise.FractalMode mode;
+    public Fractal<float2>.FractalMode mode;
     public Texture texture;
     public Inject<float2> textureScale;
     public Inject<float2> textureOffset;
@@ -46,7 +46,7 @@ public class Test : VoxelGraph {
 
         // Simple cached 2D base layer
         var voronoi = new Voronoi(scale, amplitude);
-        var fractal = new FractalNoise(voronoi, mode, lacunarity, persistence, octaves).Evaluate(temp);
+        var fractal = new Fractal<float2>(voronoi, mode, lacunarity, persistence, octaves).Evaluate(temp);
         var ramp = new Ramp<float>(gradient, minRange, maxRange, gradientSize);
         var cached = ramp.Evaluate(fractal).Cached(reduction, "xz");
 
@@ -58,7 +58,7 @@ public class Test : VoxelGraph {
         var warperSimplex = new Simplex(warpScale, warpAmplitude);
         var warped = new Warper<float2>(warperSimplex).Warpinate(pos3.Swizzle<float2>("xz"));
 
-        var fractal2 = new FractalNoise(simplex, FractalNoise.FractalMode.Sum, lacunarity2, persistence2, octaves2).Evaluate(warped);
+        var fractal2 = new Fractal<float2>(simplex, Fractal<float2>.FractalMode.Sum, lacunarity2, persistence2, octaves2).Evaluate(warped);
         var diagonals = new Ramp<float>(spikeGradient2, minRange3, maxRange3, gradientSize).Evaluate(-((fractal2 - spikeOffset).Min(0.0f)));
         //var diagonals = new Ramp<float>(spikeGradient2, minRange3, maxRange3).Evaluate((-(fractal2 - spikeOffset).Min(0.0f)));
 

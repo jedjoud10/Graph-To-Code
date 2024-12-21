@@ -1,0 +1,74 @@
+
+float4x4 _1;
+float _5;
+float _7;
+float _8;
+float _10;
+float _15;
+float _16;
+Texture1D _24_read;
+SamplerState sampler_24_read;
+float _30;
+RWTexture3D<float> voxels_write;
+RWTexture3D<float3> colors_write;
+int size;
+int3 permuationSeed;
+int3 moduloSeed;
+float3 scale;
+float3 offset;
+#include "Assets/Compute/Noises.cginc"
+#include "Assets/Compute/SDF.cginc"
+#include "Assets/Compute/Other.cginc"
+// defined nodes: 36, depth: 0, index: 0, total lines: 33, argument count: 4 
+void Voxel(float3 position,uint3 id, out float voxel, out float3 color) {
+	float3 _2 = mul(_1, float4(position, 1.0)).xyz;
+	float3 _3 = _2;
+	float _4 = _3.y;
+	float _6 = (-(_5));
+	float2 _9 = _3.xz;
+	float _11 = 0.0;
+	float _12 = 1.0;
+	float _13 = 1.0;
+	[unroll]
+	for(uint i = 0; i < 5; i++) {
+		float2 _14 = _9 * _12 + hash21(float(i) * 6543.26912) * 2366.5437;
+		float2 _17 = _12.xx;
+		float2 _18 = _14 * _17;
+		float _19 = (snoise((_18) * _16)) * _15;
+		float _20 = 2 * abs(_19) - abs(_15);
+		float _21 = _20 * _13;
+		float _22 = _11 + _21;
+		_11 = _22;
+		_12 *= _8;
+		_13 *= _10;
+	}
+	float _23 = _11;
+	float _25 = Remap(_23, _6, _7, 0.0, 1.0);
+	float _26 = _24_read.SampleLevel(sampler_24_read, _25, 0).x;
+	float _27 = Remap(_26, 0.0, 1.0, _6, _7);
+	float _28 = _27;
+	float _29 = _4 + _28;
+	float _31 = _4 / _30;
+	const float _32 = 0.5;
+	float _33 = _31 * _32;
+	const float _34 = 0.5;
+	float _35 = _33 + _34;
+	float3 _36 = _35.xxx;
+	voxel = _29;
+	color = _36;
+}
+
+
+#pragma kernel CSVoxel
+[numthreads(8, 8, 8)]
+// Name: CSVoxel, Scope name: Voxel, Scope index: 0, Outputs: 2, Arguments: 4
+void CSVoxel(uint3 id : SV_DispatchThreadID) {
+    uint3 remapped = uint3(id.xyz);
+    float3 position = (float3(remapped * 1) + offset) * scale;
+    float voxel;
+    float3 color;
+    Voxel(position,id,voxel,color);
+    voxels_write[id.xyz] = voxel;
+    colors_write[id.xyz] = color;
+
+}

@@ -45,6 +45,11 @@ void CSFlatten(uint3 id : SV_DispatchThreadID) {
 void CSVertex(uint3 id : SV_DispatchThreadID) {
     int index = id.x + id.y * size + indexOffset * size * size;
     uint3 idTemp = float3(id.x, maxHeight[id.xy], id.y);
+
+    if (idTemp.y == 0 || idTemp.y == size-1) {
+        return;
+    }
+
     float base = densities[idTemp];
     float offset = densities[idTemp + uint3(0, 1, 0)];
     float factor = invLerp(base, offset, 0.0);
