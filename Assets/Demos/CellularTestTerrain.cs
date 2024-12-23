@@ -36,9 +36,9 @@ public class CellularTestTerrain : VoxelGraph {
         var overlay = Noise.Simplex(projected, scale2, amplitude2);
 
         // Test
-        CellularTiler<float3>.Distance distanceFunc = (a, b) => SdfOps.Distance(a, b, distanceFunction);
-        CellularTiler<float3>.ShouldSpawn shouldSpawnFunc = (coords) => Hasher.Evaluate<float3, float>(coords) - shouldSpawn;
-        var distances = new CellularTiler<float3>(distanceFunc, shouldSpawnFunc, tilingModSize) { offset = offset, factor = factor }.Tile(projected * tilerScale + tilerOffset);
+        Cellular<float3>.Distance distanceFunc = (a, b) => SdfOps.Distance(a, b, distanceFunction);
+        Cellular<float3>.ShouldSpawn shouldSpawnFunc = (coords) => Hasher.Evaluate<float3, float>(coords) - shouldSpawn;
+        var distances = new Cellular<float3>(distanceFunc, shouldSpawnFunc, tilingModSize) { offset = offset, factor = factor }.Tile(projected * tilerScale + tilerOffset);
 
         // Sum!!!
         density = overlay + y + evaluated + distances;

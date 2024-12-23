@@ -6,7 +6,7 @@ public class FractalNode<T> : Variable<float> {
     public Variable<T> position;
     public Fractal<T>.Fold fold;
     public Fractal<T>.Inner inner;
-    public Fractal<T>.PreFoldRemap remap;
+    public Fractal<T>.Remap remap;
     public Variable<float> lacunarity;
     public Variable<float> persistence;
     public int octaves;
@@ -48,7 +48,7 @@ public class FractalNode<T> : Variable<float> {
 }
 
 class CreatePreFoldRemapFromModeNode<T> : Variable<float> {
-    public Fractal<T>.FractalMode mode;
+    public FractalMode mode;
     public Variable<float> upperBound;
     public Variable<float> current;
 
@@ -59,13 +59,13 @@ class CreatePreFoldRemapFromModeNode<T> : Variable<float> {
 
         string huh = "";
         switch (mode) {
-            case Fractal<T>.FractalMode.Ridged:
+            case FractalMode.Ridged:
                 huh = $"2 * abs({ctx[current]}) - abs({ctx[upperBound]})";
                 break;
-            case Fractal<T>.FractalMode.Billow:
+            case FractalMode.Billow:
                 huh = $"-(2 * abs({ctx[current]}) - abs({ctx[upperBound]}))";
                 break;
-            case Fractal<T>.FractalMode.Sum:
+            case FractalMode.Sum:
                 huh = $"{ctx[current]}";
                 break;
         }
@@ -74,65 +74,70 @@ class CreatePreFoldRemapFromModeNode<T> : Variable<float> {
     }
 }
 
+public enum FractalMode {
+    Ridged,
+    Billow,
+    Sum,
+}
+
 public class Fractal<T> {
     public delegate Variable<float> Inner(Variable<T> position);
     public delegate Variable<float> Fold(Variable<float> last, Variable<float> current);
-    public delegate Variable<float> PreFoldRemap(Variable<float> current);
+    public delegate Variable<float> Remap(Variable<float> current);
 
     public Inner inner;
     public Fold fold;
-    public PreFoldRemap preFoldRemap;
+    public Remap remap;
 
     public Variable<float> persistence;
     public Variable<float> lacunarity;
     public int octaves;
 
-    public enum FractalMode {
-        Ridged,
-        Billow,
-        Sum,
-    }
-
-    public static PreFoldRemap CreatePreFoldRemapFromNoise(Noise noise, FractalMode mode) {
+    public static Remap CreatePreFoldRemapFromNoise(Noise noise, FractalMode mode) {
         return (current) => new CreatePreFoldRemapFromModeNode<T>() { current = current, mode = mode, upperBound = noise.CreateAbstractYetToEval<T>().amplitude };
     }
 
-    public Fractal(Noise noise, FractalMode mode, Variable<float> lacunarity, Variable<float> persistence, int octaves) {
+    public Fractal(Noise noise, FractalMode mode, int octaves, Variable<float> lacunarity = null, Variable<float> persistence = null) {
         this.lacunarity = lacunarity;
         this.persistence = persistence;
         this.inner = (Variable<T> position) => { return noise.Evaluate(position); };
-        this.preFoldRemap = CreatePreFoldRemapFromNoise(noise, mode);
-        this.fold = (last, current) => last + current;
+        this.remap = CreatePreFoldRemapFromNoise(noise, mode);
         this.octaves = octaves;
     }
 
-    public Fractal(Inner inner, Variable<float> lacunarity, Variable<float> persistence, int octaves) {
+    public Fractal(Inner inner, int octaves, Variable<float> lacunarity = null, Variable<float> persistence = null, Fold fold = null, Remap remap = null) {
         this.lacunarity = lacunarity;
         this.persistence = persistence;
         this.inner = inner;
-        this.preFoldRemap = (current) => current;
         this.fold = (last, current) => last + current;
         this.octaves = octaves;
-    }
-
-    public Fractal(Noise noise, FractalMode mode, int octaves) {
-        this.inner = (Variable<T> position) => { return noise.Evaluate(position); };
-        this.lacunarity = 2.0f;
-        this.persistence = 0.5f;
-        this.octaves = octaves;
-        this.preFoldRemap = CreatePreFoldRemapFromNoise(noise, mode);
-        this.fold = (last, current) => last + current;
+        this.fold = fold;
+        this.remap = remap;
     }
 
     public Variable<float> Evaluate(Variable<T> position) {
+        if (inner == null) {
+            throw new Exception("Inner function for fractal accumulator is null");
+        }
+
         return new FractalNode<T> {
-            fold = fold,
             inner = inner,
-            remap = preFoldRemap,
-            lacunarity = lacunarity,
-            persistence = persistence,
+            fold = fold != null ? fold : (current, last) => current + last,
+            remap = remap != null ? remap : (current) => current,
+            lacunarity = lacunarity != null ? lacunarity : 2.0f,
+            persistence = persistence != null ? persistence : 0.5f,
             octaves = octaves,
             position = position
         };
+    }
+
+    public static Variable<float> Evaluate(Variable<T> position, Noise noise, FractalMode mode, int octaves, Variable<float> lacunarity = null, Variable<float> persistence = null) {
+        Fractal<T> test = new Fractal<T>(noise, mode, octaves, lacunarity, persistence);
+        return test.Evaluate(position);
+    }
+
+    public static Variable<float> Evaluate(Variable<T> position, Inner inner, int octaves, Variable<float> lacunarity = null, Variable<float> persistence = null, Fold fold = null, Remap remap = null) {
+        Fractal<T> test = new Fractal<T>(inner, octaves, lacunarity, persistence, fold, remap);
+        return test.Evaluate(position);
     }
 }

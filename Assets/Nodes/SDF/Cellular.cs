@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 
-public class CellularTilerNode<T> : Variable<float> {
+public class CellularNode<T> : Variable<float> {
 	public Variable<T> inner;
 	public float tilingModSize;
-	public CellularTiler<T>.Distance distance;
-    public CellularTiler<T>.ShouldSpawn shouldSpawn;
+	public Cellular<T>.Distance distance;
+    public Cellular<T>.ShouldSpawn shouldSpawn;
 
     public Variable<float> offset;
     public Variable<float> factor;
@@ -116,7 +116,7 @@ float output = 100.0;
     }
 }
 
-public class CellularTiler<T> {
+public class Cellular<T> {
 	public float tilingModSize;
 
     public delegate Variable<float> Distance(Variable<T> a, Variable<T> b);
@@ -129,7 +129,7 @@ public class CellularTiler<T> {
     public Variable<float> offset;
     public Variable<float> factor;
 
-    public CellularTiler(Distance distance = null, ShouldSpawn shouldSpawn = null, float ilingModSize = -1) {
+    public Cellular(Distance distance = null, ShouldSpawn shouldSpawn = null, float ilingModSize = -1) {
         this.distance = distance;
         this.tilingModSize = ilingModSize;
         this.shouldSpawn = shouldSpawn;
@@ -138,10 +138,10 @@ public class CellularTiler<T> {
     }
 
     public Variable<float> Tile(Variable<T> position) {
-        return new CellularTilerNode<T>() {
+        return new CellularNode<T>() {
 			tilingModSize = tilingModSize,
 			distance = distance != null ? distance : (a, b) => SdfOps.Distance(a, b),
-			shouldSpawn = shouldSpawn != null ? shouldSpawn : (pos) => -1.0f,
+			shouldSpawn = shouldSpawn != null ? shouldSpawn : (pos) => 1.0f,
 			inner = position,
             offset = offset,
             factor = factor,

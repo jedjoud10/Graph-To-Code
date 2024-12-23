@@ -7,6 +7,7 @@ public class DensityVisualizer : MonoBehaviour {
     public ComputeShader heightMapCompute;
     private GraphicsBuffer indexBuffer;
     private GraphicsBuffer vertexBuffer;
+    private GraphicsBuffer uvsBuffer;
     private GraphicsBuffer normalsBuffer;
     private GraphicsBuffer colorsBuffer;
     private GraphicsBuffer commandBuffer;
@@ -33,6 +34,7 @@ public class DensityVisualizer : MonoBehaviour {
 
         size = newSize;
         indexBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, size * size * size * 6, sizeof(int));
+        uvsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, size * size * size, sizeof(float) * 2);
         vertexBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, size * size * size, sizeof(float) * 3);
         normalsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, size * size * size, sizeof(float) * 3);
         colorsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, size * size * size, sizeof(float) * 3);
@@ -73,15 +75,15 @@ public class DensityVisualizer : MonoBehaviour {
         maxHeightAtomic.Release();
     }
 
-    public void Meshify(RenderTexture voxels, RenderTexture colors) {
+    public void Meshify(RenderTexture voxels, RenderTexture colors, RenderTexture uvs) {
         if (useHeightSimplification) {
             ExecuteHeightMapMesher(voxels, colors, -1, Vector3Int.zero);
         } else {
-            ExecuteSurfaceNetsMesher(voxels, colors);
+            ExecuteSurfaceNetsMesher(voxels, colors, uvs);
         }
     }
 
-    public void ExecuteSurfaceNetsMesher(RenderTexture voxels, RenderTexture colors) {
+    public void ExecuteSurfaceNetsMesher(RenderTexture voxels, RenderTexture colors, RenderTexture uvs) {
         if (atomicCounters == null || !atomicCounters.IsValid())
             return;
 
@@ -96,8 +98,10 @@ public class DensityVisualizer : MonoBehaviour {
         int id = shader.FindKernel("CSVertex");
         shader.SetTexture(id, "densities", voxels);
         shader.SetTexture(id, "colorsIn", colors);
+        shader.SetTexture(id, "uvsIn", uvs);
         shader.SetBuffer(id, "atomicCounters", atomicCounters);
         shader.SetBuffer(id, "vertices", vertexBuffer);
+        shader.SetBuffer(id, "uvs", uvsBuffer);
         shader.SetBuffer(id, "normals", normalsBuffer);
         shader.SetBuffer(id, "colors", colorsBuffer);
         shader.SetBuffer(id, "cmdBuffer", commandBuffer);
@@ -189,6 +193,7 @@ public class DensityVisualizer : MonoBehaviour {
         mat.SetBuffer("_Vertices", vertexBuffer);
         mat.SetBuffer("_Normals", normalsBuffer);
         mat.SetBuffer("_Colors", colorsBuffer);
+        mat.SetBuffer("_Uvs", uvsBuffer);
         renderParams.matProps = mat;
 
         Graphics.RenderPrimitivesIndexedIndirect(renderParams, MeshTopology.Triangles, indexBuffer, commandBuffer);

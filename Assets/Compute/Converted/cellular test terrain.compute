@@ -12,6 +12,7 @@ float _24;
 float _35;
 RWTexture3D<float> voxels_write;
 RWTexture3D<float3> colors_write;
+RWTexture3D<float2> uvs_write;
 int size;
 int3 permuationSeed;
 int3 moduloSeed;
@@ -59,8 +60,8 @@ void _19(float3 _18, out float _19_sdf_output) {
 	_19_sdf_output = _32;
 }
 
-// defined nodes: 28, depth: 0, index: 1, total lines: 21, argument count: 4 
-void Voxel(float3 position,uint3 id, out float voxel, out float3 color) {
+// defined nodes: 30, depth: 0, index: 1, total lines: 23, argument count: 5 
+void Voxel(float3 position,uint3 id, out float voxel, out float3 color, out float2 uvs) {
 	float3 _4 = mul(_3, float4(position, 1.0)).xyz;
 	float3 _5 = _4;
 	float _6 = (snoise((_5) * _2)) * _1;
@@ -82,21 +83,26 @@ void Voxel(float3 position,uint3 id, out float voxel, out float3 color) {
 	float3 _39 = _38.xxx;
 	const float3 _40 = float3(0.5,0.5,0.5);
 	float3 _41 = _39 * _40;
+	const float _42 = 0;
+	float2 _43 = float2(_42,_42);
 	voxel = _34;
 	color = _41;
+	uvs = _43;
 }
 
 
 #pragma kernel CSVoxel
 [numthreads(8, 8, 8)]
-// Name: CSVoxel, Scope name: Voxel, Scope index: 0, Outputs: 2, Arguments: 4
+// Name: CSVoxel, Scope name: Voxel, Scope index: 0, Outputs: 3, Arguments: 5
 void CSVoxel(uint3 id : SV_DispatchThreadID) {
     uint3 remapped = uint3(id.xyz);
     float3 position = (float3(remapped * 1) + offset) * scale;
     float voxel;
     float3 color;
-    Voxel(position,id,voxel,color);
+    float2 uvs;
+    Voxel(position,id,voxel,color,uvs);
     voxels_write[id.xyz] = voxel;
     colors_write[id.xyz] = color;
+    uvs_write[id.xyz] = uvs;
 
 }

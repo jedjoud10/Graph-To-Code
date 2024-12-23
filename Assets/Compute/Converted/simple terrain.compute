@@ -5,6 +5,7 @@ float inj_1;
 float inj_2;
 RWTexture3D<float> voxels_write;
 RWTexture3D<float3> colors_write;
+RWTexture3D<float2> uvs_write;
 int size;
 int3 permuationSeed;
 int3 moduloSeed;
@@ -13,8 +14,8 @@ float3 offset;
 #include "Assets/Compute/Noises.cginc"
 #include "Assets/Compute/SDF.cginc"
 #include "Assets/Compute/Other.cginc"
-// defined nodes: 17, depth: 0, index: 0, total lines: 12, argument count: 4 
-void Voxel(float3 position,uint3 id, out float voxel, out float3 color) {
+// defined nodes: 19, depth: 0, index: 0, total lines: 14, argument count: 5 
+void Voxel(float3 position,uint3 id, out float voxel, out float3 color, out float2 uvs) {
 	float3 projected_0 = mul(matrix_0, float4(position, 1.0)).xyz;
 	float3 projected2_0 = projected_0;
 	float projected2_0_swizzled_0 = projected2_0.y;
@@ -27,21 +28,26 @@ void Voxel(float3 position,uint3 id, out float voxel, out float3 color) {
 	const float c_1 = 0.5;
 	float projected2_0_swizzled_0_op_inj_2_0_op_c_0_0_op_c_1_0 = projected2_0_swizzled_0_op_inj_2_0_op_c_0_0 + c_1;
 	float3 projected2_0_swizzled_0_op_inj_2_0_op_c_0_0_op_c_1_0_swizzled_0 = projected2_0_swizzled_0_op_inj_2_0_op_c_0_0_op_c_1_0.xxx;
+	const float c_2 = 0;
+	float2 f2_ctor_0 = float2(c_2,c_2);
 	voxel = projected2_0_swizzled_0_op_projected2_0_swizzled_1_noised_0_0;
 	color = projected2_0_swizzled_0_op_inj_2_0_op_c_0_0_op_c_1_0_swizzled_0;
+	uvs = f2_ctor_0;
 }
 
 
 #pragma kernel CSVoxel
 [numthreads(8, 8, 8)]
-// Name: CSVoxel, Scope name: Voxel, Scope index: 0, Outputs: 2, Arguments: 4
+// Name: CSVoxel, Scope name: Voxel, Scope index: 0, Outputs: 3, Arguments: 5
 void CSVoxel(uint3 id : SV_DispatchThreadID) {
     uint3 remapped = uint3(id.xyz);
     float3 position = (float3(remapped * 1) + offset) * scale;
     float voxel;
     float3 color;
-    Voxel(position,id,voxel,color);
+    float2 uvs;
+    Voxel(position,id,voxel,color,uvs);
     voxels_write[id.xyz] = voxel;
     colors_write[id.xyz] = color;
+    uvs_write[id.xyz] = uvs;
 
 }
