@@ -22,7 +22,7 @@ public class CellularTestTerrain : VoxelGraph {
     public float tilingModSize = 16;
     public SdfOps.DistanceMetric distanceFunction;
 
-    public override void Execute(Variable<float3> position, Variable<uint3> id, out Variable<float> density, out Variable<float3> color) {
+    public override void Execute(Variable<float3> position, out Variable<float> density, out Variable<float3> color) {
         // Project the position using the main transformation
         var transformer = new ApplyTransformation(transform1);
         var projected = transformer.Transform(position);

@@ -14,8 +14,16 @@ float3 offset;
 #include "Assets/Compute/Noises.cginc"
 #include "Assets/Compute/SDF.cginc"
 #include "Assets/Compute/Other.cginc"
-// defined nodes: 19, depth: 0, index: 0, total lines: 14, argument count: 5 
-void Voxel(float3 position,uint3 id, out float voxel, out float3 color, out float2 uvs) {
+
+float3 ConvertIntoWorldPosition(float3 tahini) {
+    return  (tahini + offset) * scale;
+}
+
+float3 ConvertFromWorldPosition(float3 worldPos) {
+    return  (worldPos / scale) - offset;
+}
+// defined nodes: 18, depth: 0, index: 0, total lines: 14, argument count: 4 
+void Voxel(float3 position, out float voxel, out float3 color, out float2 uvs) {
 	float3 projected_0 = mul(matrix_0, float4(position, 1.0)).xyz;
 	float3 projected2_0 = projected_0;
 	float projected2_0_swizzled_0 = projected2_0.y;
@@ -38,14 +46,15 @@ void Voxel(float3 position,uint3 id, out float voxel, out float3 color, out floa
 
 #pragma kernel CSVoxel
 [numthreads(8, 8, 8)]
-// Name: CSVoxel, Scope name: Voxel, Scope index: 0, Outputs: 3, Arguments: 5
+// Name: CSVoxel, Scope name: Voxel, Scope index: 0, Outputs: 3, Arguments: 4
 void CSVoxel(uint3 id : SV_DispatchThreadID) {
     uint3 remapped = uint3(id.xyz);
-    float3 position = (float3(remapped * 1) + offset) * scale;
+    //float3 position = (float3(remapped * 1) + offset) * scale
+    float3 position = ConvertIntoWorldPosition(float3(remapped) * 1);
     float voxel;
     float3 color;
     float2 uvs;
-    Voxel(position,id,voxel,color,uvs);
+    Voxel(position,voxel,color,uvs);
     voxels_write[id.xyz] = voxel;
     colors_write[id.xyz] = color;
     uvs_write[id.xyz] = uvs;

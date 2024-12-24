@@ -56,7 +56,6 @@ public abstract class VoxelGraph : MonoBehaviour {
 
     public class AllInputs {
         public Variable<float3> position;
-        public Variable<uint3> id;
     }
 
     public class AllOutputs {
@@ -67,14 +66,14 @@ public abstract class VoxelGraph : MonoBehaviour {
     }
 
     // Execute the voxel graph at a specific position and fetch the density and material values
-    public abstract void Execute(Variable<float3> position, Variable<uint3> id, out Variable<float> density, out Variable<float3> color);
+    public abstract void Execute(Variable<float3> position, out Variable<float> density, out Variable<float3> color);
 
     // Even lower execution function that allows you to override metallic and smoothness values (and even probably pass your own uv values if needed)
     public virtual void ExecuteWithEverything(AllInputs input, out AllOutputs output) {
         output = new AllOutputs();
         output.metallic = 0.0f;
         output.smoothness = 0.0f;
-        Execute(input.position, input.id, out output.density, out output.color);
+        Execute(input.position, out output.density, out output.color);
     }
 
     // Parses the voxel graph into a tree context with all required nodes and everything!!!
@@ -83,18 +82,15 @@ public abstract class VoxelGraph : MonoBehaviour {
 
         // Create the external inputs that we use inside the function scope
         Variable<float3> position = ctx.AliasExternalInput<float3>("position");
-        Variable<uint3> id = ctx.AliasExternalInput<uint3>("id");
 
         // Input scope arguments
         ctx.position = new ScopeArgument("position", Utils.StrictType.Float3, position, false);
-        ctx.id = new ScopeArgument("id", Utils.StrictType.Uint3, id, false);
         
         // Execute the voxel graph to get density and color
-        AllInputs inputs = new AllInputs() { id = id, position = position };
+        AllInputs inputs = new AllInputs() { position = position };
         ExecuteWithEverything(inputs, out AllOutputs outputs);
 
         var combinedUvs = new ConstructNode<float2>() { inputs = new Variable<float>[2] { outputs.smoothness, outputs.smoothness } };
-        //Execute(position, id, out Variable<float> density, out Variable<float3> color);
 
         // Voxel function output arguments 
         ScopeArgument voxelArgument = new ScopeArgument("voxel", Utils.StrictType.Float, outputs.density, true);
@@ -105,7 +101,7 @@ public abstract class VoxelGraph : MonoBehaviour {
         // We can't initialize the scope again because it contains the shader graph nodes
         ctx.scopes[0].name = "Voxel";
         ctx.scopes[0].arguments = new ScopeArgument[] {
-            ctx.position, ctx.id, voxelArgument, colorArgument, uvsArgument
+            ctx.position, voxelArgument, colorArgument, uvsArgument
         };
 
         // Voxel kernel dispatcher
@@ -161,6 +157,15 @@ public abstract class VoxelGraph : MonoBehaviour {
         lines.Add("#include \"Assets/Compute/Noises.cginc\"");
         lines.Add("#include \"Assets/Compute/SDF.cginc\"");
         lines.Add("#include \"Assets/Compute/Other.cginc\"");
+
+        lines.Add(@"
+float3 ConvertIntoWorldPosition(float3 tahini) {
+    return  (tahini + offset) * scale;
+}
+
+float3 ConvertFromWorldPosition(float3 worldPos) {
+    return  (worldPos / scale) - offset;
+}");
 
         var temp = ctx.computeKernelNameAndDepth.AsEnumerable().Select(x => x.ConvertToKernelString(ctx)).ToList();
 

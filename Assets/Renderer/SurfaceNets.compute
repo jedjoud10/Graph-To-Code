@@ -5,16 +5,12 @@
 #include "UnityIndirect.cginc"
 
 RWTexture3D<float> densities;
-RWTexture3D<float3> colorsIn;
-RWTexture3D<float2> uvsIn;
 RWTexture3D<uint> vertexIds;
 
 bool blocky;
 int size;
 
 RWStructuredBuffer<float3> vertices;
-RWStructuredBuffer<float3> normals;
-RWStructuredBuffer<float3> colors;
 RWStructuredBuffer<float2> uvs;
 RWStructuredBuffer<int> indices;
 
@@ -121,9 +117,6 @@ void CSVertex(uint3 id : SV_DispatchThreadID) {
             } else {
                 float unlerped = invLerp(firstDensity, secondDensity, 0.0);
                 sum += lerp(float3(first), float3(second), unlerped);
-                normalSum += normalize(lerp(normalMaxx(id + first), normalMaxx(id + second), unlerped));
-                colorSum += lerp(colorsIn[id + first], colorsIn[id + second], unlerped);
-                uvsSum += lerp(uvsIn[id + first], uvsIn[id + second], unlerped);
             }
         }
     }
@@ -133,9 +126,7 @@ void CSVertex(uint3 id : SV_DispatchThreadID) {
         InterlockedAdd(atomicCounters[0], 1, oldValue); 
         vertices[oldValue] = float3(id) + sum/float(count);
         normals[oldValue] = normalize(-normalSum);
-        colors[oldValue] = colorSum / float(count);
-        vertexIds[id+1] = oldValue;   
-        uvs[oldValue] = uvsSum / float(count);
+        uvs[oldValue] = float(oldValue) / 1000.0;
     }
 }
 

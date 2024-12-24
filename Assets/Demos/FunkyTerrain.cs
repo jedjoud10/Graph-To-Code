@@ -38,7 +38,7 @@ public class Test : VoxelGraph {
     [Range(1, 10)]
     public int octaves2;
 
-    public override void Execute(Variable<float3> position, Variable<uint3> id, out Variable<float> density, out Variable<float3> color) {
+    public override void Execute(Variable<float3> position, out Variable<float> density, out Variable<float3> color) {
         var transformer = new ApplyTransformation(transform1);
         var pos2 = transformer.Transform(position);
         var output = pos2.Swizzle<float>("y");

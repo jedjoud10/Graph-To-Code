@@ -65,14 +65,12 @@ public class CachedNode<T> : Variable<T> {
         int oldScopeIndex = context.currentScope;
 
         TreeNode positionNode = context.position.node;
-        TreeNode idNode = context.id.node;
         string positionName = context[context.position.node];
-        string idName = context[context.id.node];
-
+        
         context.scopes.Add(new TreeScope(context.scopeDepth + 1) {
             name = scopeName,
-            arguments = new ScopeArgument[] { context.position, context.id, output, },
-            namesToNodes = new Dictionary<TreeNode, string> { { positionNode, positionName }, { idNode, idName } },
+            arguments = new ScopeArgument[] { context.position, output, },
+            namesToNodes = new Dictionary<TreeNode, string> { { positionNode, positionName } },
         });
 
         // ENTER NEW SCOPE!!!
@@ -81,7 +79,6 @@ public class CachedNode<T> : Variable<T> {
 
         // Add the start node (position node) to the new scope
         context.scopes[index].namesToNodes.TryAdd(positionNode, positionName);
-        context.scopes[index].namesToNodes.TryAdd(idNode, idName);
 
         // Call the recursive handle function within the indented scope
         inner.Handle(context);
