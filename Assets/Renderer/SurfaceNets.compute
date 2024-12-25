@@ -129,7 +129,8 @@ void CSVertex(uint3 id : SV_DispatchThreadID) {
         InterlockedAdd(atomicCounters[0], 1, oldValue); 
         vertices[oldValue] = float3(id) + sum/float(count);
         normals[oldValue] = normalize(-normalSum);
-        colors[oldValue] = colorSum / float(count);
+        //colors[oldValue] = colorSum / float(count);
+        colors[oldValue] = fmod(oldValue, 1000) / 1000.0;
         vertexIds[id+1] = oldValue;   
     }
 }
@@ -168,6 +169,10 @@ void CSQuad(uint3 id : SV_DispatchThreadID) {
                 indices[oldValue + (flip ? 4 : 3)] = check[2];
                 indices[oldValue + 5] = check[3];
                 indices[oldValue + (flip ? 3 : 4)] = check[0];
+
+                for (int j = 0; j < 4; j++) {
+                    colors[check[j]] = j / 4.0;
+                }
                 
     
                 InterlockedAdd(cmdBuffer[0].indexCountPerInstance, 6); 

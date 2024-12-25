@@ -9,7 +9,7 @@ float3 _17;
 float _20;
 float _21;
 float _24;
-float _35;
+float _31;
 RWTexture3D<float> voxels_write;
 RWTexture3D<float3> colors_write;
 RWTexture3D<float2> uvs_write;
@@ -29,7 +29,7 @@ float3 ConvertIntoWorldPosition(float3 tahini) {
 float3 ConvertFromWorldPosition(float3 worldPos) {
     return  (worldPos / scale) - offset;
 }
-// defined nodes: 14, depth: 1, index: 0, total lines: 34, argument count: 2 
+// defined nodes: 10, depth: 1, index: 0, total lines: 30, argument count: 2 
 void _19(float3 _18, out float _19_sdf_output) {
 	
 	float3 posCell = floor(_18);
@@ -54,18 +54,14 @@ void _19(float3 _18, out float _19_sdf_output) {
 	        float3 checkingPos = cell + randomOffset;
 	
 			float3 _26 = checkingPos;
-			float3 _27 = abs(_26 - _18);
-			float _28 = _27.x;
-			float _29 = max(_28, _27.y);
-			float _30 = max(_29, _27.z);
-			float _31 = _30;
+			float _27 = dot(abs(_26 - _18), 1.0) / 1.414;
 	
-	        output = min(output, _31);
+	        output = min(output, _27);
 	    }
 	}
 	
-	float _32 = min(output, 1.0) * _21 + _20;
-	_19_sdf_output = _32;
+	float _28 = min(output, 1.0) * _21 + _20;
+	_19_sdf_output = _28;
 }
 
 // defined nodes: 27, depth: 0, index: 1, total lines: 21, argument count: 3 
@@ -83,16 +79,16 @@ void Voxel(float3 position, out float voxel, out float3 color) {
 	float3 _18 = _16 + _17;
     float _19_sdf_output;
     _19(_18,_19_sdf_output);
-	float _33 = _19_sdf_output;
-	float _34 = _14 + _33;
-	const float _36 = 2;
-	float _37 = _35 / _36;
-	float _38 = _13 / _37;
-	float3 _39 = _38.xxx;
-	const float3 _40 = float3(0.5,0.5,0.5);
-	float3 _41 = _39 * _40;
-	voxel = _34;
-	color = _41;
+	float _29 = _19_sdf_output;
+	float _30 = _14 + _29;
+	const float _32 = 2;
+	float _33 = _31 / _32;
+	float _34 = _13 / _33;
+	float3 _35 = _34.xxx;
+	const float3 _36 = float3(0.5,0.5,0.5);
+	float3 _37 = _35 * _36;
+	voxel = _30;
+	color = _37;
 }
 
 

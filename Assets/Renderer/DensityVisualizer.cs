@@ -112,6 +112,7 @@ public class DensityVisualizer : MonoBehaviour {
         id = shader.FindKernel("CSQuad");
         shader.SetTexture(id, "densities", voxels);
         shader.SetBuffer(id, "indices", indexBuffer);
+        shader.SetBuffer(id, "colors", colorsBuffer);
         shader.SetTexture(id, "vertexIds", tempVertexTexture);
         shader.SetBuffer(id, "cmdBuffer", commandBuffer);
         shader.SetBuffer(id, "atomicCounters", atomicCounters);
