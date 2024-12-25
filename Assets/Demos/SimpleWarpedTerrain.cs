@@ -17,7 +17,7 @@ public class SimpleWarpingTerrain : VoxelGraph {
     public Inject<float3> axialAmplitude;
     public Inject<float3> axialScale;
 
-    public override void Execute(Variable<float3> position, Variable<uint3> id, out Variable<float> density, out Variable<float3> color) {
+    public override void Execute(Variable<float3> position, out Variable<float> density, out Variable<float3> color) {
         // Project the position using the main transformation
         var transformer = new ApplyTransformation(transform1);
         var projected = transformer.Transform(position);

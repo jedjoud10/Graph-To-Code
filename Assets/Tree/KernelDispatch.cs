@@ -34,7 +34,8 @@ public class KernelDispatch {
 // Name: {name}, Scope name: {scopeName}, Scope index: {scopeIndex}, Outputs: {outputs.Length}, Arguments: {scope.arguments.Length}
 void CS{scopeName}(uint3 id : SV_DispatchThreadID) {{
     uint3 remapped = uint3({remappedCoords});
-    float3 position = (float3(remapped * {frac}) + offset) * scale;
+    //float3 position = (float3(remapped * {frac}) + offset) * scale
+    float3 position = ConvertIntoWorldPosition(float3(remapped) * {frac});
 {scope.InitializeTempnation()}
 {scope.Callenate()}
 {kernelOutputSetter}

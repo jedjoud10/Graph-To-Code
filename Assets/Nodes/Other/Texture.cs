@@ -1,7 +1,21 @@
 using System;
 using System.Collections.Generic;
 using Unity.Mathematics;
+using UnityEditor.PackageManager.UI;
 using UnityEngine;
+using UnityEngine.Profiling;
+
+public class SampleableTexture<T> {
+    public string textureName;
+    public Variable<float> level;
+    public Variable<T> scale;
+    public Variable<T> offset;
+    public TreeContext context;
+
+    public Variable<float4> SampleLeBruh(Variable<T> coordinates) {
+        return context.AssignTempVariable<float4>("hehehehe", $"{textureName}_read.SampleLevel(sampler{textureName}_read, {context[coordinates]} * {context[scale]} + {context[offset]}, {context[level]})");
+    }
+}
 
 public class TextureSampleNode<T> : Variable<float4> {
     public Variable<T> coordinates;
@@ -31,7 +45,17 @@ public class TextureSampleNode<T> : Variable<float4> {
         tempTextureName = textureName;
         context.properties.Add($"Texture{dimensionality}D {textureName}_read;");
         context.properties.Add($"SamplerState sampler{textureName}_read;");
-        context.DefineAndBindNode<float4>(this, "hehehehe", $"{textureName}_read.SampleLevel(sampler{textureName}_read, {context[coordinates]} * {context[sampler.scale]} + {context[sampler.offset]}, {context[sampler.level]})");
+
+        Variable<float4> aaa = sampler.function(new SampleableTexture<T> {
+            level = sampler.level,
+            offset = sampler.offset,
+            scale = sampler.scale,
+            textureName = tempTextureName,
+            context = context,
+        }, coordinates);
+        aaa.Handle(context);
+        context.DefineAndBindNode<T>(this, "aaa", $"{context[aaa]}.{Utils.SwizzleFromFloat4<T>()}");
+
         context.textures.Add(tempTextureName, new UserTextureDescriptor {
             readKernels = new List<string>() { $"CS{context.scopes[context.currentScope].name}" },
             name = tempTextureName,
@@ -45,12 +69,22 @@ public class TextureSampler<T> {
     public Variable<float> level;
     public Variable<T> scale;
     public Variable<T> offset;
+    public delegate Variable<float4> FindNameForThisPls(SampleableTexture<T> texture, Variable<T> coords);
+    public FindNameForThisPls function;
 
     public TextureSampler(Texture texture) {
         this.level = 0.0f;
         this.scale = Utils.One<T>();
         this.offset = Utils.Zero<T>();
         this.texture = texture;
+        this.function = (texture, coords) => texture.SampleLeBruh(coords);
+    }
+
+    public FindNameForThisPls LeConvolutionTahiniSauce() {
+        return (texture, coords) => {
+            return null;
+            // aaaaaaa
+        };
     }
 
     public Variable<float4> Sample(Variable<T> input) {

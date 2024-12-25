@@ -11,6 +11,7 @@ SamplerState sampler_24_read;
 float _30;
 RWTexture3D<float> voxels_write;
 RWTexture3D<float3> colors_write;
+RWTexture3D<float2> uvs_write;
 int size;
 int3 permuationSeed;
 int3 moduloSeed;
@@ -19,8 +20,16 @@ float3 offset;
 #include "Assets/Compute/Noises.cginc"
 #include "Assets/Compute/SDF.cginc"
 #include "Assets/Compute/Other.cginc"
-// defined nodes: 36, depth: 0, index: 0, total lines: 33, argument count: 4 
-void Voxel(float3 position,uint3 id, out float voxel, out float3 color) {
+
+float3 ConvertIntoWorldPosition(float3 tahini) {
+    return  (tahini + offset) * scale;
+}
+
+float3 ConvertFromWorldPosition(float3 worldPos) {
+    return  (worldPos / scale) - offset;
+}
+// defined nodes: 35, depth: 0, index: 0, total lines: 33, argument count: 3 
+void Voxel(float3 position, out float voxel, out float3 color) {
 	float3 _2 = mul(_1, float4(position, 1.0)).xyz;
 	float3 _3 = _2;
 	float _4 = _3.y;
@@ -30,7 +39,7 @@ void Voxel(float3 position,uint3 id, out float voxel, out float3 color) {
 	float _12 = 1.0;
 	float _13 = 1.0;
 	[unroll]
-	for(uint i = 0; i < 5; i++) {
+	for(uint i = 0; i < 4; i++) {
 		float2 _14 = _9 * _12 + hash21(float(i) * 6543.26912) * 2366.5437;
 		float2 _17 = _12.xx;
 		float2 _18 = _14 * _17;
@@ -61,13 +70,14 @@ void Voxel(float3 position,uint3 id, out float voxel, out float3 color) {
 
 #pragma kernel CSVoxel
 [numthreads(8, 8, 8)]
-// Name: CSVoxel, Scope name: Voxel, Scope index: 0, Outputs: 2, Arguments: 4
+// Name: CSVoxel, Scope name: Voxel, Scope index: 0, Outputs: 2, Arguments: 3
 void CSVoxel(uint3 id : SV_DispatchThreadID) {
     uint3 remapped = uint3(id.xyz);
-    float3 position = (float3(remapped * 1) + offset) * scale;
+    //float3 position = (float3(remapped * 1) + offset) * scale
+    float3 position = ConvertIntoWorldPosition(float3(remapped) * 1);
     float voxel;
     float3 color;
-    Voxel(position,id,voxel,color);
+    Voxel(position,voxel,color);
     voxels_write[id.xyz] = voxel;
     colors_write[id.xyz] = color;
 

@@ -26,7 +26,7 @@ public class Test : VoxelGraph {
     public Inject<float> warpScale;
     public Inject<float> warpAmplitude;
     public Inject<float> spikeOffset;
-    public Fractal<float2>.FractalMode mode;
+    public FractalMode mode;
     public Texture texture;
     public Inject<float2> textureScale;
     public Inject<float2> textureOffset;
@@ -38,7 +38,7 @@ public class Test : VoxelGraph {
     [Range(1, 10)]
     public int octaves2;
 
-    public override void Execute(Variable<float3> position, Variable<uint3> id, out Variable<float> density, out Variable<float3> color) {
+    public override void Execute(Variable<float3> position, out Variable<float> density, out Variable<float3> color) {
         var transformer = new ApplyTransformation(transform1);
         var pos2 = transformer.Transform(position);
         var output = pos2.Swizzle<float>("y");
@@ -46,9 +46,9 @@ public class Test : VoxelGraph {
 
         // Simple cached 2D base layer
         var voronoi = new Voronoi(scale, amplitude);
-        var fractal = new Fractal<float2>(voronoi, mode, lacunarity, persistence, octaves).Evaluate(temp);
-        var ramp = new Ramp<float>(gradient, minRange, maxRange, gradientSize);
-        var cached = ramp.Evaluate(fractal).Cached(reduction, "xz");
+        var fractal = Fractal<float2>.Evaluate(temp, voronoi, mode, octaves, lacunarity, persistence);
+        var ramp = Ramp<float>.Evaluate(fractal, gradient, minRange, maxRange, gradientSize);
+        var cached = ramp.Cached(reduction, "xz");
 
         // 3D secondary transformed layer
         var transformer2 = new ApplyTransformation(transform2);
@@ -58,8 +58,8 @@ public class Test : VoxelGraph {
         var warperSimplex = new Simplex(warpScale, warpAmplitude);
         var warped = new Warper<float2>(warperSimplex).Warpinate(pos3.Swizzle<float2>("xz"));
 
-        var fractal2 = new Fractal<float2>(simplex, Fractal<float2>.FractalMode.Sum, lacunarity2, persistence2, octaves2).Evaluate(warped);
-        var diagonals = new Ramp<float>(spikeGradient2, minRange3, maxRange3, gradientSize).Evaluate(-((fractal2 - spikeOffset).Min(0.0f)));
+        var fractal2 = Fractal<float2>.Evaluate(warped, simplex, FractalMode.Sum, octaves2, lacunarity2, persistence2);
+        var diagonals = Ramp<float>.Evaluate(-((fractal2 - spikeOffset).Min(0.0f)), spikeGradient2, minRange3, maxRange3, gradientSize);
         //var diagonals = new Ramp<float>(spikeGradient2, minRange3, maxRange3).Evaluate((-(fractal2 - spikeOffset).Min(0.0f)));
 
         density = cached + output - diagonals;
@@ -73,7 +73,7 @@ public class Test : VoxelGraph {
 
         //density -= colonThreeFace; 
 
-        var baseColor = new Ramp<float3>(heightGradient, minRange2, maxRange2, remapOutput: false).Evaluate(pos2.Swizzle<float>("y"));
+        var baseColor = Ramp<float3>.Evaluate(pos2.Swizzle<float>("y"), heightGradient, minRange2, maxRange2, remapOutput: false);
         var otherColor = new float3(0.2);
         color = Variable<float3>.Lerp(baseColor, otherColor, diagonals.Swizzle<float3>("xxx"), true);
         color = Variable<float3>.Lerp(color, float3.zero, colonThreeFace.Swizzle<float3>("xxx"), true);

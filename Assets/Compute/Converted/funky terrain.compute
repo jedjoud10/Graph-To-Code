@@ -35,6 +35,7 @@ Texture2D _108_read;
 SamplerState sampler_108_read;
 RWTexture3D<float> voxels_write;
 RWTexture3D<float3> colors_write;
+RWTexture3D<float2> uvs_write;
 int size;
 int3 permuationSeed;
 int3 moduloSeed;
@@ -43,8 +44,16 @@ float3 offset;
 #include "Assets/Compute/Noises.cginc"
 #include "Assets/Compute/SDF.cginc"
 #include "Assets/Compute/Other.cginc"
-// defined nodes: 26, depth: 1, index: 0, total lines: 24, argument count: 3 
-void _4(float3 position,uint3 id, out float _4_output) {
+
+float3 ConvertIntoWorldPosition(float3 tahini) {
+    return  (tahini + offset) * scale;
+}
+
+float3 ConvertFromWorldPosition(float3 worldPos) {
+    return  (worldPos / scale) - offset;
+}
+// defined nodes: 25, depth: 1, index: 0, total lines: 24, argument count: 2 
+void _4(float3 position, out float _4_output) {
 	float3 _10 = mul(_9, float4(position, 1.0)).xyz;
 	float3 _11 = _10;
 	float2 _12 = _11.xz;
@@ -72,12 +81,12 @@ void _4(float3 position,uint3 id, out float _4_output) {
 	_4_output = _31;
 }
 
-// defined nodes: 82, depth: 0, index: 1, total lines: 73, argument count: 4 
-void Voxel(float3 position,uint3 id, out float voxel, out float3 color) {
+// defined nodes: 82, depth: 0, index: 1, total lines: 74, argument count: 3 
+void Voxel(float3 position, out float voxel, out float3 color) {
 	const float3 _1 = float3(1,1,1);
 	const float3 _2 = float3(0,0,0);
 	const float _3 = 0;
-	float _32 = SampleBounded(_5_read, sampler_5_read, (float2(id.xz) / size) * _1.xz + _2.xz, _3, (float(size) / 1)).x;
+	float _32 = SampleBounded(_5_read, sampler_5_read, (ConvertFromWorldPosition(position).xz / size) * _1.xz + _2.xz, _3, (float(size) / 1)).x;
 	float3 _34 = mul(_33, float4(position, 1.0)).xyz;
 	float3 _35 = _34;
 	float _36 = _35.y;
@@ -142,37 +151,40 @@ void Voxel(float3 position,uint3 id, out float voxel, out float3 color) {
 	float2 _104 = _35.xz;
 	const float _105 = 0;
 	float4 _109 = _108_read.SampleLevel(sampler_108_read, _104 * _106 + _107, _105);
-	float _110 = _109.x;
-	const float _111 = 10;
-	float _112 = _110 * _111;
-	float3 _113 = _112.xxx;
-	float3 _114 = lerp(_102,_103,clamp(_113, 0.0, 1.0));
+	float2 _110 = _109.xy;
+	float _111 = _110.x;
+	const float _112 = 10;
+	float _113 = _111 * _112;
+	float3 _114 = _113.xxx;
+	float3 _115 = lerp(_102,_103,clamp(_114, 0.0, 1.0));
 	voxel = _92;
-	color = _114;
+	color = _115;
 }
 
 
 #pragma kernel CS_4
 [numthreads(32, 32, 1)]
-// Name: CS_4, Scope name: _4, Scope index: 1, Outputs: 1, Arguments: 3
+// Name: CS_4, Scope name: _4, Scope index: 1, Outputs: 1, Arguments: 2
 void CS_4(uint3 id : SV_DispatchThreadID) {
     uint3 remapped = uint3(id.x, 0.0, id.y);
-    float3 position = (float3(remapped * 1) + offset) * scale;
+    //float3 position = (float3(remapped * 1) + offset) * scale
+    float3 position = ConvertIntoWorldPosition(float3(remapped) * 1);
     float _4_output;
-    _4(position,id,_4_output);
+    _4(position,_4_output);
     _5_write[id.xy] = _4_output;
 
 }
 
 #pragma kernel CSVoxel
 [numthreads(8, 8, 8)]
-// Name: CSVoxel, Scope name: Voxel, Scope index: 0, Outputs: 2, Arguments: 4
+// Name: CSVoxel, Scope name: Voxel, Scope index: 0, Outputs: 2, Arguments: 3
 void CSVoxel(uint3 id : SV_DispatchThreadID) {
     uint3 remapped = uint3(id.xyz);
-    float3 position = (float3(remapped * 1) + offset) * scale;
+    //float3 position = (float3(remapped * 1) + offset) * scale
+    float3 position = ConvertIntoWorldPosition(float3(remapped) * 1);
     float voxel;
     float3 color;
-    Voxel(position,id,voxel,color);
+    Voxel(position,voxel,color);
     voxels_write[id.xyz] = voxel;
     colors_write[id.xyz] = color;
 

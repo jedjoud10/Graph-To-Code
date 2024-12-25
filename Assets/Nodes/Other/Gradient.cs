@@ -67,27 +67,7 @@ public class GradientNode<T> : Variable<T> {
 }
 
 public class Ramp<T> {
-    public Gradient gradient;
-    public int size = 128;
-
-    public Variable<float> inputMin = 0.0f;
-    public Variable<float> inputMax = 1.0f;
-    public bool remapOutput = true;
-
-    public Ramp(Gradient gradient, int size = 128) {
-        this.size = size;
-        this.gradient = gradient;
-    }
-
-    public Ramp(Gradient gradient, Variable<float> inputMin, Variable<float> inputMax, int size = 128, bool remapOutput = true) {
-        this.size = size;
-        this.gradient = gradient;
-        this.inputMin = inputMin;
-        this.inputMax = inputMax;
-        this.remapOutput = remapOutput;
-    }
-
-    public Variable<T> Evaluate(Variable<float> mixer) {
+    public static Variable<T> Evaluate(Variable<float> mixer, Gradient gradient, Variable<float> inputMin = null, Variable<float> inputMax = null, int size = 128, bool remapOutput = true) {
         if (gradient == null) {
             throw new NullReferenceException("Ramp gradient is not set");
         }
@@ -96,8 +76,8 @@ public class Ramp<T> {
             gradient = gradient,
             mixer = mixer,
             size = size,
-            inputMin = inputMin,
-            inputMax = inputMax,
+            inputMin = inputMin != null ? inputMin : 0.0f,
+            inputMax = inputMax != null ? inputMax : 1.0f,
             remapOutput = remapOutput
         };
     }

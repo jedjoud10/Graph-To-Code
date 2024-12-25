@@ -3,6 +3,8 @@ using System.IO;
 using System.Linq;
 using Unity.Mathematics;
 using UnityEngine;
+using System.Drawing;
+
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -21,17 +23,24 @@ public abstract class VoxelGraph : MonoBehaviour {
 
     // Called when the voxel graph's properties get modified
     public void OnPropertiesChanged() {
+        if (!gameObject.activeSelf)
+            return;
+
         var executor = GetComponent<VoxelGraphExecutor>();
         var visualizer = GetComponent<DensityVisualizer>();
 
         executor.ExecuteShader(Vector3Int.zero);
         RenderTexture density = (RenderTexture)executor.Textures["voxels"];
         RenderTexture colors = (RenderTexture)executor.Textures["colors"];
+        //RenderTexture uvs = (RenderTexture)executor.Textures["uvs"];
         visualizer.Meshify(density, colors);
     }
 
     // Called when the voxel graph gets recompiled in the editor
     public void OnRecompilation() {
+        if (!gameObject.activeSelf)
+            return;
+
         var executor = GetComponent<VoxelGraphExecutor>();
         var visualizer = GetComponent<DensityVisualizer>();
 
@@ -51,8 +60,27 @@ public abstract class VoxelGraph : MonoBehaviour {
         }
     }
 
+    public class AllInputs {
+        public Variable<float3> position;
+    }
+
+    public class AllOutputs {
+        public Variable<float> density;
+        public Variable<float3> color;
+        public Variable<float> metallic;
+        public Variable<float> smoothness;
+    }
+
     // Execute the voxel graph at a specific position and fetch the density and material values
-    public abstract void Execute(Variable<float3> position, Variable<uint3> id, out Variable<float> density, out Variable<float3> color);
+    public abstract void Execute(Variable<float3> position, out Variable<float> density, out Variable<float3> color);
+
+    // Even lower execution function that allows you to override metallic and smoothness values (and even probably pass your own uv values if needed)
+    public virtual void ExecuteWithEverything(AllInputs input, out AllOutputs output) {
+        output = new AllOutputs();
+        output.metallic = 0.0f;
+        output.smoothness = 0.0f;
+        Execute(input.position, out output.density, out output.color);
+    }
 
     // Parses the voxel graph into a tree context with all required nodes and everything!!!
     private TreeContext ParsedTranspilation() {
@@ -60,24 +88,26 @@ public abstract class VoxelGraph : MonoBehaviour {
 
         // Create the external inputs that we use inside the function scope
         Variable<float3> position = ctx.AliasExternalInput<float3>("position");
-        Variable<uint3> id = ctx.AliasExternalInput<uint3>("id");
 
         // Input scope arguments
         ctx.position = new ScopeArgument("position", Utils.StrictType.Float3, position, false);
-        ctx.id = new ScopeArgument("id", Utils.StrictType.Uint3, id, false);
         
         // Execute the voxel graph to get density and color
-        Execute(position, id, out Variable<float> density, out Variable<float3> color);
+        AllInputs inputs = new AllInputs() { position = position };
+        ExecuteWithEverything(inputs, out AllOutputs outputs);
+
+        var combinedUvs = new ConstructNode<float2>() { inputs = new Variable<float>[2] { outputs.smoothness, outputs.smoothness } };
 
         // Voxel function output arguments 
-        ScopeArgument voxelArgument = new ScopeArgument("voxel", Utils.StrictType.Float, density, true);
-        ScopeArgument colorArgument = new ScopeArgument("color", Utils.StrictType.Float3, color, true);
+        ScopeArgument voxelArgument = new ScopeArgument("voxel", Utils.StrictType.Float, outputs.density, true);
+        ScopeArgument colorArgument = new ScopeArgument("color", Utils.StrictType.Float3, outputs.color, true);
+        ScopeArgument uvsArgument = new ScopeArgument("uvs", Utils.StrictType.Float2, combinedUvs, true);
 
         // Voxel function scope
         // We can't initialize the scope again because it contains the shader graph nodes
         ctx.scopes[0].name = "Voxel";
         ctx.scopes[0].arguments = new ScopeArgument[] {
-            ctx.position, ctx.id, voxelArgument, colorArgument
+            ctx.position, voxelArgument, colorArgument
         };
 
         // Voxel kernel dispatcher
@@ -95,13 +125,14 @@ public abstract class VoxelGraph : MonoBehaviour {
             outputs = new KernelOutput[] {
                 new KernelOutput { output = voxelArgument, outputTextureName = "voxels" },
                 new KernelOutput { output = colorArgument, outputTextureName = "colors" },
+                //new KernelOutput { output = uvsArgument, outputTextureName = "uvs" },
             }
         });
 
         // Prase the voxel graph going from density and color
         System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
         timer.Start();
-        ctx.Parse(new TreeNode[] { density, color });
+        ctx.Parse(new TreeNode[] { outputs.density, outputs.color });
         timer.Stop();
         //Debug.Log($"{timer.Elapsed.TotalMilliseconds}ms");
         
@@ -122,6 +153,7 @@ public abstract class VoxelGraph : MonoBehaviour {
         lines.AddRange(ctx.Properties);
         lines.Add("RWTexture3D<float> voxels_write;");
         lines.Add("RWTexture3D<float3> colors_write;");
+        lines.Add("RWTexture3D<float2> uvs_write;");
 
         lines.Add("int size;");
         lines.Add("int3 permuationSeed;\nint3 moduloSeed;");
@@ -131,6 +163,15 @@ public abstract class VoxelGraph : MonoBehaviour {
         lines.Add("#include \"Assets/Compute/Noises.cginc\"");
         lines.Add("#include \"Assets/Compute/SDF.cginc\"");
         lines.Add("#include \"Assets/Compute/Other.cginc\"");
+
+        lines.Add(@"
+float3 ConvertIntoWorldPosition(float3 tahini) {
+    return  (tahini + offset) * scale;
+}
+
+float3 ConvertFromWorldPosition(float3 worldPos) {
+    return  (worldPos / scale) - offset;
+}");
 
         var temp = ctx.computeKernelNameAndDepth.AsEnumerable().Select(x => x.ConvertToKernelString(ctx)).ToList();
 
@@ -179,6 +220,9 @@ public abstract class VoxelGraph : MonoBehaviour {
 
     // Checks if we need to recompile the shader by checking the hash changes. Calls a property callback in all cases
     public void SoftRecompile() {
+        if (!gameObject.activeSelf)
+            return;
+
         TreeContext ctx = ParsedTranspilation();
         if (hash != ctx.hashinator.hash) {
             hash = ctx.hashinator.hash;
@@ -190,6 +234,9 @@ public abstract class VoxelGraph : MonoBehaviour {
     // Every time the user updates a field, we will re-transpile (to check for hash-differences) and re-compile if needed
     // Also executing the shader at the specified size as well
     private void OnValidate() {
+        if (!gameObject.activeSelf)
+            return;
+
         SoftRecompile();
         OnPropertiesChanged();
     }

@@ -28,7 +28,6 @@ public class TreeContext {
     public List<string> Properties { get { return properties; } }
 
     public ScopeArgument position;
-    public ScopeArgument id;
 
     public TreeContext(bool debugNames) {
         this.properties = new List<string>();
