@@ -93,7 +93,7 @@ float3 normalMaxx(uint3 id) {
 
 [numthreads(8, 8, 8)]
 void CSVertex(uint3 id : SV_DispatchThreadID) {
-    if (any(id == size)) {
+    if (any(id >= size)) {
         return;
     }
 
@@ -138,7 +138,7 @@ void CSVertex(uint3 id : SV_DispatchThreadID) {
 
 [numthreads(8, 8, 8)]
 void CSQuad(uint3 id : SV_DispatchThreadID) {
-    if (any(id == size-1) || any(id <= 2)) {
+    if (any(id >= size-1) || any(id <= 2)) {
         return;
     }
 
@@ -154,14 +154,15 @@ void CSQuad(uint3 id : SV_DispatchThreadID) {
             for (int j = 0; j < 4; j++) {
                 check[j] = vertexIds[id + test[i] + offsets[j + i * 4]];
             
-                if (check[j] <= 0) {
+                if (check[j] < 0) {
                     valid = false;
                 }
             }
 
             if (valid) {
                 uint oldValue = 0;
-                InterlockedAdd(atomicCounters[1], 6, oldValue); 
+                InterlockedAdd(cmdBuffer[0].indexCountPerInstance, 6, oldValue); 
+                //InterlockedAdd(atomicCounters[1], 6, oldValue); 
                 
                 indices[oldValue + (flip ? 0 : 2)] = check[0];
                 indices[oldValue + 1] = check[1];
@@ -171,7 +172,7 @@ void CSQuad(uint3 id : SV_DispatchThreadID) {
                 indices[oldValue + 5] = check[3];
                 indices[oldValue + (flip ? 3 : 4)] = check[0];
     
-                InterlockedAdd(cmdBuffer[0].indexCountPerInstance, 6); 
+
             }
         }
     }
@@ -180,17 +181,38 @@ void CSQuad(uint3 id : SV_DispatchThreadID) {
 RWTexture2D<float4> testTextureIndeed;
 int testTextureSize;
 
+static uint2 test2[4] = {
+    uint2(0, 0),
+    uint2(1, 0),
+    uint2(0, 1),
+    uint2(1, 1),
+};
+
 [numthreads(32, 32, 1)]
 void CSTexturing(uint3 id : SV_DispatchThreadID) {
     //testTextureIndeed[id.xy] = float4(float2(id.xy) / testTextureSize, 0, 0);
-    int index = id.y * testTextureSize + id.x;
+    //return;
+    
     //testTextureIndeed[id.xy] = 0.0;
-    if (index > 110000) {
+    int index = id.y * testTextureSize + id.x;
+    
+    if (id.x > (testTextureSize/2) || id.y > (testTextureSize/2)) {
         //return;
     }
+    
+    float3 verticesTemp[4] = { float3(0, 0, 0), float3(0, 0, 0), float3(0, 0, 0), float3(0, 0, 0) };
+    verticesTemp[0] = vertices[indices[index * 6]];
+    verticesTemp[1] = vertices[indices[index * 6 + 1]];
+    verticesTemp[2] = vertices[indices[index * 6 + 3]];
+    verticesTemp[3] = vertices[indices[index * 6 + 5]];
 
-    testTextureIndeed[id.xy] = float4(fmod(vertices[indices[index * 6]], 10.0) / 10.0, 0);
-    //testTextureIndeed[id.xy] = float(indices[index]) / 1000.0;
+    for (int j = 0; j < 4; j++) {
+        float3 color2 = fmod(verticesTemp[j], 10.0)/10.0;
+        testTextureIndeed[id.xy * 2 + test2[j]] = float4(color2, 0);
+    }
+    
+    //testTextureIndeed[id.xy] = float4(fmod(vertices[indices[index * 6]], 10.0) / 10.0, 0);
+    //testTextureIndeed[id.xy] = float(indices[index]) / 100000.0;
 
     
 

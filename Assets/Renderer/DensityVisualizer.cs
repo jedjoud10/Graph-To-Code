@@ -55,7 +55,7 @@ public class DensityVisualizer : MonoBehaviour {
 
         tempVertexTexture = Utils.Create3DRenderTexture(size, GraphicsFormat.R32_UInt, FilterMode.Point, TextureWrapMode.Repeat, false);
         maxHeightAtomic = Utils.Create2DRenderTexture(size, GraphicsFormat.R32_UInt, FilterMode.Point, TextureWrapMode.Repeat, false);
-        testTexture = Utils.Create2DRenderTexture(testTextureSize, GraphicsFormat.R8G8B8A8_UNorm, FilterMode.Point, TextureWrapMode.Repeat, false);
+        testTexture = Utils.Create2DRenderTexture(testTextureSize*2, GraphicsFormat.R8G8B8A8_UNorm, FilterMode.Point, TextureWrapMode.Repeat, false);
     }
 
     private void OnDisable() {
