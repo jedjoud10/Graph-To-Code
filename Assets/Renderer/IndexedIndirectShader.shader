@@ -72,7 +72,8 @@ Shader "Custom/NewSurfaceShader"
            half3x3 tbn = half3x3(worldT, worldB, worldN);
            
            //o.Albedo = flatWorldNormal;
-           o.Albedo = IN.color; 
+           o.Albedo = 1.0;
+           //o.Albedo = IN.color; 
            //o.Smoothness = 1.0;
            //o.Metallic = 1.0;
            //o.Normal = float3(0,0,0);

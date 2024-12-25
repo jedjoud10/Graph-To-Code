@@ -27,8 +27,8 @@ float3 ConvertIntoWorldPosition(float3 tahini) {
 float3 ConvertFromWorldPosition(float3 worldPos) {
     return  (worldPos / scale) - offset;
 }
-// defined nodes: 41, depth: 0, index: 0, total lines: 32, argument count: 4 
-void Voxel(float3 position, out float voxel, out float3 color, out float2 uvs) {
+// defined nodes: 39, depth: 0, index: 0, total lines: 30, argument count: 3 
+void Voxel(float3 position, out float voxel, out float3 color) {
 	float3 projected_0 = mul(matrix_0, float4(position, 1.0)).xyz;
 	float3 projected2_0 = projected_0;
 	float projected2_0_swizzled_0 = projected2_0.y;
@@ -59,27 +59,22 @@ void Voxel(float3 position, out float voxel, out float3 color, out float2 uvs) {
 	float projected2_0_warped_0_op_projected2_0_0_op_inj_7_swizzled_0_0_length_0 = length(projected2_0_warped_0_op_projected2_0_0_op_inj_7_swizzled_0_0);
 	float projected2_0_swizzled_0_op_inj_6_0_op_c_0_0_op_c_1_0_op_projected2_0_warped_0_op_projected2_0_0_op_inj_7_swizzled_0_0_length_0_0 = projected2_0_swizzled_0_op_inj_6_0_op_c_0_0_op_c_1_0 * projected2_0_warped_0_op_projected2_0_0_op_inj_7_swizzled_0_0_length_0;
 	float3 projected2_0_swizzled_0_op_inj_6_0_op_c_0_0_op_c_1_0_op_projected2_0_warped_0_op_projected2_0_0_op_inj_7_swizzled_0_0_length_0_0_swizzled_0 = projected2_0_swizzled_0_op_inj_6_0_op_c_0_0_op_c_1_0_op_projected2_0_warped_0_op_projected2_0_0_op_inj_7_swizzled_0_0_length_0_0.xxx;
-	const float c_2 = 0;
-	float2 f2_ctor_0 = float2(c_2,c_2);
 	voxel = projected2_0_swizzled_0_op_projected2_0_warped_0_noised_0_0;
 	color = projected2_0_swizzled_0_op_inj_6_0_op_c_0_0_op_c_1_0_op_projected2_0_warped_0_op_projected2_0_0_op_inj_7_swizzled_0_0_length_0_0_swizzled_0;
-	uvs = f2_ctor_0;
 }
 
 
 #pragma kernel CSVoxel
 [numthreads(8, 8, 8)]
-// Name: CSVoxel, Scope name: Voxel, Scope index: 0, Outputs: 3, Arguments: 4
+// Name: CSVoxel, Scope name: Voxel, Scope index: 0, Outputs: 2, Arguments: 3
 void CSVoxel(uint3 id : SV_DispatchThreadID) {
     uint3 remapped = uint3(id.xyz);
     //float3 position = (float3(remapped * 1) + offset) * scale
     float3 position = ConvertIntoWorldPosition(float3(remapped) * 1);
     float voxel;
     float3 color;
-    float2 uvs;
-    Voxel(position,voxel,color,uvs);
+    Voxel(position,voxel,color);
     voxels_write[id.xyz] = voxel;
     colors_write[id.xyz] = color;
-    uvs_write[id.xyz] = uvs;
 
 }

@@ -5,13 +5,15 @@
 #include "UnityIndirect.cginc"
 
 RWTexture3D<float> densities;
+RWTexture3D<float3> colorsIn;
 RWTexture3D<uint> vertexIds;
 
 bool blocky;
 int size;
 
 RWStructuredBuffer<float3> vertices;
-RWStructuredBuffer<float2> uvs;
+RWStructuredBuffer<float3> normals;
+RWStructuredBuffer<float3> colors;
 RWStructuredBuffer<int> indices;
 
 RWStructuredBuffer<uint> atomicCounters;
@@ -98,7 +100,6 @@ void CSVertex(uint3 id : SV_DispatchThreadID) {
     float3 sum = float3(0, 0, 0);
     float3 normalSum = float3(0, 0, 0);
     float3 colorSum = float3(0, 0, 0);
-    float2 uvsSum = float2(0, 0);
 
     for (int i = 0; i < 12; i++) {
         uint3 first = edgePositions0[i];
@@ -117,6 +118,8 @@ void CSVertex(uint3 id : SV_DispatchThreadID) {
             } else {
                 float unlerped = invLerp(firstDensity, secondDensity, 0.0);
                 sum += lerp(float3(first), float3(second), unlerped);
+                normalSum += normalize(lerp(normalMaxx(id + first), normalMaxx(id + second), unlerped));
+                colorSum += lerp(colorsIn[id + first], colorsIn[id + second], unlerped);
             }
         }
     }
@@ -126,7 +129,8 @@ void CSVertex(uint3 id : SV_DispatchThreadID) {
         InterlockedAdd(atomicCounters[0], 1, oldValue); 
         vertices[oldValue] = float3(id) + sum/float(count);
         normals[oldValue] = normalize(-normalSum);
-        uvs[oldValue] = float(oldValue) / 1000.0;
+        colors[oldValue] = colorSum / float(count);
+        vertexIds[id+1] = oldValue;   
     }
 }
 

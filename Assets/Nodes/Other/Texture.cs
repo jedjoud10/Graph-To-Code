@@ -10,7 +10,7 @@ public class SampleableTexture<T> {
     public Variable<float> level;
     public Variable<T> scale;
     public Variable<T> offset;
-    private TreeContext context;
+    public TreeContext context;
 
     public Variable<float4> SampleLeBruh(Variable<T> coordinates) {
         return context.AssignTempVariable<float4>("hehehehe", $"{textureName}_read.SampleLevel(sampler{textureName}_read, {context[coordinates]} * {context[scale]} + {context[offset]}, {context[level]})");
@@ -50,7 +50,8 @@ public class TextureSampleNode<T> : Variable<float4> {
             level = sampler.level,
             offset = sampler.offset,
             scale = sampler.scale,
-            textureName = tempTextureName
+            textureName = tempTextureName,
+            context = context,
         }, coordinates);
         aaa.Handle(context);
         context.DefineAndBindNode<T>(this, "aaa", $"{context[aaa]}.{Utils.SwizzleFromFloat4<T>()}");

@@ -93,7 +93,7 @@ public class CachedNode<T> : Variable<T> {
         int frac = (1 << sizeReductionPower);
         string aa = $"(float(size) / {frac})";
 
-        string idCtor = _3d ? "float3(id)" : $"float2(id.{swizzle})";
+        string idCtor = _3d ? $"ConvertFromWorldPosition({positionName})" : $"ConvertFromWorldPosition({positionName}).{swizzle}";
         if (sampler.bicubic) {
             context.DefineAndBindNode<T>(this, $"{tempName}_cached", $"SampleBicubic({textureName}_read, sampler{textureName}_read, ({idCtor} / size) * {context[sampler.scale]}.{swizzle} + {context[sampler.offset]}.{swizzle}, {context[sampler.level]}, {aa}).{Utils.SwizzleFromFloat4<T>()}");
         } else {

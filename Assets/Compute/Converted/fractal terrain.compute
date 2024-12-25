@@ -28,8 +28,8 @@ float3 ConvertIntoWorldPosition(float3 tahini) {
 float3 ConvertFromWorldPosition(float3 worldPos) {
     return  (worldPos / scale) - offset;
 }
-// defined nodes: 37, depth: 0, index: 0, total lines: 35, argument count: 4 
-void Voxel(float3 position, out float voxel, out float3 color, out float2 uvs) {
+// defined nodes: 35, depth: 0, index: 0, total lines: 33, argument count: 3 
+void Voxel(float3 position, out float voxel, out float3 color) {
 	float3 _2 = mul(_1, float4(position, 1.0)).xyz;
 	float3 _3 = _2;
 	float _4 = _3.y;
@@ -39,7 +39,7 @@ void Voxel(float3 position, out float voxel, out float3 color, out float2 uvs) {
 	float _12 = 1.0;
 	float _13 = 1.0;
 	[unroll]
-	for(uint i = 0; i < 5; i++) {
+	for(uint i = 0; i < 4; i++) {
 		float2 _14 = _9 * _12 + hash21(float(i) * 6543.26912) * 2366.5437;
 		float2 _17 = _12.xx;
 		float2 _18 = _14 * _17;
@@ -63,27 +63,22 @@ void Voxel(float3 position, out float voxel, out float3 color, out float2 uvs) {
 	const float _34 = 0.5;
 	float _35 = _33 + _34;
 	float3 _36 = _35.xxx;
-	const float _37 = 0;
-	float2 _38 = float2(_37,_37);
 	voxel = _29;
 	color = _36;
-	uvs = _38;
 }
 
 
 #pragma kernel CSVoxel
 [numthreads(8, 8, 8)]
-// Name: CSVoxel, Scope name: Voxel, Scope index: 0, Outputs: 3, Arguments: 4
+// Name: CSVoxel, Scope name: Voxel, Scope index: 0, Outputs: 2, Arguments: 3
 void CSVoxel(uint3 id : SV_DispatchThreadID) {
     uint3 remapped = uint3(id.xyz);
     //float3 position = (float3(remapped * 1) + offset) * scale
     float3 position = ConvertIntoWorldPosition(float3(remapped) * 1);
     float voxel;
     float3 color;
-    float2 uvs;
-    Voxel(position,voxel,color,uvs);
+    Voxel(position,voxel,color);
     voxels_write[id.xyz] = voxel;
     colors_write[id.xyz] = color;
-    uvs_write[id.xyz] = uvs;
 
 }

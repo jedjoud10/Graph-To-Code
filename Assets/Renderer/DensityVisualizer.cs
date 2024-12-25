@@ -18,8 +18,8 @@ public class DensityVisualizer : MonoBehaviour {
     private GraphicsBuffer.IndirectDrawIndexedArgs aaa;
     public bool blocky;
     public bool useHeightSimplification;
+    public bool flatshaded;
     private int size;
-    public int heightMapReductionFactor;
 
     public void InitializeForSize(int newSize) {
         if (!isActiveAndEnabled)
@@ -75,15 +75,18 @@ public class DensityVisualizer : MonoBehaviour {
         maxHeightAtomic.Release();
     }
 
-    public void Meshify(RenderTexture voxels, RenderTexture colors, RenderTexture uvs) {
+    public void Meshify(RenderTexture voxels, RenderTexture colors) {
         if (useHeightSimplification) {
+            // TODO: For some reason does not work on dx12
+            // wut???????? why????????
             ExecuteHeightMapMesher(voxels, colors, -1, Vector3Int.zero);
         } else {
-            ExecuteSurfaceNetsMesher(voxels, colors, uvs);
+            ExecuteSurfaceNetsMesher(voxels, colors);
         }
+
     }
 
-    public void ExecuteSurfaceNetsMesher(RenderTexture voxels, RenderTexture colors, RenderTexture uvs) {
+    public void ExecuteSurfaceNetsMesher(RenderTexture voxels, RenderTexture colors) {
         if (atomicCounters == null || !atomicCounters.IsValid())
             return;
 
@@ -98,10 +101,8 @@ public class DensityVisualizer : MonoBehaviour {
         int id = shader.FindKernel("CSVertex");
         shader.SetTexture(id, "densities", voxels);
         shader.SetTexture(id, "colorsIn", colors);
-        shader.SetTexture(id, "uvsIn", uvs);
         shader.SetBuffer(id, "atomicCounters", atomicCounters);
         shader.SetBuffer(id, "vertices", vertexBuffer);
-        shader.SetBuffer(id, "uvs", uvsBuffer);
         shader.SetBuffer(id, "normals", normalsBuffer);
         shader.SetBuffer(id, "colors", colorsBuffer);
         shader.SetBuffer(id, "cmdBuffer", commandBuffer);
@@ -179,23 +180,20 @@ public class DensityVisualizer : MonoBehaviour {
         if (indexBuffer == null || commandBuffer == null || !indexBuffer.IsValid() || !commandBuffer.IsValid())
             return;
 
-        RenderParams renderParams = new RenderParams();
-        renderParams.worldBounds = new Bounds {
+        Bounds bounds = new Bounds {
             center = Vector3.zero,
             extents = Vector3.one * 1000.0f,
         };
-        renderParams.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.TwoSided;
-        renderParams.receiveShadows = true;
-
-        renderParams.material = customRenderingMaterial;
 
         var mat = new MaterialPropertyBlock();
+        mat.SetBuffer("_Indices", indexBuffer);
         mat.SetBuffer("_Vertices", vertexBuffer);
         mat.SetBuffer("_Normals", normalsBuffer);
         mat.SetBuffer("_Colors", colorsBuffer);
-        mat.SetBuffer("_Uvs", uvsBuffer);
-        renderParams.matProps = mat;
+        mat.SetInt("_Flatshaded", (flatshaded || blocky) ? 1 : 0);
 
-        Graphics.RenderPrimitivesIndexedIndirect(renderParams, MeshTopology.Triangles, indexBuffer, commandBuffer);
+        // FIXME: Why do I need to use this instead of just render mesh primitives indexed inderect???
+        // Also why do I need to handle the indexing myself???
+        Graphics.DrawProceduralIndirect(customRenderingMaterial, bounds, MeshTopology.Triangles, commandBuffer, properties: mat);
     }
 }

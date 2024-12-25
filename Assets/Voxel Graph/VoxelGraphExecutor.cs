@@ -23,7 +23,11 @@ public class VoxelGraphExecutor : MonoBehaviour {
 
     private void OnValidate() {
         size = Mathf.ClosestPowerOfTwo(size);
-        graph.OnPropertiesChanged();
+
+        if (graph != null) {
+            graph.OnPropertiesChanged();
+        }
+
         ComputeSecondarySeeds();
     }
 
@@ -46,7 +50,7 @@ public class VoxelGraphExecutor : MonoBehaviour {
         Textures = new Dictionary<string, ExecutorTexture> {
             { "voxels", new OutputExecutorTexture("voxels", new List<string>() { "CSVoxel" }, Utils.Create3DRenderTexture(size, GraphicsFormat.R16_SFloat)) },
             { "colors", new OutputExecutorTexture("colors", new List<string>() { "CSVoxel" }, Utils.Create3DRenderTexture(size, GraphicsFormat.R8G8B8A8_UNorm)) },
-            { "uvs", new OutputExecutorTexture("uvs", new List<string>() { "CSVoxel" }, Utils.Create3DRenderTexture(size, GraphicsFormat.R8G8_UNorm))},
+            //{ "uvs", new OutputExecutorTexture("uvs", new List<string>() { "CSVoxel" }, Utils.Create3DRenderTexture(size, GraphicsFormat.R8G8_UNorm))},
         };
 
         foreach (var (name, descriptor) in graph.textureDescriptors) {

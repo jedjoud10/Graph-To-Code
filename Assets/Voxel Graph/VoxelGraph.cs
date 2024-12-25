@@ -23,18 +23,24 @@ public abstract class VoxelGraph : MonoBehaviour {
 
     // Called when the voxel graph's properties get modified
     public void OnPropertiesChanged() {
+        if (!gameObject.activeSelf)
+            return;
+
         var executor = GetComponent<VoxelGraphExecutor>();
         var visualizer = GetComponent<DensityVisualizer>();
 
         executor.ExecuteShader(Vector3Int.zero);
         RenderTexture density = (RenderTexture)executor.Textures["voxels"];
         RenderTexture colors = (RenderTexture)executor.Textures["colors"];
-        RenderTexture uvs = (RenderTexture)executor.Textures["uvs"];
-        visualizer.Meshify(density, colors, uvs);
+        //RenderTexture uvs = (RenderTexture)executor.Textures["uvs"];
+        visualizer.Meshify(density, colors);
     }
 
     // Called when the voxel graph gets recompiled in the editor
     public void OnRecompilation() {
+        if (!gameObject.activeSelf)
+            return;
+
         var executor = GetComponent<VoxelGraphExecutor>();
         var visualizer = GetComponent<DensityVisualizer>();
 
@@ -101,7 +107,7 @@ public abstract class VoxelGraph : MonoBehaviour {
         // We can't initialize the scope again because it contains the shader graph nodes
         ctx.scopes[0].name = "Voxel";
         ctx.scopes[0].arguments = new ScopeArgument[] {
-            ctx.position, voxelArgument, colorArgument, uvsArgument
+            ctx.position, voxelArgument, colorArgument
         };
 
         // Voxel kernel dispatcher
@@ -119,14 +125,14 @@ public abstract class VoxelGraph : MonoBehaviour {
             outputs = new KernelOutput[] {
                 new KernelOutput { output = voxelArgument, outputTextureName = "voxels" },
                 new KernelOutput { output = colorArgument, outputTextureName = "colors" },
-                new KernelOutput { output = uvsArgument, outputTextureName = "uvs" },
+                //new KernelOutput { output = uvsArgument, outputTextureName = "uvs" },
             }
         });
 
         // Prase the voxel graph going from density and color
         System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
         timer.Start();
-        ctx.Parse(new TreeNode[] { outputs.density, outputs.color, combinedUvs });
+        ctx.Parse(new TreeNode[] { outputs.density, outputs.color });
         timer.Stop();
         //Debug.Log($"{timer.Elapsed.TotalMilliseconds}ms");
         
@@ -214,6 +220,9 @@ float3 ConvertFromWorldPosition(float3 worldPos) {
 
     // Checks if we need to recompile the shader by checking the hash changes. Calls a property callback in all cases
     public void SoftRecompile() {
+        if (!gameObject.activeSelf)
+            return;
+
         TreeContext ctx = ParsedTranspilation();
         if (hash != ctx.hashinator.hash) {
             hash = ctx.hashinator.hash;
@@ -225,6 +234,9 @@ float3 ConvertFromWorldPosition(float3 worldPos) {
     // Every time the user updates a field, we will re-transpile (to check for hash-differences) and re-compile if needed
     // Also executing the shader at the specified size as well
     private void OnValidate() {
+        if (!gameObject.activeSelf)
+            return;
+
         SoftRecompile();
         OnPropertiesChanged();
     }
