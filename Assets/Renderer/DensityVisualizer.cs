@@ -21,7 +21,8 @@ public class DensityVisualizer : MonoBehaviour {
     public bool useHeightSimplification;
     public bool flatshaded;
     private int size;
-    public int testTextureSize;
+    public int testTextureSize = 512;
+    public int testTextureSizeScaling = 2;
 
     public void InitializeForSize(int newSize) {
         if (!isActiveAndEnabled)
@@ -55,7 +56,7 @@ public class DensityVisualizer : MonoBehaviour {
 
         tempVertexTexture = Utils.Create3DRenderTexture(size, GraphicsFormat.R32_UInt, FilterMode.Point, TextureWrapMode.Repeat, false);
         maxHeightAtomic = Utils.Create2DRenderTexture(size, GraphicsFormat.R32_UInt, FilterMode.Point, TextureWrapMode.Repeat, false);
-        testTexture = Utils.Create2DRenderTexture(testTextureSize*2, GraphicsFormat.R8G8B8A8_UNorm, FilterMode.Point, TextureWrapMode.Repeat, false);
+        testTexture = Utils.Create2DRenderTexture(testTextureSize*testTextureSizeScaling, GraphicsFormat.R8G8B8A8_UNorm, FilterMode.Point, TextureWrapMode.Repeat, false);
     }
 
     private void OnDisable() {
@@ -102,6 +103,7 @@ public class DensityVisualizer : MonoBehaviour {
         shader.SetBool("blocky", blocky);
         shader.SetInt("size", size);
         shader.SetInt("testTextureSize", testTextureSize);
+        shader.SetInt("testTextureSizeScaling", testTextureSizeScaling);
 
         int id = shader.FindKernel("CSVertex");
         shader.SetTexture(id, "densities", voxels);

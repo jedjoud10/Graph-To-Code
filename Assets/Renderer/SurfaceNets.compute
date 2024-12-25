@@ -180,6 +180,7 @@ void CSQuad(uint3 id : SV_DispatchThreadID) {
 
 RWTexture2D<float4> testTextureIndeed;
 int testTextureSize;
+int testTextureSizeScaling;
 StructuredBuffer<int> remapping;
 
 static uint2 test2[4] = {
@@ -195,15 +196,7 @@ int3 permuationSeed;
 
 [numthreads(32, 32, 1)]
 void CSTexturing(uint3 id : SV_DispatchThreadID) {
-    //testTextureIndeed[id.xy] = float4(float2(id.xy) / testTextureSize, 0, 0);
-    //return;
-    
-    //testTextureIndeed[id.xy] = 0.0;
     int index = id.y * testTextureSize + id.x;
-    
-    if (id.x > (testTextureSize/2) || id.y > (testTextureSize/2)) {
-        //return;
-    }
     
     float3 verticesTemp[4] = { float3(0, 0, 0), float3(0, 0, 0), float3(0, 0, 0), float3(0, 0, 0) };
     verticesTemp[0] = vertices[indices[index * 6 + 0]];
@@ -211,14 +204,25 @@ void CSTexturing(uint3 id : SV_DispatchThreadID) {
     verticesTemp[3] = vertices[indices[index * 6 + 2]];
     verticesTemp[2] = vertices[indices[index * 6 + 5]];
 
-    for (int j = 0; j < 4; j++) {
-        testTextureIndeed[id.xy * 2 + test2[j]] = 0.0;
-    }
-
+    /*
     for (int j = 0; j < 4; j++) {
         //float3 color2 = fmod(verticesTemp[j], 10.0)/10.0;
         float3 color2 = snoise(verticesTemp[j] * 0.1) * 0.5 + 0.5;
         testTextureIndeed[id.xy * 2 + test2[j]] = float4(color2, 0);
+    }
+    */
+
+    for(int y=0; y<testTextureSizeScaling; y++)
+    for(int x=0; x<testTextureSizeScaling; x++)
+    {
+        float horiz = saturate(x / float(testTextureSizeScaling));
+        float vert = saturate(y / float(testTextureSizeScaling));
+
+        float3 first1 = lerp(verticesTemp[0], verticesTemp[1], horiz);
+        float3 first2 = lerp(verticesTemp[2], verticesTemp[3], horiz);
+        float3 second = lerp(first1, first2, vert);
+        float3 color2 = snoise(second * 0.2) * 0.5 + 0.5;
+        testTextureIndeed[id.xy * testTextureSizeScaling + uint2(x,y)] = float4(color2, 0.0);
     }
     
     //testTextureIndeed[id.xy] = float4(fmod(vertices[indices[index * 6]], 10.0) / 10.0, 0);
