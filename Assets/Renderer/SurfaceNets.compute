@@ -204,25 +204,18 @@ void CSTexturing(uint3 id : SV_DispatchThreadID) {
     verticesTemp[3] = vertices[indices[index * 6 + 2]];
     verticesTemp[2] = vertices[indices[index * 6 + 5]];
 
-    /*
-    for (int j = 0; j < 4; j++) {
-        //float3 color2 = fmod(verticesTemp[j], 10.0)/10.0;
-        float3 color2 = snoise(verticesTemp[j] * 0.1) * 0.5 + 0.5;
-        testTextureIndeed[id.xy * 2 + test2[j]] = float4(color2, 0);
-    }
-    */
-
     for(int y=0; y<testTextureSizeScaling; y++)
     for(int x=0; x<testTextureSizeScaling; x++)
     {
-        float horiz = saturate(x / float(testTextureSizeScaling));
-        float vert = saturate(y / float(testTextureSizeScaling));
+        float horiz = saturate((x-1) / float(testTextureSizeScaling-3));
+        float vert = saturate((y-1) / float(testTextureSizeScaling-3));
 
         float3 first1 = lerp(verticesTemp[0], verticesTemp[1], horiz);
         float3 first2 = lerp(verticesTemp[2], verticesTemp[3], horiz);
         float3 second = lerp(first1, first2, vert);
-        float3 color2 = snoise(second * 0.2) * 0.5 + 0.5;
-        testTextureIndeed[id.xy * testTextureSizeScaling + uint2(x,y)] = float4(color2, 0.0);
+        float3 color2 = snoise(second * 0.6) * 0.5 + 0.5;
+
+        testTextureIndeed[id.xy * testTextureSizeScaling + uint2(x,y)] = float4(color2, 1.0);
     }
     
     //testTextureIndeed[id.xy] = float4(fmod(vertices[indices[index * 6]], 10.0) / 10.0, 0);

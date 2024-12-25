@@ -29,7 +29,7 @@ Material:
   m_LightmapFlags: 2
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
+  m_CustomRenderQueue: 2000
   stringTagMap: {}
   disabledShaderPasses:
   - MOTIONVECTORS
@@ -69,7 +69,7 @@ Material:
     - _Scaler_out: 1
     - _TestTextureSize: 0
     m_Colors:
-    - _Vector2: {r: 0.99, g: 0.99, b: 0, a: 0}
+    - _Vector2: {r: 0.7, g: 0.7, b: 0, a: 0}
     - _Vector2_1: {r: 0, g: 0, b: 0, a: 0}
     - _Vector2_2: {r: 0, g: 0, b: 0, a: 0}
     - _Vector2_3: {r: 0, g: 0, b: 0, a: 0}

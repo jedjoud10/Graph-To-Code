@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
+using UnityEngine.Rendering;
+using static UnityEngine.UIElements.UxmlAttributeDescription;
 
 [ExecuteInEditMode]
 public class DensityVisualizer : MonoBehaviour {
@@ -129,6 +131,19 @@ public class DensityVisualizer : MonoBehaviour {
         shader.SetBuffer(id, "indices", indexBuffer);
         shader.SetBuffer(id, "vertices", vertexBuffer);
         shader.Dispatch(id, testTextureSize / 32, testTextureSize / 32, 1);
+        //SaveTexture();
+    }
+
+    public void SaveTexture() {
+        byte[] bytes = toTexture2D(testTexture).EncodeToPNG();
+        System.IO.File.WriteAllBytes(Application.dataPath + "amogus.png", bytes);
+    }
+    Texture2D toTexture2D(RenderTexture rTex) {
+        Texture2D tex = new Texture2D(rTex.width, rTex.height, TextureFormat.RGBA32, false);
+        RenderTexture.active = rTex;
+        tex.ReadPixels(new Rect(0, 0, rTex.width, rTex.height), 0, 0);
+        tex.Apply();
+        return tex;
     }
 
     public void ExecuteHeightMapMesher(RenderTexture voxels, RenderTexture colors, int indexed, Vector3Int chunkOffset) {
@@ -164,6 +179,8 @@ public class DensityVisualizer : MonoBehaviour {
         shader.SetBuffer(id, "colors", colorsBuffer);
         shader.SetBuffer(id, "cmdBuffer", commandBuffer);
         shader.Dispatch(id, size / 32, size / 32, 1);
+
+        
     }
 
     /*
