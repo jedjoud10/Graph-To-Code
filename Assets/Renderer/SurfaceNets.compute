@@ -180,6 +180,7 @@ void CSQuad(uint3 id : SV_DispatchThreadID) {
 
 RWTexture2D<float4> testTextureIndeed;
 int testTextureSize;
+StructuredBuffer<int> remapping;
 
 static uint2 test2[4] = {
     uint2(0, 0),
@@ -187,6 +188,10 @@ static uint2 test2[4] = {
     uint2(0, 1),
     uint2(1, 1),
 };
+
+int3 moduloSeed;
+int3 permuationSeed;
+#include "Assets/Compute/Noises.cginc"
 
 [numthreads(32, 32, 1)]
 void CSTexturing(uint3 id : SV_DispatchThreadID) {
@@ -201,13 +206,18 @@ void CSTexturing(uint3 id : SV_DispatchThreadID) {
     }
     
     float3 verticesTemp[4] = { float3(0, 0, 0), float3(0, 0, 0), float3(0, 0, 0), float3(0, 0, 0) };
-    verticesTemp[0] = vertices[indices[index * 6]];
+    verticesTemp[0] = vertices[indices[index * 6 + 0]];
     verticesTemp[1] = vertices[indices[index * 6 + 1]];
-    verticesTemp[2] = vertices[indices[index * 6 + 3]];
-    verticesTemp[3] = vertices[indices[index * 6 + 5]];
+    verticesTemp[3] = vertices[indices[index * 6 + 2]];
+    verticesTemp[2] = vertices[indices[index * 6 + 5]];
 
     for (int j = 0; j < 4; j++) {
-        float3 color2 = fmod(verticesTemp[j], 10.0)/10.0;
+        testTextureIndeed[id.xy * 2 + test2[j]] = 0.0;
+    }
+
+    for (int j = 0; j < 4; j++) {
+        //float3 color2 = fmod(verticesTemp[j], 10.0)/10.0;
+        float3 color2 = snoise(verticesTemp[j] * 0.1) * 0.5 + 0.5;
         testTextureIndeed[id.xy * 2 + test2[j]] = float4(color2, 0);
     }
     
