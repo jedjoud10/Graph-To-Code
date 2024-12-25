@@ -1,5 +1,6 @@
 #pragma kernel CSVertex
 #pragma kernel CSQuad
+#pragma kernel CSTexturing
 
 #define UNITY_INDIRECT_DRAW_ARGS IndirectDrawIndexedArgs
 #include "UnityIndirect.cginc"
@@ -169,14 +170,28 @@ void CSQuad(uint3 id : SV_DispatchThreadID) {
                 indices[oldValue + (flip ? 4 : 3)] = check[2];
                 indices[oldValue + 5] = check[3];
                 indices[oldValue + (flip ? 3 : 4)] = check[0];
-
-                for (int j = 0; j < 4; j++) {
-                    colors[check[j]] = j / 4.0;
-                }
-                
     
                 InterlockedAdd(cmdBuffer[0].indexCountPerInstance, 6); 
             }
         }
     }
+}
+
+RWTexture2D<float4> testTextureIndeed;
+int testTextureSize;
+
+[numthreads(32, 32, 1)]
+void CSTexturing(uint3 id : SV_DispatchThreadID) {
+    //testTextureIndeed[id.xy] = float4(float2(id.xy) / testTextureSize, 0, 0);
+    int index = id.y * testTextureSize + id.x;
+    //testTextureIndeed[id.xy] = 0.0;
+    if (index > 110000) {
+        //return;
+    }
+
+    testTextureIndeed[id.xy] = float4(fmod(vertices[indices[index * 6]], 10.0) / 10.0, 0);
+    //testTextureIndeed[id.xy] = float(indices[index]) / 1000.0;
+
+    
+
 }

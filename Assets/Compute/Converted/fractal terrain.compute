@@ -39,7 +39,7 @@ void Voxel(float3 position, out float voxel, out float3 color) {
 	float _12 = 1.0;
 	float _13 = 1.0;
 	[unroll]
-	for(uint i = 0; i < 4; i++) {
+	for(uint i = 0; i < 5; i++) {
 		float2 _14 = _9 * _12 + hash21(float(i) * 6543.26912) * 2366.5437;
 		float2 _17 = _12.xx;
 		float2 _18 = _14 * _17;

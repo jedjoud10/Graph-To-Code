@@ -119,43 +119,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!84 &9120289
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 256
-  m_Height: 256
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 45
-  m_MipMap: 0
-  m_GenerateMips: 0
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 1
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 2
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_Dimension: 3
-  m_VolumeDepth: 256
-  m_ShadowSamplingMode: 2
 --- !u!84 &95300297
 RenderTexture:
   m_ObjectHideFlags: 0
@@ -193,7 +156,7 @@ RenderTexture:
   m_Dimension: 3
   m_VolumeDepth: 256
   m_ShadowSamplingMode: 2
---- !u!84 &104326963
+--- !u!84 &104253203
 RenderTexture:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -205,8 +168,8 @@ RenderTexture:
     Hash: 00000000000000000000000000000000
   m_IsAlphaChannelOptional: 0
   serializedVersion: 6
-  m_Width: 256
-  m_Height: 256
+  m_Width: 2048
+  m_Height: 2048
   m_AntiAliasing: 1
   m_MipCount: -1
   m_DepthStencilFormat: 0
@@ -221,14 +184,14 @@ RenderTexture:
   m_EnableRandomWrite: 1
   m_TextureSettings:
     serializedVersion: 2
-    m_FilterMode: 2
+    m_FilterMode: 1
     m_Aniso: 1
     m_MipBias: 0
-    m_WrapU: 1
-    m_WrapV: 1
-    m_WrapW: 1
-  m_Dimension: 3
-  m_VolumeDepth: 256
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
   m_ShadowSamplingMode: 2
 --- !u!1 &125766388
 GameObject:
@@ -264,6 +227,7 @@ MonoBehaviour:
   surfaceNetsCompute: {fileID: 7200000, guid: 414c71a72bcba394d921913198296aac, type: 3}
   heightMapCompute: {fileID: 7200000, guid: de7c990be885cc84292f8dc0e8dd3f48, type: 3}
   customRenderingMaterial: {fileID: -876546973899608171, guid: 166e54d3613b4364a8b5b79a8bc94764, type: 3}
+  testTexture: {fileID: 104253203}
   blocky: 0
   useHeightSimplification: 0
   flatshaded: 0
@@ -279,13 +243,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 63a066558079a8145a0717980575810b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  seed: -2571
-  permutationSeed: {x: 763, y: -607, z: 732}
-  moduloSeed: {x: -361, y: 951, z: -300}
+  seed: -8039
+  permutationSeed: {x: 6, y: 219, z: 864}
+  moduloSeed: {x: -149, y: 399, z: 646}
   debugTextures:
-  - {fileID: 9120289}
-  - {fileID: 104326963}
-  - {fileID: 514456738}
+  - {fileID: 380056753}
+  - {fileID: 548008944}
+  - {fileID: 1713283028}
   size: 256
 --- !u!114 &125766391
 MonoBehaviour:
@@ -344,7 +308,7 @@ MonoBehaviour:
     m_ColorSpace: 0
     m_NumColorKeys: 8
     m_NumAlphaKeys: 2
-  octaves: 4
+  octaves: 5
 --- !u!4 &125766392
 Transform:
   m_ObjectHideFlags: 0
@@ -406,8 +370,8 @@ Texture2D:
     offset: 0
     size: 0
     path: 
---- !u!28 &514456738
-Texture2D:
+--- !u!84 &380056753
+RenderTexture:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -417,41 +381,69 @@ Texture2D:
     serializedVersion: 2
     Hash: 00000000000000000000000000000000
   m_IsAlphaChannelOptional: 0
-  serializedVersion: 3
-  m_Width: 128
-  m_Height: 1
-  m_CompleteImageSize: 512
-  m_MipsStripped: 0
-  m_TextureFormat: 4
-  m_MipCount: 1
-  m_IsReadable: 1
-  m_IsPreProcessed: 0
-  m_IgnoreMipmapLimit: 1
-  m_MipmapLimitGroupName: 
-  m_StreamingMipmaps: 0
-  m_StreamingMipmapsPriority: 0
-  m_VTOnly: 0
-  m_AlphaIsTransparency: 0
-  m_ImageCount: 1
-  m_TextureDimension: 2
+  serializedVersion: 6
+  m_Width: 256
+  m_Height: 256
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 45
+  m_MipMap: 0
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
   m_TextureSettings:
     serializedVersion: 2
-    m_FilterMode: 1
+    m_FilterMode: 2
     m_Aniso: 1
     m_MipBias: 0
     m_WrapU: 1
     m_WrapV: 1
     m_WrapW: 1
-  m_LightmapFormat: 0
-  m_ColorSpace: 0
-  m_PlatformBlob: 
-  image data: 512
-  _typelessdata: 000000ff050505ff0b0b0bff101010ff151515ff1b1b1bff202020ff252525ff2b2b2bff303030ff353535ff3b3b3bff404040ff454545ff4b4b4bff505050ff555555ff5b5b5bff606060ff656565ff6b6b6bff707070ff757575ff7a7a7aff808080ff858585ff8a8a8aff909090ff8f8f8fff8d8d8dff8b8b8bff8a8a8aff888888ff868686ff848484ff838383ff818181ff7f7f7fff7d7d7dff7c7c7cff7a7a7aff787878ff767676ff757575ff737373ff717171ff6f6f6fff6e6e6eff6c6c6cff6a6a6aff686868ff666666ff646464ff626262ff606060ff5e5e5eff626262ff656565ff696969ff6c6c6cff707070ff737373ff777777ff7b7b7bff7e7e7eff828282ff868686ff8a8a8aff8e8e8eff939393ff979797ff9b9b9bff9f9f9fffa3a3a3ffa7a7a7ffabababffafafafffb3b3b3ffb7b7b7ffbbbbbbffbfbfbfffc3c3c3ffc4c4c4ffc5c5c5ffc6c6c6ffc7c7c7ffc7c7c7ffc8c8c8ffc9c9c9ffcacacaffcbcbcbffccccccffcdcdcdffcececeffcfcfcfffd0d0d0ffd1d1d1ffd2d2d2ffd2d2d2ffd3d3d3ffd4d4d4ffd5d5d5ffd6d6d6ffd8d8d8ffd9d9d9ffdbdbdbffdcdcdcffdededeffe0e0e0ffe1e1e1ffe3e3e3ffe4e4e4ffe6e6e6ffe7e7e7ffe9e9e9ffebebebffecececffeeeeeeffefefeffff1f1f1fff2f2f2fff4f4f4fff6f6f6fff7f7f7fff9f9f9fffafafafffcfcfcfffdfdfdff
-  m_StreamData:
+  m_Dimension: 3
+  m_VolumeDepth: 256
+  m_ShadowSamplingMode: 2
+--- !u!84 &548008944
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
     serializedVersion: 2
-    offset: 0
-    size: 0
-    path: 
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 256
+  m_Height: 256
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 8
+  m_MipMap: 0
+  m_GenerateMips: 0
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 1
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 2
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_Dimension: 3
+  m_VolumeDepth: 256
+  m_ShadowSamplingMode: 2
 --- !u!84 &655620357
 RenderTexture:
   m_ObjectHideFlags: 0
@@ -818,7 +810,7 @@ Light:
   m_InnerSpotAngle: 21.80208
   m_CookieSize: 10
   m_Shadows:
-    m_Type: 2
+    m_Type: 0
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
@@ -1021,6 +1013,7 @@ MonoBehaviour:
   surfaceNetsCompute: {fileID: 7200000, guid: 414c71a72bcba394d921913198296aac, type: 3}
   heightMapCompute: {fileID: 7200000, guid: de7c990be885cc84292f8dc0e8dd3f48, type: 3}
   customRenderingMaterial: {fileID: -876546973899608171, guid: 166e54d3613b4364a8b5b79a8bc94764, type: 3}
+  testTexture: {fileID: 0}
   blocky: 0
   useHeightSimplification: 0
   flatshaded: 0
@@ -1136,6 +1129,7 @@ MonoBehaviour:
   surfaceNetsCompute: {fileID: 7200000, guid: 414c71a72bcba394d921913198296aac, type: 3}
   heightMapCompute: {fileID: 7200000, guid: de7c990be885cc84292f8dc0e8dd3f48, type: 3}
   customRenderingMaterial: {fileID: 2100000, guid: ab77a143e630ac94daa1218f76ccb619, type: 2}
+  testTexture: {fileID: 0}
   blocky: 0
   useHeightSimplification: 1
   flatshaded: 0
@@ -1195,6 +1189,52 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!28 &1713283028
+Texture2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 3
+  m_Width: 128
+  m_Height: 1
+  m_CompleteImageSize: 512
+  m_MipsStripped: 0
+  m_TextureFormat: 4
+  m_MipCount: 1
+  m_IsReadable: 1
+  m_IsPreProcessed: 0
+  m_IgnoreMipmapLimit: 1
+  m_MipmapLimitGroupName: 
+  m_StreamingMipmaps: 0
+  m_StreamingMipmapsPriority: 0
+  m_VTOnly: 0
+  m_AlphaIsTransparency: 0
+  m_ImageCount: 1
+  m_TextureDimension: 2
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
+  m_LightmapFormat: 0
+  m_ColorSpace: 0
+  m_PlatformBlob: 
+  image data: 512
+  _typelessdata: 000000ff050505ff0b0b0bff101010ff151515ff1b1b1bff202020ff252525ff2b2b2bff303030ff353535ff3b3b3bff404040ff454545ff4b4b4bff505050ff555555ff5b5b5bff606060ff656565ff6b6b6bff707070ff757575ff7a7a7aff808080ff858585ff8a8a8aff909090ff8f8f8fff8d8d8dff8b8b8bff8a8a8aff888888ff868686ff848484ff838383ff818181ff7f7f7fff7d7d7dff7c7c7cff7a7a7aff787878ff767676ff757575ff737373ff717171ff6f6f6fff6e6e6eff6c6c6cff6a6a6aff686868ff666666ff646464ff626262ff606060ff5e5e5eff626262ff656565ff696969ff6c6c6cff707070ff737373ff777777ff7b7b7bff7e7e7eff828282ff868686ff8a8a8aff8e8e8eff939393ff979797ff9b9b9bff9f9f9fffa3a3a3ffa7a7a7ffabababffafafafffb3b3b3ffb7b7b7ffbbbbbbffbfbfbfffc3c3c3ffc4c4c4ffc5c5c5ffc6c6c6ffc7c7c7ffc7c7c7ffc8c8c8ffc9c9c9ffcacacaffcbcbcbffccccccffcdcdcdffcececeffcfcfcfffd0d0d0ffd1d1d1ffd2d2d2ffd2d2d2ffd3d3d3ffd4d4d4ffd5d5d5ffd6d6d6ffd8d8d8ffd9d9d9ffdbdbdbffdcdcdcffdededeffe0e0e0ffe1e1e1ffe3e3e3ffe4e4e4ffe6e6e6ffe7e7e7ffe9e9e9ffebebebffecececffeeeeeeffefefeffff1f1f1fff2f2f2fff4f4f4fff6f6f6fff7f7f7fff9f9f9fffafafafffcfcfcfffdfdfdff
+  m_StreamData:
+    serializedVersion: 2
+    offset: 0
+    size: 0
+    path: 
 --- !u!84 &1877899196
 RenderTexture:
   m_ObjectHideFlags: 0
@@ -1484,6 +1524,7 @@ MonoBehaviour:
   surfaceNetsCompute: {fileID: 7200000, guid: 414c71a72bcba394d921913198296aac, type: 3}
   heightMapCompute: {fileID: 7200000, guid: de7c990be885cc84292f8dc0e8dd3f48, type: 3}
   customRenderingMaterial: {fileID: -876546973899608171, guid: 166e54d3613b4364a8b5b79a8bc94764, type: 3}
+  testTexture: {fileID: 0}
   blocky: 0
   useHeightSimplification: 0
   flatshaded: 1
@@ -1545,6 +1586,7 @@ MonoBehaviour:
   surfaceNetsCompute: {fileID: 7200000, guid: 414c71a72bcba394d921913198296aac, type: 3}
   heightMapCompute: {fileID: 7200000, guid: de7c990be885cc84292f8dc0e8dd3f48, type: 3}
   customRenderingMaterial: {fileID: -876546973899608171, guid: 166e54d3613b4364a8b5b79a8bc94764, type: 3}
+  testTexture: {fileID: 0}
   blocky: 0
   useHeightSimplification: 0
   flatshaded: 0

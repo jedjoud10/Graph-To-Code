@@ -16,10 +16,12 @@ public class DensityVisualizer : MonoBehaviour {
     private RenderTexture maxHeightAtomic;
     public Material customRenderingMaterial;
     private GraphicsBuffer.IndirectDrawIndexedArgs aaa;
+    public RenderTexture testTexture;
     public bool blocky;
     public bool useHeightSimplification;
     public bool flatshaded;
     private int size;
+    public int testTextureSize;
 
     public void InitializeForSize(int newSize) {
         if (!isActiveAndEnabled)
@@ -53,6 +55,7 @@ public class DensityVisualizer : MonoBehaviour {
 
         tempVertexTexture = Utils.Create3DRenderTexture(size, GraphicsFormat.R32_UInt, FilterMode.Point, TextureWrapMode.Repeat, false);
         maxHeightAtomic = Utils.Create2DRenderTexture(size, GraphicsFormat.R32_UInt, FilterMode.Point, TextureWrapMode.Repeat, false);
+        testTexture = Utils.Create2DRenderTexture(testTextureSize, GraphicsFormat.R8G8B8A8_UNorm, FilterMode.Point, TextureWrapMode.Repeat, false);
     }
 
     private void OnDisable() {
@@ -73,6 +76,7 @@ public class DensityVisualizer : MonoBehaviour {
         colorsBuffer.Dispose();
         tempVertexTexture.Release();
         maxHeightAtomic.Release();
+        testTexture.Release();
     }
 
     public void Meshify(RenderTexture voxels, RenderTexture colors) {
@@ -97,6 +101,7 @@ public class DensityVisualizer : MonoBehaviour {
         var shader = surfaceNetsCompute;
         shader.SetBool("blocky", blocky);
         shader.SetInt("size", size);
+        shader.SetInt("testTextureSize", testTextureSize);
 
         int id = shader.FindKernel("CSVertex");
         shader.SetTexture(id, "densities", voxels);
@@ -112,11 +117,16 @@ public class DensityVisualizer : MonoBehaviour {
         id = shader.FindKernel("CSQuad");
         shader.SetTexture(id, "densities", voxels);
         shader.SetBuffer(id, "indices", indexBuffer);
-        shader.SetBuffer(id, "colors", colorsBuffer);
         shader.SetTexture(id, "vertexIds", tempVertexTexture);
         shader.SetBuffer(id, "cmdBuffer", commandBuffer);
         shader.SetBuffer(id, "atomicCounters", atomicCounters);
         shader.Dispatch(id, size / 8, size / 8, size / 8);
+
+        id = shader.FindKernel("CSTexturing");
+        shader.SetTexture(id, "testTextureIndeed", testTexture);
+        shader.SetBuffer(id, "indices", indexBuffer);
+        shader.SetBuffer(id, "vertices", vertexBuffer);
+        shader.Dispatch(id, testTextureSize / 32, testTextureSize / 32, 1);
     }
 
     public void ExecuteHeightMapMesher(RenderTexture voxels, RenderTexture colors, int indexed, Vector3Int chunkOffset) {
@@ -191,10 +201,20 @@ public class DensityVisualizer : MonoBehaviour {
         mat.SetBuffer("_Vertices", vertexBuffer);
         mat.SetBuffer("_Normals", normalsBuffer);
         mat.SetBuffer("_Colors", colorsBuffer);
+        mat.SetTexture("_TestTexture", testTexture);
         mat.SetInt("_Flatshaded", (flatshaded || blocky) ? 1 : 0);
+        mat.SetInt("_TestTextureSize", testTextureSize);
 
         // FIXME: Why do I need to use this instead of just render mesh primitives indexed inderect???
         // Also why do I need to handle the indexing myself???
+
+        // I kinda realized this too late but this is a non indexed thing, which explains why we need to sample the indices by ourselves in the shader
+        // this also explains why I can "emulate" "flat" or no-interpolation by just passing different values that don't map to the vertex attributes
+
+        // I really hope the slowness that comes from non-indexed rendering comes from the fact that it uses a lot of duped vertices and not the fact
+        // that it's, well, is non-indexed.
+        // In either case this is the only way to make it work with urp rn anyways so not like I have a choice AND it allows me to experiment with the goofy
+        // texture mapping idea that I'm fiddling with right now
         Graphics.DrawProceduralIndirect(customRenderingMaterial, bounds, MeshTopology.Triangles, commandBuffer, properties: mat);
     }
 }
