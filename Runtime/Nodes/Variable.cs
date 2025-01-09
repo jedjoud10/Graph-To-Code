@@ -1,5 +1,4 @@
 using System;
-using static UnityEngine.Rendering.VolumeComponent;
 
 [Serializable]
 public abstract class Variable<T> : TreeNode {

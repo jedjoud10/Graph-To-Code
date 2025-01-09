@@ -160,9 +160,10 @@ public abstract class VoxelGraph : MonoBehaviour {
         lines.Add("float3 scale;\nfloat3 offset;");
 
         // imports
-        lines.Add("#include \"Assets/Compute/Noises.cginc\"");
-        lines.Add("#include \"Assets/Compute/SDF.cginc\"");
-        lines.Add("#include \"Assets/Compute/Other.cginc\"");
+        //lines.Add("#include \"Assets/Compute/Noises.cginc\"");
+        lines.Add("#include \"Packages/com.jedjoud.graphtocode/Runtime/Compute/Noises.cginc\"");
+        lines.Add("#include \"Packages/com.jedjoud.graphtocode/Runtime/Compute/SDF.cginc\"");
+        lines.Add("#include \"Packages/com.jedjoud.graphtocode/Runtime/Compute/Other.cginc\"");
 
         lines.Add(@"
 float3 ConvertIntoWorldPosition(float3 tahini) {
@@ -245,15 +246,15 @@ float3 ConvertFromWorldPosition(float3 worldPos) {
     public void Compile() {
 #if UNITY_EDITOR
         string source = Transpile();
-        string folder = "Converted";
-        string root = "Assets/Compute";
 
-        if (!AssetDatabase.IsValidFolder(root + "/" + folder + "/")) {
+        if (!AssetDatabase.IsValidFolder("Assets/Compute/Converted/")) {
+            // TODO: Use package cache instead? would it work???
+            AssetDatabase.CreateFolder("Assets", "Compute");
+            AssetDatabase.CreateFolder("Assets/Compute", "Converted");
             Debug.Log("Creating converted compute shaders folders");
-            string guid = AssetDatabase.CreateFolder(root, folder);
         }
 
-        string filePath = root + "/" + folder + "/" + name.ToLower() + ".compute";
+        string filePath = "Assets/Compute/Converted/" + name.ToLower() + ".compute";
         using (StreamWriter sw = File.CreateText(filePath)) {
             sw.Write(source);
         }
